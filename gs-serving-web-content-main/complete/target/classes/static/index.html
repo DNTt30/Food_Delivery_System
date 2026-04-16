@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Luxe - Hotel Management System</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #b59410;
+            --bg-light: #f1f5f9;
+            --white: #ffffff;
+            --footer-bg: #0f172a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--primary);
+            overflow-x: hidden;
+        }
+
+        /* --- Navbar --- */
+        nav {
+            background: var(--white);
+            padding: 0.8rem 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 15px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--primary);
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .logo:hover {
+            color: var(--accent);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 5px 15px 5px 5px;
+            border-radius: 40px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+        }
+
+        .user-info-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-role {
+            font-size: 0.65rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* --- Hero Slider --- */
+        .slider-container {
+            width: 100%;
+            height: 400px;
+            /* Hơi giảm chiều cao để tập trung vào Dashboard */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slider {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            animation: slideAnimation 15s infinite ease-in-out;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .slide-content {
+            position: relative;
+            z-index: 1;
+            padding: 0 20px;
+        }
+
+        .slide-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        @keyframes slideAnimation {
+
+            0%,
+            20% {
+                transform: translateX(0);
+            }
+
+            33%,
+            53% {
+                transform: translateX(-33.33%);
+            }
+
+            66%,
+            86% {
+                transform: translateX(-66.66%);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        /* --- Dashboard Body --- */
+        .container {
+            max-width: 1200px;
+            margin: -50px auto 80px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .dashboard-title {
+            text-align: center;
+            margin-bottom: 40px;
+            background: white;
+            display: block;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 15px 40px;
+            border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .dashboard-title h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 35px 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .card:hover .icon {
+            background: #fffbeb;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .card p {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: var(--footer-bg);
+            color: #94a3b8;
+            padding: 60px 8% 20px;
+            margin-top: 50px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-col h4 {
+            color: var(--white);
+            margin-bottom: 20px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .footer-col p,
+        .footer-col li {
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            list-style: none;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #1e293b;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+
+        .accent-text {
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <a th:href="@{/}" class="logo">LUXURY SYSTEM</a>
+
+        <div class="user-profile">
+            <img src="https://i.pravatar.cc/150?u=duong" alt="Avatar" class="avatar">
+            <div class="user-info-text">
+                <span class="user-role">Receptionist</span>
+                <span class="user-name">Dương TÚ</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="slider-container">
+        <div class="slider">
+            <div class="slide"
+                style="background-image: url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1920&auto=format&fit=crop');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <h2>Trải Nghiệm Đẳng Cấp</h2>
+                    <p>Chào mừng đến với hệ thống quản trị khách sạn 5 sao</p>
+                </div>
+            </div>
+            <div class="slide"
+                style="background-image: url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1920&auto=format&fit=crop');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <h2>Vận Hành Thông Minh</h2>
+                    <p>Tối ưu quy trình đặt lịch và quản lý khách hàng</p>
+                </div>
+            </div>
+            <div class="slide"
+                style="background-image: url('https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=1920&auto=format&fit=crop');">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <h2>Dịch Vụ Tận Tâm</h2>
+                    <p>Sự hài lòng của khách hàng là ưu tiên hàng đầu</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-title">
+            <h1>Bảng Điều Khiển Quản Trị</h1>
+        </div>
+
+        <div class="module-grid">
+            <a href="/guests/list" class="card">
+                <div class="icon">👥</div>
+                <h2>Guest Management</h2>
+                <p>Đăng ký, tra cứu hồ sơ khách hàng và theo dõi tích điểm loyalty.</p>
+            </a>
+
+            <a href="/rooms/list" class="card">
+                <div class="icon">🏨</div>
+                <h2>Room Management</h2>
+                <p>Kiểm tra sơ đồ phòng, cập nhật trạng thái trống/đầy và giá phòng.</p>
+            </a>
+
+            <a href="/reservations/list" class="card">
+                <div class="icon">📅</div>
+                <h2>Reservation</h2>
+                <p>Xử lý quy trình đặt lịch, Check-in và Check-out nhanh chóng.</p>
+            </a>
+
+
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>Luxury Hotel</h4>
+                <p>Hệ thống quản lý chuyên nghiệp dành cho sinh viên thực tập Phenikaa.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Hỗ Trợ</h4>
+                <ul>
+                    <li>Chính sách bảo mật</li>
+                    <li>Điều khoản dịch vụ</li>
+                    <li>Hướng dẫn sử dụng</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Liên Hệ</h4>
+                <p>📍 Phenikaa University, Hanoi</p>
+                <p>📞 +84 123 456 789</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 <span class="accent-text">Hotel Management System</span>. Designed by Duong at Phenikaa
+                Student Lab.</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

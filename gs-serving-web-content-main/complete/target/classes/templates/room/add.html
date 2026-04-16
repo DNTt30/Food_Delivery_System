@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Grand Luxe - Add New Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1e293b; --accent: #b59410; --bg: #f8fafc; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); padding: 60px; margin: 0; }
+        .form-card { 
+            max-width: 550px; margin: auto; background: white; padding: 45px; 
+            border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08); 
+        }
+        h2 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--primary); margin-bottom: 30px; text-align: center; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 10px; }
+        input, select { 
+            width: 100%; padding: 15px; border: 2px solid #f1f5f9; border-radius: 12px; 
+            font-family: inherit; font-size: 1rem; box-sizing: border-box; transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); outline: none; background: #fff; }
+        .btn-save { 
+            background: var(--primary); color: white; padding: 16px; border: none; 
+            border-radius: 12px; font-weight: 700; cursor: pointer; width: 100%; 
+            font-size: 1rem; margin-top: 15px; transition: 0.3s;
+        }
+        .btn-save:hover { background: #334155; transform: translateY(-2px); }
+        .btn-cancel { 
+            display: block; text-align: center; margin-top: 20px; color: #94a3b8; 
+            text-decoration: none; font-size: 0.9rem; font-weight: 600; 
+        }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>Thêm Phòng Mới</h2>
+        <form th:action="@{/rooms/save}" th:object="${room}" method="post">
+            
+            <div class="form-group">
+                <label>Số phòng (Ví dụ: 101, 302)</label>
+                <input type="text" th:field="*{roomNumber}" placeholder="Nhập số phòng..." required>
+            </div>
+
+            <div class="form-group">
+                <label>Loại phòng</label>
+                <select th:field="*{type}"> <option th:each="t : ${roomTypes}" 
+                            th:value="${t.typeId}" 
+                            th:text="${t.typeName}">Standard Single</option>
+                </select>
+            </div>
+
+            <input type="hidden" th:field="*{status}" value="AVAILABLE">
+
+            <button type="submit" class="btn-save">Xác nhận thêm phòng</button>
+            <a th:href="@{/rooms/list}" class="btn-cancel">Hủy bỏ và quay lại</a>
+        </form>
+    </div>
+</body>
+</html>
