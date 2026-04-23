@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant - Quản lý Menu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-warning mb-4">
+  <div class="container">
+    <a class="navbar-brand text-dark fw-bold" href="/restaurant/dashboard">Restaurant Portal</a>
+  </div>
+</nav>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Quản lý Thực đơn</h4>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#menuModal">+ Thêm Món</button>
+    </div>
+    <div class="card shadow-sm">
+        <table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Tên món</th><th>Giá</th><th>Tình trạng</th><th>Thao tác</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>Cơm Sườn Ninh Kiều</td><td>35.000 đ</td><td><span class="badge bg-success">Còn hàng</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#menuModal">Sửa</button>
+                        <button class="btn btn-sm btn-danger">Xóa</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="menuModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Cập nhật món ăn</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <label>Tên món</label><input type="text" class="form-control mb-2">
+        <label>Giá tiền</label><input type="number" class="form-control mb-2">
+        <label>Trạng thái</label>
+        <select class="form-select"><option>Còn hàng</option><option>Hết hàng</option></select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success w-100">Lưu lại</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

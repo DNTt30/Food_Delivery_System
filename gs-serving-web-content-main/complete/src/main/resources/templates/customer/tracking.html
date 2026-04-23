@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer - Theo dõi đơn hàng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="/customer/home">FoodApp Customer</a>
+  </div>
+</nav>
+
+<div class="container" style="max-width: 600px;">
+    <h4 class="mb-4 text-center">Trạng thái đơn hàng #12345</h4>
+    <div class="card shadow-sm p-4">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-success fw-bold">✓ Đặt hàng thành công <small class="text-muted float-end">10:00</small></li>
+            <li class="list-group-item text-primary fw-bold">✓ Nhà hàng đã nhận đơn <small class="text-muted float-end">10:02</small></li>
+            <li class="list-group-item fw-bold text-warning">⏳ Đang giao (Tài xế: Nguyễn Văn B) <small class="text-muted float-end">Dự kiến 10:30</small></li>
+            <li class="list-group-item text-muted">⚪ Đã giao xong</li>
+        </ul>
+        <div class="mt-4 text-center">
+            <button class="btn btn-primary w-100 mb-2">Gọi Tài Xế</button>
+            <a href="/customer/home" class="btn btn-outline-secondary w-100">Quay về trang chủ</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

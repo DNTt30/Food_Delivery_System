@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Food Delivery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>body { padding-top: 50px; background-color: #f8f9fa; }</style>
+</head>
+<body>
+    <div class="container text-center">
+        <h2 class="mb-4 text-primary">🍕 Customer Dashboard</h2>
+        <div class="card mx-auto p-4" style="max-width: 600px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 10px;">
+            <p>Chào mừng Khách hàng! Tại đây bạn có thể xem menu, đặt đồ ăn và theo dõi đơn hàng của mình.</p>
+            <div class="mt-4">
+                <button class="btn btn-outline-primary m-1">Xem Menu</button>
+                <button class="btn btn-outline-success m-1">Đơn hàng của tôi</button>
+            </div>
+            <button onclick="logout()" class="btn btn-danger mt-4">Về trang chủ (Đăng xuất)</button>
+        </div>
+    </div>
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/index.html';
+        }
+    </script>
+</body>
+</html>

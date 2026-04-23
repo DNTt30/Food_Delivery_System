@@ -1,5 +1,13 @@
 # 🍔 Food Delivery Management System
+**Dự án môn học: Phân Tích và Thiết Kế Phần Mềm**
+- Tên Repository Git: `PTTKPM25-26_ClassNx_Nhom<x>`
+- Môn học: Phân tích và thiết kế phần mềm 2025-2026
+- Nhóm: <Điền số thứ tự của nhóm>
+- Tên Lớp: <Điền mã lớp>
 
+**Các giảng viên đã được cấp quyền:**
+1. Thầy vqdzung@gmail.com
+2. Thầy/Cô que.nguyenxuan@phenikaa-uni.edu.vn
 **Hệ thống quản lý đặt đồ ăn trực tuyến**
 
 ---
