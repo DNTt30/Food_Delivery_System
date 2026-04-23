@@ -1,29 +1,230 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - Food Delivery</title>
+    <title>Customer Dashboard - Food Delivery Team 14</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>body { padding-top: 50px; background-color: #f8f9fa; }</style>
-</head>
-<body>
-    <div class="container text-center">
-        <h2 class="mb-4 text-primary">🍕 Customer Dashboard</h2>
-        <div class="card mx-auto p-4" style="max-width: 600px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 10px;">
-            <p>Chào mừng Khách hàng! Tại đây bạn có thể xem menu, đặt đồ ăn và theo dõi đơn hàng của mình.</p>
-            <div class="mt-4">
-                <button class="btn btn-outline-primary m-1">Xem Menu</button>
-                <button class="btn btn-outline-success m-1">Đơn hàng của tôi</button>
-            </div>
-            <button onclick="logout()" class="btn btn-danger mt-4">Về trang chủ (Đăng xuất)</button>
-        </div>
-    </div>
-    <script>
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/index.html';
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #f5f6fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
+        /* Navbar Custom */
+        .navbar {
+            background: linear-gradient(90deg, #ff4757, #ff6b81);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: white !important;
+        }
+
+        .search-bar {
+            border-radius: 20px;
+            padding: 8px 20px;
+            border: none;
+            width: 100%;
+        }
+
+        /* Banner Đơn hàng */
+        .active-order-banner {
+            background: white;
+            border-left: 5px solid #2ed573;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Card Món ăn */
+        .food-card {
+            border-radius: 15px;
+            border: none;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .food-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .food-img {
+            height: 180px;
+            object-fit: cover;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .price-tag {
+            color: #ff4757;
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+
+        .btn-add-cart {
+            background-color: #ff4757;
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .btn-add-cart:hover {
+            background-color: #ff6b81;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4" href="#"><i class="fa-solid fa-motorcycle me-2"></i>Food14</a>
+            <button class="navbar-toggler bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <form class="d-flex mx-auto w-50 my-2 my-lg-0">
+                    <input class="form-control search-bar" type="search" id="searchInput"
+                        placeholder="Tìm kiếm món ăn (UC-05)...">
+                </form>
+                <div class="d-flex align-items-center mt-3 mt-lg-0">
+                    <button class="btn btn-light rounded-pill px-3 me-3 position-relative">
+                        <i class="fa-solid fa-cart-shopping text-danger"></i> Giỏ hàng
+                        <span id="cartCount"
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">0</span>
+                    </button>
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle fw-bold" href="#" data-bs-toggle="dropdown">
+                            <i class="fa-regular fa-circle-user fs-5 me-1"></i> Tài khoản
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch
+                                    sử đơn hàng</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i
+                                        class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+
+        <div class="active-order-banner p-3 mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1 fw-bold text-success"><i class="fa-solid fa-location-dot fa-bounce me-2"></i>Đơn hàng
+                    #FD-889 đang được giao!</h6>
+                <small class="text-muted">Shipper đã lấy hàng và dự kiến đến trong 10 phút.</small>
+            </div>
+            <button class="btn btn-outline-success btn-sm fw-bold">Theo dõi ngay</button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <h4 class="fw-bold mb-0">🔥 Thực đơn hôm nay</h4>
+        </div>
+
+        <div class="row g-4" id="foodContainer">
+            <div class="col-12 text-center text-muted py-5" id="loadingIndicator">
+                <div class="spinner-border text-danger" role="status"></div>
+                <p class="mt-2">Đang tải món ăn từ hệ thống...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Khởi tạo giỏ hàng rỗng
+        let cartItemCount = 0;
+
+        // 1. Hàm tải dữ liệu món ăn từ Backend Spring Boot
+        function loadFoods() {
+            // URL API Backend của Tú (cần trùng khớp với @RequestMapping trong Controller)
+            const apiUrl = 'http://localhost:8080/api/foods';
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Không thể kết nối đến Backend');
+                    return response.json();
+                })
+                .then(foods => {
+                    renderFoods(foods);
+                })
+                .catch(error => {
+                    console.warn(error);
+                    // DỮ LIỆU MẪU (Mock Data): Dùng để demo giao diện khi Backend chưa chạy
+                    const mockFoods = [
+                        { id: 1, name: "Pizza Hải Sản Phô Mai", price: 129000, imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=350&fit=crop", restaurant: "Pizza Hut" },
+                        { id: 2, name: "Burger Bò Tảng 2 Lớp", price: 75000, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&h=350&fit=crop", restaurant: "KFC Phenikaa" },
+                        { id: 3, name: "Mì Ý Sốt Bò Bằm", price: 65000, imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&h=350&fit=crop", restaurant: "Pasta Station" },
+                        { id: 4, name: "Gà Rán Sốt Cay Hàn Quốc", price: 89000, imageUrl: "https://images.unsplash.com/photo-1569691899455-88464f6d3ab1?w=500&h=350&fit=crop", restaurant: "Don Chicken" }
+                    ];
+                    renderFoods(mockFoods);
+                });
+        }
+
+        // 2. Hàm in HTML món ăn ra màn hình (Render)
+        function renderFoods(foodList) {
+            const container = document.getElementById('foodContainer');
+            container.innerHTML = ''; // Xóa loading
+
+            foodList.forEach(food => {
+                // Format tiền tệ VNĐ
+                const formattedPrice = food.price.toLocaleString('vi-VN') + 'đ';
+
+                const cardHtml = `
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card food-card shadow-sm">
+                            <img src="${food.imageUrl}" class="card-img-top food-img" alt="${food.name}">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title fw-bold text-truncate" title="${food.name}">${food.name}</h6>
+                                <small class="text-muted mb-3"><i class="fa-solid fa-store me-1"></i>${food.restaurant}</small>
+                                <div class="mt-auto d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">${formattedPrice}</span>
+                                    <button onclick="addToCart(${food.id}, '${food.name}')" class="btn btn-add-cart px-3">Thêm <i class="fa-solid fa-plus"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        // 3. Hàm xử lý nút "Thêm vào giỏ" (UC-07)
+        function addToCart(foodId, foodName) {
+            // Tăng số lượng giỏ hàng trên UI
+            cartItemCount++;
+            document.getElementById('cartCount').innerText = cartItemCount;
+
+            // Hiện popup thông báo nhẹ nhàng
+            alert('Đã thêm "' + foodName + '" vào giỏ hàng thành công!');
+
+            // Gợi ý cho Backend: Nơi này có thể gọi API POST /api/cart/add
+        }
+
+        // 4. Hàm Đăng xuất
+        function logout() {
+            localStorage.removeItem('jwt_token');
+            window.location.href = '/login.html';
+        }
+
+        // Tự động tải món ăn khi trang web vừa mở lên
+        document.addEventListener("DOMContentLoaded", function () {
+            loadFoods();
+        });
     </script>
 </body>
+
 </html>

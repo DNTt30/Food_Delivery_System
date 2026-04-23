@@ -1,8 +1,9 @@
 com\duong\salesmanagement\Main.class
-com\duong\salesmanagement\security\SecurityConfig.class
-com\duong\salesmanagement\security\CustomUserDetailsService.class
 com\duong\salesmanagement\security\JwtUtil.class
 com\duong\salesmanagement\controller\AuthController.class
+com\duong\salesmanagement\controller\WebController.class
+com\duong\salesmanagement\security\SecurityConfig.class
+com\duong\salesmanagement\security\CustomUserDetailsService.class
 com\duong\salesmanagement\controller\AuthResponse.class
 com\duong\salesmanagement\model\Role.class
 com\duong\salesmanagement\controller\AuthRequest.class
