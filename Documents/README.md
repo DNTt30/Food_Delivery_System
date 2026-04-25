@@ -147,16 +147,28 @@ gs-serving-web-content-main/complete/
 
 ---
 
+#### 6. Triển khai Hệ thống Đăng ký & Xác thực Email (OTP)
+
+Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đảm bảo tính an toàn:
+- **Tích hợp Spring Mail**: Sử dụng Gmail SMTP để gửi mã OTP.
+- **Cơ chế OTP**: Sinh mã 6 chữ số ngẫu nhiên, lưu trữ vào DB kèm thời gian hết hạn (15 phút).
+- **Luồng Đăng ký & Quên mật khẩu**: 
+    - Đăng ký 👉 Gửi OTP 👉 Xác minh 👉 Kích hoạt tài khoản (`ENABLED = true`).
+    - Quên mật khẩu 👉 Gửi OTP 👉 Nhập mã & Mật khẩu mới 👉 Reset thành công.
+- **Giao diện hiện đại**: Thiết kế trang `register.html` và `forgot-password.html` sử dụng phong cách **Glassmorphism**, responsive và interactive.
+
+---
+
 ### 📦 Sản phẩm tuần 3
 
-| # | Sản phẩm | File |
-| :--- | :--- | :--- |
-| 1 | Bảng Noun Extraction (16 lớp) | Mục phân tích trên |
-| 2 | Class Diagram Draw.io | `ClassDiagram_Team14_Tuan3.drawio` |
-| 3 | Tài liệu thiết kế lớp (Word) | `ClassDiagram_Tuan3_Team14.docx` |
-| 4 | Các file Entity Java | `src/.../model/*.java` |
-| 5 | Cấu hình DB (application.properties) | `src/main/resources/` |
-| 6 | README hướng dẫn chạy dự án | `README.md` (root) |
+| # | Sản phẩm | File/Link | Status |
+| :--- | :--- | :--- | :--- |
+| 1 | Biểu đồ Lớp (Class Diagram) | `ClassDiagram_Team14_Tuan3.drawio` | ✅ |
+| 2 | Tài liệu thiết kế lớp (Word) | `ClassDiagram_Tuan3_Team14.docx` | ✅ |
+| 3 | Khung mã nguồn (Skeleton) | `src/.../model/*.java` | ✅ |
+| 4 | Hệ thống xác thực OTP/Mail | `EmailService.java`, `AuthService.java` | ✅ |
+| 5 | Giao diện Đăng ký & Reset PW | `register.html`, `forgot-password.html` | ✅ |
+| 6 | README hướng dẫn chạy | `README.md` (root) | ✅ |
 
 ---
 

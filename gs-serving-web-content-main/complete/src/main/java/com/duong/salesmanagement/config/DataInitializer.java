@@ -28,10 +28,10 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.count() == 0) {
             System.out.println("No users found. Initializing default accounts...");
 
-            userRepository.save(buildUser("admin",      "admin123",      "System Administrator",   "admin@food.dev",      Role.ADMIN));
-            userRepository.save(buildUser("customer",   "customer123",   "John Doe – Customer",    "customer@food.dev",   Role.CUSTOMER));
-            userRepository.save(buildUser("restaurant", "restaurant123", "Tasty Food Restaurant",  "restaurant@food.dev", Role.RESTAURANT));
-            userRepository.save(buildUser("driver",     "driver123",     "Mike – Driver",           "driver@food.dev",     Role.DRIVER));
+            saveSeedUser("admin",      "admin123",      "System Administrator",   "admin@food.dev",      Role.ADMIN);
+            saveSeedUser("customer",   "customer123",   "John Doe – Customer",    "customer@food.dev",   Role.CUSTOMER);
+            saveSeedUser("restaurant", "restaurant123", "Tasty Food Restaurant",  "restaurant@food.dev", Role.RESTAURANT);
+            saveSeedUser("driver",     "driver123",     "Mike – Driver",           "driver@food.dev",     Role.DRIVER);
 
             System.out.println("Default accounts created successfully!");
         } else {
@@ -39,11 +39,11 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    /** Tạo User với password đã mã hóa và enabled = true (tài khoản seed). */
-    private User buildUser(String username, String rawPassword,
-                           String fullName, String email, Role role) {
+    /** Tạo và lưu trực tiếp để tránh cảnh báo Null safety của IDE */
+    private void saveSeedUser(String username, String rawPassword,
+                              String fullName, String email, Role role) {
         User u = new User(username, passwordEncoder.encode(rawPassword), fullName, email, role);
-        u.setEnabled(true); // Bỏ qua bước xác minh email cho tài khoản seed
-        return u;
+        u.setEnabled(true);
+        userRepository.save(u);
     }
 }

@@ -127,6 +127,8 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
     // =========================================================
     //  POST /api/auth/forgot-password
     //  Body: { "email":"..." }
