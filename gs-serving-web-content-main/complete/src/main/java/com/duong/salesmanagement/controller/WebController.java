@@ -43,8 +43,8 @@ public class WebController {
     public String restaurantOrders() { return "restaurant/orders"; }
 
     // 4. Driver
-    @GetMapping("/driver/dashboard") // Fallback
-    public String driverDashboard() { return "driver/new_orders"; }
+    @GetMapping("/driver/dashboard")
+    public String driverDashboard() { return "driver/dashboard"; }
 
     @GetMapping("/driver/new_orders")
     public String driverNewOrders() { return "driver/new_orders"; }

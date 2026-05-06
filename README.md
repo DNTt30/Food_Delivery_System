@@ -77,4 +77,16 @@ Sau khi ứng dụng khởi chạy thành công, truy cập:
 | **Ngô Minh Quân** | 23017112 |
 
 ---
+## 📝 Nhật ký cập nhật (Progress Log)
+
+### 📅 06/05/2026
+- **Giao diện Dashboard Nhà hàng:** Thiết kế lại hoàn toàn trang dashboard (`restaurant/dashboard.html`) với:
+    - Thẻ thống kê (Stat Cards) cho Đơn mới, Đơn hoàn thành và Doanh thu.
+    - Biểu đồ doanh thu 7 ngày và biểu đồ tròn trạng thái đơn hàng bằng **Chart.js**.
+    - Hiệu ứng **Skeleton Loader** khi tải dữ liệu.
+    - Xử lý thông báo yêu cầu đăng nhập thân thiện thay vì trang lỗi trắng.
+- **Bảo mật (Spring Security):** Cập nhật `SecurityConfig.java` cho phép truy cập `/error` để cải thiện trải nghiệm người dùng khi gặp lỗi hệ thống.
+- **Sửa lỗi giao diện:** Khắc phục lỗi `SpelEvaluationException` liên quan đến `requestURI` trong `sidebar_dashboard.html` bằng cách chuyển sang dùng JavaScript để xử lý trạng thái "Active" của menu, đảm bảo tương thích với Spring Boot 3.
+
+---
 *Dự án thuộc học phần thực hành Phát triển ứng dụng Web.*

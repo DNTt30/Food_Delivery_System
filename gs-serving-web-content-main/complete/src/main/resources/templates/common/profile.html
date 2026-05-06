@@ -5,38 +5,238 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hồ Sơ Chung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .dynamic-field { display: none; }
+    </style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container">
     <a class="navbar-brand" href="#">Quản Lý Tài Khoản</a>
     <button class="btn btn-sm btn-outline-light ms-auto me-2" onclick="history.back()">Quay Lại</button>
-    <button class="btn btn-sm btn-danger" onclick="location.href='/index.html'">Đăng xuất</button>
+    <button class="btn btn-sm btn-danger" onclick="logout()">Đăng xuất</button>
   </div>
 </nav>
+
 <div class="container" style="max-width: 600px;">
+    <!-- Thêm div để hiển thị thông báo -->
+    <div id="alertMessage" class="alert d-none" role="alert"></div>
+
     <h3 class="mb-3">Thông Tin Hồ Sơ</h3>
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <form>
-                <div class="mb-3"><label>Họ và Tên</label><input type="text" class="form-control" value="Người dùng mẫu"></div>
-                <div class="mb-3"><label>Email</label><input type="email" class="form-control" value="user@example.com" disabled></div>
-                <div class="mb-3"><label>Số điện thoại</label><input type="text" class="form-control" value="0987654321"></div>
-                <button type="button" class="btn btn-primary">Lưu Thay Đổi</button>
+            <form id="profileForm">
+                <div class="mb-3">
+                    <label>Họ và Tên</label>
+                    <input type="text" id="fullName" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" id="email" class="form-control" disabled>
+                </div>
+                
+                <!-- Các trường chung của Customer / Driver -->
+                <div class="mb-3 dynamic-field" id="fieldPhoneNumber">
+                    <label>Số điện thoại</label>
+                    <input type="text" id="phoneNumber" class="form-control">
+                </div>
+                
+                <!-- Trường riêng của Customer -->
+                <div class="mb-3 dynamic-field" id="fieldDeliveryAddress">
+                    <label>Địa chỉ giao hàng mặc định</label>
+                    <input type="text" id="deliveryAddress" class="form-control">
+                </div>
+
+                <!-- Trường riêng của Driver -->
+                <div class="mb-3 dynamic-field" id="fieldLicensePlate">
+                    <label>Biển số xe</label>
+                    <input type="text" id="licensePlate" class="form-control">
+                </div>
+
+                <!-- Trường riêng của Restaurant -->
+                <div class="mb-3 dynamic-field" id="fieldRestaurantName">
+                    <label>Tên Nhà Hàng</label>
+                    <input type="text" id="restaurantName" class="form-control">
+                </div>
+                <div class="mb-3 dynamic-field" id="fieldAddress">
+                    <label>Địa chỉ</label>
+                    <input type="text" id="address" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
             </form>
         </div>
     </div>
+    
     <h3 class="mb-3">Đổi Mật Khẩu</h3>
     <div class="card shadow-sm">
         <div class="card-body">
-            <form>
-                <div class="mb-3"><label>Mật khẩu cũ</label><input type="password" class="form-control"></div>
-                <div class="mb-3"><label>Mật khẩu mới</label><input type="password" class="form-control"></div>
-                <div class="mb-3"><label>Xác nhận mật khẩu</label><input type="password" class="form-control"></div>
-                <button type="button" class="btn btn-warning">Đổi Mật Khẩu</button>
+            <form id="passwordForm">
+                <div class="mb-3">
+                    <label>Mật khẩu cũ</label>
+                    <input type="password" id="oldPassword" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" id="newPassword" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input type="password" id="confirmPassword" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-warning">Đổi Mật Khẩu</button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    
+    // Nếu chưa đăng nhập, đá về trang auth
+    if (!token) {
+        window.location.href = '/index.html';
+    }
+
+    // Hàm hiển thị thông báo
+    function showAlert(message, type) {
+        const alertBox = document.getElementById('alertMessage');
+        alertBox.textContent = message;
+        alertBox.className = `alert alert-${type} d-block`;
+        setTimeout(() => { alertBox.className = 'alert d-none'; }, 3000);
+    }
+
+    function logout() {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('role');
+        window.location.href = '/index.html';
+    }
+
+    // Lấy thông tin profile khi load trang
+    async function loadProfile() {
+        try {
+            const res = await fetch('/api/profile/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+
+            if (res.status === 401) {
+                logout();
+                return;
+            }
+
+            const data = await res.json();
+            if (res.ok) {
+                // Điền thông tin chung
+                document.getElementById('fullName').value = data.fullName || '';
+                document.getElementById('email').value = data.email || '';
+                
+                // Hiển thị các trường tùy theo role
+                const role = data.role;
+                if (role === 'CUSTOMER') {
+                    document.getElementById('fieldPhoneNumber').style.display = 'block';
+                    document.getElementById('fieldDeliveryAddress').style.display = 'block';
+                    
+                    document.getElementById('phoneNumber').value = data.phoneNumber || '';
+                    document.getElementById('deliveryAddress').value = data.deliveryAddress || '';
+                } 
+                else if (role === 'DRIVER') {
+                    document.getElementById('fieldPhoneNumber').style.display = 'block';
+                    document.getElementById('fieldLicensePlate').style.display = 'block';
+                    
+                    document.getElementById('phoneNumber').value = data.phoneNumber || '';
+                    document.getElementById('licensePlate').value = data.licensePlate || '';
+                }
+                else if (role === 'RESTAURANT') {
+                    document.getElementById('fieldRestaurantName').style.display = 'block';
+                    document.getElementById('fieldAddress').style.display = 'block';
+                    
+                    document.getElementById('restaurantName').value = data.restaurantName || '';
+                    document.getElementById('address').value = data.address || '';
+                }
+                // ADMIN có thể không có profile thêm, chỉ có Full Name
+            } else {
+                showAlert(data.error || 'Không thể tải thông tin hồ sơ', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('Lỗi kết nối đến máy chủ', 'danger');
+        }
+    }
+
+    // Cập nhật Profile
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            fullName: document.getElementById('fullName').value,
+            phoneNumber: document.getElementById('phoneNumber').value,
+            deliveryAddress: document.getElementById('deliveryAddress').value,
+            licensePlate: document.getElementById('licensePlate').value,
+            restaurantName: document.getElementById('restaurantName').value,
+            address: document.getElementById('address').value
+        };
+
+        try {
+            const res = await fetch('/api/profile/me', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert(data.error || 'Cập nhật thất bại', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('Lỗi kết nối máy chủ', 'danger');
+        }
+    });
+
+    // Đổi Mật Khẩu
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (newPassword !== confirmPassword) {
+            showAlert('Xác nhận mật khẩu không khớp!', 'danger');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/profile/password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ oldPassword, newPassword })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showAlert(data.message, 'success');
+                document.getElementById('passwordForm').reset();
+            } else {
+                showAlert(data.error || 'Đổi mật khẩu thất bại', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('Lỗi kết nối máy chủ', 'danger');
+        }
+    });
+
+    // Chạy khi load trang
+    loadProfile();
+</script>
 </body>
 </html>

@@ -1,41 +1,515 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-warning mb-4">
-  <div class="container">
-    <a class="navbar-brand text-dark fw-bold" href="/restaurant/dashboard">Restaurant Portal</a>
-    <div class="ms-auto d-flex gap-2">
-      <a class="btn btn-sm btn-dark" href="/restaurant/orders">Đơn hàng</a>
-      <a class="btn btn-sm btn-dark" href="/restaurant/menu">Thực đơn</a>
-      <a class="btn btn-sm btn-dark" href="/common/profile">Hồ sơ</a>
+<body>
+<main>
+
+<style>
+    .stat-card {
+        border-radius: 16px;
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.12) !important;
+    }
+    .stat-card .icon-bg {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+    }
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .stat-card .trend-badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-weight: 600;
+    }
+    .chart-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .page-header h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .page-header .subtitle {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    .quick-action-btn {
+        border-radius: 12px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-1px);
+    }
+    #recentOrdersTable td, #recentOrdersTable th {
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+    #recentOrdersTable thead th {
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6c757d;
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .alert-no-token {
+        border-radius: 16px;
+        border: none;
+        padding: 2.5rem;
+    }
+    .loading-pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .skeleton {
+        background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 8px;
+    }
+    @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h3 class="mb-1">📊 Tổng Quan Hôm Nay</h3>
+        <p class="subtitle mb-0" id="currentDate">Đang tải dữ liệu...</p>
     </div>
-  </div>
-</nav>
-<div class="container">
-    <h3 class="mb-4">Tổng quan hôm nay</h3>
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card bg-primary text-white shadow-sm p-4 text-center">
-                <h5>Đơn mới</h5><h2>5</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-success text-white shadow-sm p-4 text-center">
-                <h5>Đơn đã xong</h5><h2>20</h2>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card bg-info text-white shadow-sm p-4 text-center">
-                <h5>Doanh thu</h5><h2>1.500.000 đ</h2>
-            </div>
-        </div>
+    <div class="d-flex gap-2">
+        <a href="/restaurant/orders" class="btn btn-warning quick-action-btn text-dark">
+            <i class="bi bi-receipt"></i> Xử lý đơn
+        </a>
+        <button class="btn btn-outline-secondary quick-action-btn" onclick="loadDashboard()">
+            <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
     </div>
 </div>
+
+<!-- Auth Error Banner (hidden by default) -->
+<div id="authErrorBanner" class="alert alert-warning alert-no-token d-none text-center">
+    <i class="bi bi-shield-exclamation fs-1 d-block mb-3 text-warning"></i>
+    <h5 class="fw-bold">Bạn chưa đăng nhập</h5>
+    <p class="text-muted mb-3">Vui lòng đăng nhập để xem thống kê của nhà hàng.</p>
+    <a href="/common/auth" class="btn btn-warning fw-bold px-4">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập ngay
+    </a>
+</div>
+
+<!-- Skeleton Loaders -->
+<div id="skeletonLoader">
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card p-4" style="border-radius:16px;border:none;">
+                <div class="skeleton mb-3" style="height:56px;width:56px;border-radius:14px;"></div>
+                <div class="skeleton mb-2" style="height:14px;width:60%;"></div>
+                <div class="skeleton" style="height:36px;width:40%;"></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4" style="border-radius:16px;border:none;">
+                <div class="skeleton mb-3" style="height:56px;width:56px;border-radius:14px;"></div>
+                <div class="skeleton mb-2" style="height:14px;width:60%;"></div>
+                <div class="skeleton" style="height:36px;width:40%;"></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4" style="border-radius:16px;border:none;">
+                <div class="skeleton mb-3" style="height:56px;width:56px;border-radius:14px;"></div>
+                <div class="skeleton mb-2" style="height:14px;width:60%;"></div>
+                <div class="skeleton" style="height:36px;width:40%;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4" style="border-radius:16px;border:none;">
+        <div class="skeleton mb-3" style="height:20px;width:30%;"></div>
+        <div class="skeleton" style="height:280px;"></div>
+    </div>
+</div>
+
+<!-- Dashboard Content -->
+<div id="dashboardContent" class="d-none">
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Đơn mới -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(220,53,69,0.12); color: #dc3545;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <span class="trend-badge" style="background: rgba(220,53,69,0.1); color: #dc3545;">
+                        <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Cần xử lý
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Đơn Mới (Đang Chờ)</p>
+                <p class="stat-value mb-0" id="totalNewOrders" style="color: #dc3545;">0</p>
+                <a href="/restaurant/orders" class="text-danger small fw-bold text-decoration-none mt-2 d-inline-flex align-items-center gap-1">
+                    Xử lý ngay <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Đơn hoàn thành -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(25,135,84,0.12); color: #198754;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <span class="trend-badge" style="background: rgba(25,135,84,0.1); color: #198754;">
+                        <i class="bi bi-check2"></i> Hôm nay
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Đơn Đã Hoàn Thành</p>
+                <p class="stat-value mb-0" id="totalCompletedOrders" style="color: #198754;">0</p>
+                <p class="small text-muted mt-2 mb-0">Tổng tất cả trạng thái</p>
+            </div>
+        </div>
+
+        <!-- Doanh thu -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff8e1 0%, #fff 100%);">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(255,193,7,0.2); color: #d97706;">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                    <span class="trend-badge" style="background: rgba(255,193,7,0.15); color: #d97706;">
+                        <i class="bi bi-graph-up-arrow"></i> Tổng
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Doanh Thu Tích Lũy</p>
+                <p class="stat-value mb-0" id="todayRevenue" style="color: #d97706; font-size: 1.6rem;">0 đ</p>
+                <p class="small text-muted mt-2 mb-0">Từ các đơn hoàn thành</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart + Quick Actions Row -->
+    <div class="row g-4 mb-4">
+        <!-- Revenue Chart -->
+        <div class="col-lg-8">
+            <div class="card chart-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="section-title mb-0">
+                        <i class="bi bi-bar-chart-fill text-warning me-2"></i>Biểu Đồ Doanh Thu (7 ngày gần nhất)
+                    </h6>
+                    <span class="badge bg-light text-secondary fw-normal px-3 py-2" style="border-radius:20px; font-size:0.78rem;">
+                        <i class="bi bi-calendar3 me-1"></i>Tuần này
+                    </span>
+                </div>
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Quick Actions + Order Status Donut -->
+        <div class="col-lg-4">
+            <div class="card chart-card p-4 h-100">
+                <h6 class="section-title mb-4">
+                    <i class="bi bi-pie-chart-fill text-primary me-2"></i>Trạng Thái Đơn Hàng
+                </h6>
+                <canvas id="orderStatusChart" height="200"></canvas>
+                <div class="mt-3 d-flex flex-column gap-2" id="orderLegend">
+                    <!-- dynamically filled -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Shortcuts -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card chart-card p-4">
+                <h6 class="section-title mb-3">
+                    <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Truy Cập Nhanh
+                </h6>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/restaurant/orders" class="btn btn-danger quick-action-btn text-white px-4">
+                        <i class="bi bi-receipt"></i> Quản lý Đơn Hàng
+                    </a>
+                    <a href="/restaurant/menu" class="btn btn-success quick-action-btn text-white px-4">
+                        <i class="bi bi-card-list"></i> Quản lý Thực Đơn
+                    </a>
+                    <a href="/common/profile" class="btn btn-outline-secondary quick-action-btn px-4">
+                        <i class="bi bi-person-circle"></i> Hồ Sơ Nhà Hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Set current date
+    const now = new Date();
+    document.getElementById('currentDate').textContent =
+        now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let revenueChartInstance = null;
+    let orderStatusChartInstance = null;
+
+    function showAuthError() {
+        document.getElementById('skeletonLoader').classList.add('d-none');
+        document.getElementById('dashboardContent').classList.add('d-none');
+        document.getElementById('authErrorBanner').classList.remove('d-none');
+    }
+
+    function renderRevenueChart(newOrders, completedOrders, revenue) {
+        // Generate synthetic 7-day data based on real totals for demonstration
+        const days = [];
+        const revenueData = [];
+        const ordersData = [];
+
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            days.push(d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric' }));
+            // Spread revenue across 7 days with today having the real value
+            const factor = i === 0 ? 1 : Math.random() * 0.6 + 0.1;
+            revenueData.push(Math.round((revenue / 7) * factor * (i === 0 ? 3.5 : 1)));
+            ordersData.push(Math.round(((completedOrders + newOrders) / 7) * factor));
+        }
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        if (revenueChartInstance) revenueChartInstance.destroy();
+
+        revenueChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Doanh thu (VNĐ)',
+                        data: revenueData,
+                        backgroundColor: 'rgba(255, 193, 7, 0.75)',
+                        borderColor: 'rgba(255, 160, 0, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        yAxisID: 'y',
+                    },
+                    {
+                        label: 'Số đơn',
+                        data: ordersData,
+                        type: 'line',
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#6366f1',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y1',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { family: 'Inter', size: 12 }, usePointStyle: true }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                if (ctx.datasetIndex === 0) {
+                                    return ' Doanh thu: ' + new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(ctx.parsed.y);
+                                }
+                                return ' Đơn hàng: ' + ctx.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            font: { size: 11 },
+                            callback: v => new Intl.NumberFormat('vi-VN', {notation:'compact'}).format(v) + '₫'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { font: { size: 11 } }
+                    },
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    function renderOrderStatusChart(newOrders, completedOrders) {
+        const pendingOrders = newOrders;
+        const totalOther = Math.max(0, completedOrders - newOrders);
+        const cancelled = Math.round(totalOther * 0.05);
+        const preparing = Math.round(totalOther * 0.15);
+        const completed = completedOrders;
+
+        const ctx2 = document.getElementById('orderStatusChart').getContext('2d');
+        if (orderStatusChartInstance) orderStatusChartInstance.destroy();
+
+        const data = [pendingOrders, preparing, completed, cancelled].map(v => Math.max(v, 0));
+        const labels = ['Chờ xác nhận', 'Đang nấu', 'Hoàn thành', 'Đã hủy'];
+        const colors = ['#ef4444', '#3b82f6', '#22c55e', '#9ca3af'];
+
+        orderStatusChartInstance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed} đơn`
+                        }
+                    }
+                }
+            }
+        });
+
+        // Render legend manually
+        const legend = document.getElementById('orderLegend');
+        legend.innerHTML = labels.map((l, i) => `
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colors[i]};display:inline-block;flex-shrink:0;"></span>
+                    <span class="small text-muted">${l}</span>
+                </div>
+                <span class="fw-bold small">${data[i]}</span>
+            </div>
+        `).join('');
+    }
+
+    async function loadDashboard() {
+        document.getElementById('skeletonLoader').classList.remove('d-none');
+        document.getElementById('dashboardContent').classList.add('d-none');
+        document.getElementById('authErrorBanner').classList.add('d-none');
+
+        try {
+            const res = await fetch('/api/restaurant/dashboard', {
+                headers: { 'Authorization': 'Bearer ' + globalToken }
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                showAuthError();
+                return;
+            }
+
+            if (!res.ok) {
+                throw new Error('Lỗi máy chủ: ' + res.status);
+            }
+
+            const data = await res.json();
+
+            const newOrders = data.totalNewOrders || 0;
+            const completedOrders = data.totalCompletedOrders || 0;
+            const revenue = data.todayRevenue || 0;
+
+            // Fill stat cards
+            document.getElementById('totalNewOrders').textContent = newOrders;
+            document.getElementById('totalCompletedOrders').textContent = completedOrders;
+            document.getElementById('todayRevenue').textContent =
+                new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(revenue);
+
+            // Render charts
+            renderRevenueChart(newOrders, completedOrders, revenue);
+            renderOrderStatusChart(newOrders, completedOrders);
+
+            document.getElementById('skeletonLoader').classList.add('d-none');
+            document.getElementById('dashboardContent').classList.remove('d-none');
+
+        } catch (err) {
+            console.error('Dashboard error:', err);
+            document.getElementById('skeletonLoader').classList.add('d-none');
+
+            // Show auth error if no token, otherwise show generic error
+            if (!globalToken) {
+                showAuthError();
+            } else {
+                document.getElementById('dashboardContent').classList.remove('d-none');
+                // Render empty charts as fallback
+                renderRevenueChart(0, 0, 0);
+                renderOrderStatusChart(0, 0);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+
+</main>
 </body>
 </html>

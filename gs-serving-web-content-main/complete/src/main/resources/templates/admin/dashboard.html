@@ -1,47 +1,117 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'admin', ~{::main})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Admin - Quản trị Hệ thống</title>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-danger mb-4">
-  <div class="container">
-    <a class="navbar-brand text-white fw-bold" href="/admin/dashboard">Hệ Thống Admin</a>
-    <div class="ms-auto d-flex gap-2">
-      <a class="btn btn-sm btn-light" href="/admin/partners">Đối tác & User</a>
-      <a class="btn btn-sm btn-light" href="/admin/promotions">Khuyến mãi</a>
-      <a class="btn btn-sm btn-dark" href="/common/profile">Hồ sơ</a>
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0">Quản trị Hệ thống</h3>
+        <button class="btn btn-primary fw-bold"><i class="bi bi-download me-1"></i> Xuất Báo cáo</button>
     </div>
-  </div>
-</nav>
+    
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card bg-white shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted fw-bold mb-0">TỔNG NGƯỜI DÙNG</h6>
+                        <div class="bg-primary bg-opacity-10 text-primary rounded p-2"><i class="bi bi-people fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold mb-1">12,450</h3>
+                    <p class="text-success small fw-bold mb-0"><i class="bi bi-arrow-up-right me-1"></i>+5.2% tháng này</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted fw-bold mb-0">NHÀ HÀNG</h6>
+                        <div class="bg-warning bg-opacity-10 text-warning rounded p-2"><i class="bi bi-shop fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold mb-1">342</h3>
+                    <p class="text-success small fw-bold mb-0"><i class="bi bi-arrow-up-right me-1"></i>+12 đối tác mới</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted fw-bold mb-0">SHIPPER ONILNE</h6>
+                        <div class="bg-success bg-opacity-10 text-success rounded p-2"><i class="bi bi-bicycle fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold mb-1">85 / 150</h3>
+                    <p class="text-muted small fw-bold mb-0">Đang hoạt động</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-white shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted fw-bold mb-0">TỔNG DOANH THU</h6>
+                        <div class="bg-danger bg-opacity-10 text-danger rounded p-2"><i class="bi bi-cash-stack fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold mb-1">2.4B đ</h3>
+                    <p class="text-danger small fw-bold mb-0"><i class="bi bi-arrow-down-right me-1"></i>-1.5% tháng này</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="container">
-    <h3 class="mb-4">Tổng quan Hệ thống</h3>
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm p-4 text-center border-start border-primary border-5">
-                <h6 class="text-muted">Tổng User</h6><h3>1,250</h3>
+    <div class="row g-4">
+        <!-- Biểu đồ -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Lượng Đơn Hàng (7 ngày qua)</h6>
+                    <select class="form-select form-select-sm w-auto"><option>Tuần này</option><option>Tháng này</option></select>
+                </div>
+                <div class="card-body bg-light d-flex align-items-center justify-content-center">
+                    <span class="text-muted"><i class="bi bi-graph-up text-primary me-2"></i>Biểu đồ Chart.js sẽ chèn ở đây</span>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-4 text-center border-start border-warning border-5">
-                <h6 class="text-muted">Nhà hàng</h6><h3>85</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-4 text-center border-start border-success border-5">
-                <h6 class="text-muted">Shipper</h6><h3>120</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm p-4 text-center border-start border-danger border-5">
-                <h6 class="text-muted">Đơn hàng (Tháng)</h6><h3>5,400</h3>
+        <!-- Cảnh báo hệ thống -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-1"></i> Cảnh báo hệ thống</h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item p-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong class="text-dark">Quá tải khu vực Quận 1</strong>
+                                <small class="text-muted">10p trước</small>
+                            </div>
+                            <p class="small text-muted mb-0">Tỷ lệ đơn/shipper đang là 5:1. Cần điều phối thêm tài xế.</p>
+                        </li>
+                        <li class="list-group-item p-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong class="text-dark">Nhà hàng phản hồi chậm</strong>
+                                <small class="text-muted">30p trước</small>
+                            </div>
+                            <p class="small text-muted mb-0">"Cơm gà Xối Mỡ" có 3 đơn chưa nhận sau 15 phút.</p>
+                        </li>
+                        <li class="list-group-item p-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong class="text-dark">Lỗi Payment Gateway</strong>
+                                <small class="text-muted">2h trước</small>
+                            </div>
+                            <p class="small text-muted mb-0">VNPAY timeout 5 giao dịch. Đã auto-retry thành công.</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-white text-center border-top-0 py-3">
+                    <a href="#" class="text-decoration-none fw-bold small">Xem tất cả cảnh báo</a>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 </body>
 </html>
