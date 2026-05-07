@@ -16,8 +16,12 @@
         function globalLogout() {
             localStorage.removeItem('jwt_token');
             localStorage.removeItem('role');
-            window.location.href = '/index.html';
+            localStorage.removeItem('username');
+            /* Xóa cart nếu muốn: localStorage.clear() */
+            window.location.href = '/';
         }
+        /* Export ra window để các fragment khác không cần tự định nghĩa lại */
+        window.globalLogout = globalLogout;
     </script>
 </div>
 </html>

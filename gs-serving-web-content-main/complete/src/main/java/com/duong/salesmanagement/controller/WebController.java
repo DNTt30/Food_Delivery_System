@@ -21,7 +21,7 @@ public class WebController {
     @GetMapping("/customer/home")
     public String customerHome() { return "customer/home"; }
 
-    @GetMapping("/customer/dashboard") // Fallback matching older link
+    @GetMapping("/customer/dashboard")
     public String customerDashboard() { return "customer/home"; }
 
     @GetMapping("/customer/detail")
@@ -56,6 +56,12 @@ public class WebController {
     @GetMapping("/driver/delivering")
     public String driverDelivering() { return "driver/delivering"; }
 
+    @GetMapping("/driver/active_order")
+    public String driverActiveOrder() { return "driver/delivering"; }
+
+    @GetMapping("/driver/history")
+    public String driverHistory() { return "driver/delivering"; }
+
     // 5. Admin
     @GetMapping("/admin/dashboard")
     public String adminDashboard() { return "admin/dashboard"; }
@@ -65,4 +71,10 @@ public class WebController {
 
     @GetMapping("/admin/promotions")
     public String adminPromotions() { return "admin/promotions"; }
+
+    @GetMapping("/admin/users")
+    public String adminUsers() { return "admin/partners"; }
+
+    @GetMapping("/admin/restaurants")
+    public String adminRestaurants() { return "admin/partners"; }
 }

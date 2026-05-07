@@ -1,66 +1,298 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Customer - Theo dõi đơn hàng</title>
-    <style>
-        .timeline-step { position: relative; padding-bottom: 2rem; border-left: 2px solid #e9ecef; margin-left: 1rem; padding-left: 2rem; }
-        .timeline-step:last-child { border-left: 2px solid transparent; }
-        .timeline-step::before { content: ''; position: absolute; left: -11px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #e9ecef; border: 4px solid #fff; }
-        .timeline-step.active::before { background: #198754; box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2); }
-        .timeline-step.active .step-title { color: #198754; font-weight: bold; }
-    </style>
+    <title>Theo dõi đơn hàng - Food Delivery</title>
 </head>
 <body>
 <main>
-    <div class="container py-4" style="max-width: 600px;">
-        <h4 class="fw-bold mb-4">Trạng thái đơn hàng</h4>
-        
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold mb-0">Đơn hàng #12345</h6>
-                    <span class="badge bg-primary rounded-pill">Đang giao</span>
+<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
+<div class="container mb-5" style="max-width: 700px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="/customer/home" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-house me-1"></i>Trang chủ
+        </a>
+        <h4 class="fw-bold mb-0"><i class="bi bi-pin-map-fill text-danger me-2"></i>Theo dõi đơn hàng</h4>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-danger"></div>
+        <p class="text-muted mt-2">Đang tải thông tin...</p>
+    </div>
+
+    <!-- Order not found -->
+    <div id="notFound" class="text-center py-5 d-none">
+        <div style="font-size:4rem">😕</div>
+        <h5 class="fw-bold">Không tìm thấy đơn hàng</h5>
+        <a href="/customer/history" class="btn btn-outline-danger rounded-pill mt-2">Xem lịch sử đơn hàng</a>
+    </div>
+
+    <!-- Order Detail -->
+    <div id="orderDetail" class="d-none">
+
+        <!-- Status Banner -->
+        <div id="statusBanner" class="rounded-4 p-4 mb-4 text-white shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-1" id="statusTitle"></h5>
+                    <p class="mb-0 opacity-75 small" id="statusSubtitle"></p>
                 </div>
-                <p class="text-muted small mb-0"><i class="bi bi-shop me-1"></i> Tasty Food Restaurant</p>
-                <p class="text-muted small mb-0"><i class="bi bi-clock me-1"></i> Dự kiến giao: 14:30 hôm nay</p>
+                <div style="font-size:3rem" id="statusEmoji"></div>
             </div>
         </div>
 
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <div class="timeline">
-                    <div class="timeline-step active">
-                        <div class="step-title mb-1">Đã đặt đơn</div>
-                        <p class="text-muted small mb-0">14:00 - Bạn đã đặt món thành công.</p>
-                    </div>
-                    <div class="timeline-step active">
-                        <div class="step-title mb-1">Nhà hàng xác nhận</div>
-                        <p class="text-muted small mb-0">14:05 - Nhà hàng đã nhận đơn và bắt đầu chuẩn bị.</p>
-                    </div>
-                    <div class="timeline-step active">
-                        <div class="step-title mb-1">Đang chuẩn bị</div>
-                        <p class="text-muted small mb-0">14:10 - Bếp đang nấu món ăn của bạn.</p>
-                    </div>
-                    <div class="timeline-step active">
-                        <div class="step-title mb-1">Shipper đã nhận hàng</div>
-                        <p class="text-muted small mb-0">14:20 - Shipper Nguyễn Văn B đã lấy hàng.</p>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-title mb-1 text-muted">Đang giao hàng</div>
-                        <p class="text-muted small mb-0">Shipper đang trên đường tới chỗ bạn.</p>
-                    </div>
-                    <div class="timeline-step">
-                        <div class="step-title mb-1 text-muted">Đã giao</div>
-                        <p class="text-muted small mb-0">Hoàn tất đơn hàng.</p>
-                    </div>
+        <!-- Progress Timeline -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h6 class="fw-bold mb-4"><i class="bi bi-diagram-3 me-2 text-danger"></i>Trạng thái đơn hàng</h6>
+            <div class="position-relative" id="timeline"></div>
+        </div>
+
+        <!-- Order Info -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-shop me-2 text-danger"></i>Thông tin đơn hàng</h6>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Nhà hàng</span>
+                <span class="fw-semibold small" id="orderRestaurant"></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Mã đơn hàng</span>
+                <span class="fw-semibold small text-muted" id="orderId"></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Địa chỉ giao</span>
+                <span class="fw-semibold small text-end" style="max-width:60%" id="orderAddress"></span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted small">Tổng tiền</span>
+                <span class="fw-bold text-danger" id="orderTotal"></span>
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bag me-2"></i>Các món đã đặt</h6>
+            <div id="orderItems"></div>
+        </div>
+
+        <!-- Driver Info -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 d-none" id="driverCard">
+            <h6 class="fw-bold mb-3"><i class="bi bi-bicycle text-success me-2"></i>Thông tin tài xế</h6>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                     style="width:50px;height:50px;">
+                    <i class="bi bi-person-fill text-success fs-4"></i>
+                </div>
+                <div>
+                    <p class="fw-bold mb-0" id="driverName"></p>
+                    <a id="driverPhone" class="text-muted small text-decoration-none"></a>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Cancel Button (only for PENDING orders) -->
+        <div id="cancelSection" class="d-none mt-3">
+            <div class="alert alert-warning rounded-4 d-flex justify-content-between align-items-center">
+                <small><i class="bi bi-info-circle me-2"></i>Bạn có thể hủy đơn khi nhà hàng chưa xác nhận.</small>
+                <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="cancelOrder()">Hủy đơn</button>
+            </div>
+        </div>
+
+        <!-- Refresh -->
         <div class="text-center mt-4">
-            <button class="btn btn-outline-danger">Liên hệ hỗ trợ</button>
+            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="loadOrder()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Làm mới trạng thái
+            </button>
+            <a href="/customer/history" class="btn btn-link text-muted ms-2">Xem tất cả đơn hàng</a>
         </div>
     </div>
+</div>
+
+
+<style>
+.timeline-step { display: flex; gap: 16px; margin-bottom: 24px; position: relative; }
+.timeline-step:not(:last-child)::before {
+    content: ''; position: absolute; left: 19px; top: 40px;
+    width: 2px; height: calc(100% - 8px);
+    background: #dee2e6;
+}
+.timeline-step.done::before { background: #198754; }
+.step-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid #dee2e6; background: #fff; z-index: 1; }
+.timeline-step.done .step-icon { background: #198754; border-color: #198754; color: white; }
+.timeline-step.current .step-icon { background: #0d6efd; border-color: #0d6efd; color: white; animation: pulse-ring 1.5s infinite; }
+.timeline-step.cancelled .step-icon { background: #dc3545; border-color: #dc3545; color: white; }
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+}
+</style>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let orderId = urlParams.get('orderId');
+    let currentOrder = null;
+
+    const STATUS_STEPS = [
+        { key: 'PENDING', icon: 'bi-clock-fill', label: 'Đang chờ xác nhận', sub: 'Nhà hàng đang xem xét đơn' },
+        { key: 'PREPARING', icon: 'bi-fire', label: 'Đang chuẩn bị', sub: 'Nhà hàng đang nấu món của bạn' },
+        { key: 'DELIVERING', icon: 'bi-bicycle', label: 'Đang giao hàng', sub: 'Tài xế đang trên đường đến' },
+        { key: 'COMPLETED', icon: 'bi-check-circle-fill', label: 'Đã giao thành công', sub: 'Chúc bạn ngon miệng!' },
+    ];
+
+    const STATUS_CONFIG = {
+        PENDING: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', title: 'Đang chờ xác nhận', subtitle: 'Nhà hàng đang xem xét đơn của bạn...', emoji: '⏳' },
+        PREPARING: { bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', title: 'Đang chuẩn bị món', subtitle: 'Các đầu bếp đang nấu cho bạn!', emoji: '👨‍🍳' },
+        DELIVERING: { bg: 'linear-gradient(135deg, #10b981, #059669)', title: 'Đang giao hàng', subtitle: 'Tài xế đang trên đường đến!', emoji: '🛵' },
+        COMPLETED: { bg: 'linear-gradient(135deg, #22c55e, #16a34a)', title: 'Giao hàng thành công!', subtitle: 'Chúc bạn ngon miệng! 🎉', emoji: '✅' },
+        CANCELLED: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', title: 'Đơn hàng đã bị hủy', subtitle: 'Đơn hàng này đã bị hủy.', emoji: '❌' }
+    };
+
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+
+    async function loadOrder() {
+        if (!orderId) {
+            // Redirect to history if no orderId
+            window.location.href = '/customer/history';
+            return;
+        }
+
+        document.getElementById('loading').classList.remove('d-none');
+        document.getElementById('orderDetail').classList.add('d-none');
+        document.getElementById('notFound').classList.add('d-none');
+
+        try {
+            const res = await fetch(`/api/customer/orders/${orderId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+
+            document.getElementById('loading').classList.add('d-none');
+
+            if (!res.ok) {
+                document.getElementById('notFound').classList.remove('d-none');
+                return;
+            }
+
+            currentOrder = await res.json();
+            renderOrder(currentOrder);
+            document.getElementById('orderDetail').classList.remove('d-none');
+
+        } catch {
+            document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    function renderOrder(order) {
+        const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
+        const banner = document.getElementById('statusBanner');
+        banner.style.background = config.bg;
+        document.getElementById('statusTitle').textContent = config.title;
+        document.getElementById('statusSubtitle').textContent = config.subtitle;
+        document.getElementById('statusEmoji').textContent = config.emoji;
+
+        document.getElementById('orderRestaurant').textContent = order.restaurantName;
+        document.getElementById('orderId').textContent = '#' + order.id;
+        document.getElementById('orderAddress').textContent = order.deliveryAddress;
+        document.getElementById('orderTotal').textContent = formatVND(order.totalAmount);
+
+        // Items
+        const itemsEl = document.getElementById('orderItems');
+        itemsEl.innerHTML = (order.items || []).map(i =>
+            `<div class="d-flex justify-content-between py-1 border-bottom">
+                <span class="small">${i.itemName} × ${i.quantity}</span>
+                <span class="small fw-semibold">${formatVND(i.price * i.quantity)}</span>
+             </div>`
+        ).join('');
+
+        // Timeline
+        renderTimeline(order.status);
+
+        // Driver
+        if (order.driverName && order.status === 'DELIVERING') {
+            document.getElementById('driverCard').classList.remove('d-none');
+            document.getElementById('driverName').textContent = order.driverName;
+            const phoneEl = document.getElementById('driverPhone');
+            if (order.driverPhone) {
+                phoneEl.textContent = '📞 ' + order.driverPhone;
+                phoneEl.href = 'tel:' + order.driverPhone;
+            }
+        } else {
+            document.getElementById('driverCard').classList.add('d-none');
+        }
+
+        // Cancel button
+        if (order.status === 'PENDING') {
+            document.getElementById('cancelSection').classList.remove('d-none');
+        } else {
+            document.getElementById('cancelSection').classList.add('d-none');
+        }
+
+        // Auto-refresh for active orders
+        if (order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING') {
+            setTimeout(loadOrder, 15000);
+        }
+    }
+
+    function renderTimeline(status) {
+        const el = document.getElementById('timeline');
+        const statusOrder = ['PENDING', 'PREPARING', 'DELIVERING', 'COMPLETED'];
+        const currentIdx = statusOrder.indexOf(status);
+        const isCancelled = status === 'CANCELLED';
+
+        let html = '';
+        if (isCancelled) {
+            html = `<div class="timeline-step cancelled">
+                <div class="step-icon"><i class="bi bi-x-lg"></i></div>
+                <div class="mt-2"><p class="fw-bold mb-0 small text-danger">Đã hủy đơn hàng</p></div>
+            </div>`;
+        } else {
+            STATUS_STEPS.forEach((step, i) => {
+                let cls = '';
+                if (i < currentIdx) cls = 'done';
+                else if (i === currentIdx) cls = 'current';
+                html += `<div class="timeline-step ${cls}">
+                    <div class="step-icon"><i class="bi ${step.icon}"></i></div>
+                    <div class="mt-1">
+                        <p class="fw-bold mb-0 small ${cls === '' ? 'text-muted' : ''}">${step.label}</p>
+                        <small class="text-muted">${step.sub}</small>
+                    </div>
+                </div>`;
+            });
+        }
+        el.innerHTML = html;
+    }
+
+    async function cancelOrder() {
+        if (!confirm('Bạn có chắc muốn hủy đơn hàng này không?')) return;
+        try {
+            const res = await fetch(`/api/customer/orders/${orderId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('Đã hủy đơn hàng thành công!');
+                loadOrder();
+            } else {
+                alert(data.error || 'Không thể hủy đơn hàng');
+            }
+        } catch { alert('Lỗi kết nối!'); }
+    }
+
+    // If no orderId, show history shortcut
+    if (!orderId) {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('notFound').classList.remove('d-none');
+    } else {
+        loadOrder();
+    }
+</script>
 </main>
 </body>
 </html>

@@ -1,100 +1,289 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Customer - Giỏ hàng</title>
+    <title>Giỏ hàng - Food Delivery</title>
 </head>
 <body>
 <main>
-    <div class="container py-4" style="max-width: 900px;">
-        <h3 class="fw-bold mb-4">Giỏ hàng của bạn</h3>
-        
+<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
+<div class="container mb-5" style="max-width: 900px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại
+        </a>
+        <h4 class="fw-bold mb-0"><i class="bi bi-bag-heart-fill text-danger me-2"></i>Giỏ hàng</h4>
+    </div>
+
+    <!-- Empty Cart -->
+    <div id="emptyCart" class="text-center py-5 d-none">
+        <div style="font-size:5rem;" class="mb-3">🛒</div>
+        <h5 class="fw-bold">Giỏ hàng đang trống</h5>
+        <p class="text-muted">Hãy thêm một vài món ngon vào nhé!</p>
+        <a href="/customer/home" class="btn btn-danger rounded-pill px-5 mt-2">Khám phá nhà hàng</a>
+    </div>
+
+    <!-- Cart Content -->
+    <div id="cartContent" class="d-none">
         <div class="row g-4">
-            <!-- Danh sách món -->
-            <div class="col-md-8">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body p-0">
-                        <!-- Món 1 -->
-                        <div class="d-flex align-items-center p-3 border-bottom">
-                            <img src="https://via.placeholder.com/80" class="rounded-3 me-3" style="width: 80px; height: 80px; object-fit: cover;">
-                            <div class="flex-grow-1">
-                                <h6 class="fw-bold mb-1">Cơm Sườn Ninh Kiều</h6>
-                                <p class="text-muted small mb-0">Tùy chọn: Thêm trứng</p>
-                            </div>
-                            <div class="text-end ms-3">
-                                <div class="fw-bold text-danger mb-2">40.000 đ</div>
-                                <div class="input-group input-group-sm" style="width: 100px;">
-                                    <button class="btn btn-outline-secondary">-</button>
-                                    <input type="text" class="form-control text-center" value="1" readonly>
-                                    <button class="btn btn-outline-secondary">+</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Món 2 -->
-                        <div class="d-flex align-items-center p-3">
-                            <img src="https://via.placeholder.com/80" class="rounded-3 me-3" style="width: 80px; height: 80px; object-fit: cover;">
-                            <div class="flex-grow-1">
-                                <h6 class="fw-bold mb-1">Trà Sữa Trân Châu</h6>
-                                <p class="text-muted small mb-0">Size L, Đá 50%, Đường 50%</p>
-                            </div>
-                            <div class="text-end ms-3">
-                                <div class="fw-bold text-danger mb-2">35.000 đ</div>
-                                <div class="input-group input-group-sm" style="width: 100px;">
-                                    <button class="btn btn-outline-secondary">-</button>
-                                    <input type="text" class="form-control text-center" value="2" readonly>
-                                    <button class="btn btn-outline-secondary">+</button>
-                                </div>
-                            </div>
-                        </div>
+
+            <!-- Left: Cart Items -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0" id="restaurantNameTitle">Nhà hàng</h6>
+                        <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none" onclick="clearCart()">
+                            <i class="bi bi-trash me-1"></i>Xóa tất cả
+                        </button>
+                    </div>
+                    <div id="cartItems"></div>
+                </div>
+
+                <!-- Delivery Address -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-3">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Địa chỉ giao hàng</h6>
+                    <textarea id="deliveryAddress" class="form-control" rows="2"
+                              placeholder="Nhập địa chỉ giao hàng của bạn..."></textarea>
+                    <div class="mt-2">
+                        <button class="btn btn-link btn-sm text-muted p-0 text-decoration-none"
+                                onclick="useDefaultAddress()">
+                            <i class="bi bi-house me-1"></i>Dùng địa chỉ mặc định
+                        </button>
                     </div>
                 </div>
+
+                <!-- Note -->
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-left-text me-2 text-muted"></i>Ghi chú</h6>
+                    <textarea id="orderNote" class="form-control" rows="2"
+                              placeholder="Ví dụ: Ít đường, không hành..."></textarea>
+                </div>
             </div>
-            
-            <!-- Hóa đơn -->
-            <div class="col-md-4">
-                <div class="card shadow-sm sticky-top" style="top: 80px;">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3 border-bottom pb-2">Tổng quan đơn hàng</h5>
-                        
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Tổng tiền món</span>
-                            <span>110.000 đ</span>
+
+            <!-- Right: Order Summary -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 80px;">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-receipt me-2"></i>Chi tiết đơn hàng</h6>
+
+                    <div id="orderSummary" class="mb-3"></div>
+
+                    <!-- Voucher -->
+                    <div class="border rounded-3 p-3 mb-3 bg-light">
+                        <h6 class="fw-bold small mb-2"><i class="bi bi-ticket-perforated me-2 text-warning"></i>Mã giảm giá</h6>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="voucherCode" class="form-control" placeholder="Nhập mã voucher">
+                            <button class="btn btn-warning fw-bold" onclick="applyVoucher()">Áp dụng</button>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Phí giao hàng</span>
-                            <span>15.000 đ</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-3 border-bottom pb-3">
-                            <span class="text-muted">Khuyến mãi</span>
-                            <span class="text-success">- 10.000 đ</span>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between mb-4">
-                            <span class="fw-bold fs-5">Thanh toán</span>
-                            <span class="fw-bold fs-5 text-danger">115.000 đ</span>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold small">Địa chỉ giao hàng</label>
-                            <textarea class="form-control text-muted" rows="2" readonly>123 Đường Trần Phú, Quận Ninh Kiều, TP. Cần Thơ</textarea>
-                            <a href="#" class="small text-danger text-decoration-none d-inline-block mt-1">Thay đổi</a>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold small">Phương thức thanh toán</label>
-                            <select class="form-select text-muted">
-                                <option>Tiền mặt khi nhận hàng (COD)</option>
-                                <option>Ví Momo</option>
-                                <option>Thẻ ngân hàng</option>
-                            </select>
-                        </div>
-                        
-                        <button class="btn btn-danger w-100 py-2 fw-bold" onclick="alert('Tính năng đang phát triển!')">Đặt hàng ngay</button>
+                        <div id="voucherMsg" class="small mt-1"></div>
                     </div>
+
+                    <!-- Payment Method -->
+                    <h6 class="fw-bold small mb-2"><i class="bi bi-credit-card me-2"></i>Thanh toán</h6>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <label class="d-flex align-items-center gap-3 p-3 border rounded-3" style="cursor:pointer;">
+                            <input type="radio" name="paymentMethod" value="CASH" checked class="form-check-input flex-shrink-0">
+                            <div>
+                                <div class="fw-semibold small">💵 Tiền mặt (COD)</div>
+                                <div class="text-muted" style="font-size:0.75rem">Thanh toán khi nhận hàng</div>
+                            </div>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 border rounded-3" style="cursor:pointer;">
+                            <input type="radio" name="paymentMethod" value="WALLET" class="form-check-input flex-shrink-0">
+                            <div>
+                                <div class="fw-semibold small">📱 Ví điện tử</div>
+                                <div class="text-muted" style="font-size:0.75rem">VNPay / MoMo</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Total -->
+                    <hr>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Tạm tính</span>
+                        <span id="subtotal" class="small fw-semibold"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">Phí giao hàng</span>
+                        <span class="small text-success fw-semibold">Miễn phí</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3" id="discountRow" style="display:none!important;">
+                        <span class="text-muted small">Giảm giá</span>
+                        <span id="discountAmt" class="small text-danger fw-semibold"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fw-bold">Tổng cộng</span>
+                        <span class="fw-bold fs-5 text-danger" id="totalAmt"></span>
+                    </div>
+
+                    <button class="btn btn-danger w-100 py-3 fw-bold rounded-pill" onclick="placeOrder()" id="placeOrderBtn">
+                        <i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay
+                    </button>
+                    <p class="text-muted text-center small mt-2 mb-0">Giao hàng trong 15–30 phút</p>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    let restaurantId = urlParams.get('restaurantId');
+    if (!restaurantId) {
+        for (let k of Object.keys(localStorage)) {
+            if (k.startsWith('fd_cart_') && JSON.parse(localStorage.getItem(k) || '[]').length) {
+                restaurantId = k.replace('fd_cart_', ''); break;
+            }
+        }
+    }
+    const CART_KEY = 'fd_cart_' + restaurantId;
+    let discountAmount = 0;
+
+    function getCart() { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
+    function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+
+    function renderCart() {
+        const cart = getCart();
+        if (!cart.length) {
+            document.getElementById('emptyCart').classList.remove('d-none');
+            document.getElementById('cartContent').classList.add('d-none');
+            return;
+        }
+        document.getElementById('emptyCart').classList.add('d-none');
+        document.getElementById('cartContent').classList.remove('d-none');
+
+        const ri = JSON.parse(localStorage.getItem('fd_restaurant_' + restaurantId) || '{}');
+        if (ri.name) document.getElementById('restaurantNameTitle').innerHTML = `<i class="bi bi-shop me-2 text-danger"></i>${ri.name}`;
+
+        const itemsEl = document.getElementById('cartItems');
+        itemsEl.innerHTML = '';
+        let subtotal = 0;
+        cart.forEach((item, i) => {
+            subtotal += item.price * item.qty;
+            itemsEl.insertAdjacentHTML('beforeend', `
+            <div class="d-flex justify-content-between align-items-center py-2 ${i < cart.length-1 ? 'border-bottom' : ''}">
+                <div class="flex-grow-1 pe-2">
+                    <p class="mb-0 fw-semibold small">${item.name}</p>
+                    <small class="text-muted">${formatVND(item.price)} / phần</small>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeQty(${i}, -1)" style="width:28px;height:28px;padding:0;line-height:1;">−</button>
+                    <span class="fw-bold small" style="min-width:24px;text-align:center;">${item.qty}</span>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="changeQty(${i}, 1)" style="width:28px;height:28px;padding:0;line-height:1;">+</button>
+                    <button class="btn btn-link text-danger p-0 ms-1" onclick="removeItem(${i})"><i class="bi bi-trash3"></i></button>
+                </div>
+            </div>`);
+        });
+
+        const total = Math.max(0, subtotal - discountAmount);
+        document.getElementById('subtotal').textContent = formatVND(subtotal);
+        document.getElementById('totalAmt').textContent = formatVND(total);
+
+        if (discountAmount > 0) {
+            document.getElementById('discountRow').style.removeProperty('display');
+            document.getElementById('discountAmt').textContent = '-' + formatVND(discountAmount);
+        } else {
+            document.getElementById('discountRow').style.display = 'none';
+        }
+
+        document.getElementById('orderSummary').innerHTML = cart.map(i =>
+            `<div class="d-flex justify-content-between small py-1">
+                <span class="text-muted">${i.name} ×${i.qty}</span>
+                <span>${formatVND(i.price * i.qty)}</span>
+             </div>`).join('');
+    }
+
+    function changeQty(idx, delta) {
+        let c = getCart();
+        c[idx].qty += delta;
+        if (c[idx].qty <= 0) c.splice(idx, 1);
+        saveCart(c);
+        renderCart();
+    }
+
+    function removeItem(idx) {
+        let c = getCart(); c.splice(idx, 1); saveCart(c); renderCart();
+    }
+
+    function clearCart() {
+        if (confirm('Xóa tất cả sản phẩm?')) { localStorage.removeItem(CART_KEY); renderCart(); }
+    }
+
+    async function useDefaultAddress() {
+        try {
+            const res = await fetch('/api/profile/me', { headers: { 'Authorization': 'Bearer ' + token } });
+            const d = await res.json();
+            if (d.deliveryAddress) document.getElementById('deliveryAddress').value = d.deliveryAddress;
+            else alert('Chưa cài địa chỉ mặc định. Vào Hồ sơ để cập nhật!');
+        } catch {}
+    }
+
+    function applyVoucher() {
+        const code = document.getElementById('voucherCode').value.trim().toUpperCase();
+        const msgEl = document.getElementById('voucherMsg');
+        const sub = getCart().reduce((s, i) => s + i.price * i.qty, 0);
+        if (code === 'SAVE10') {
+            discountAmount = sub * 0.1;
+            msgEl.innerHTML = `<span class="text-success">✅ Giảm 10%: -${formatVND(discountAmount)}</span>`;
+        } else if (code === 'GIAM50K') {
+            discountAmount = 50000;
+            msgEl.innerHTML = `<span class="text-success">✅ Giảm 50,000đ</span>`;
+        } else {
+            discountAmount = 0;
+            msgEl.innerHTML = '<span class="text-danger">❌ Mã không hợp lệ hoặc đã hết hạn</span>';
+        }
+        renderCart();
+    }
+
+    async function placeOrder() {
+        const cart = getCart();
+        if (!cart.length) return;
+        const address = document.getElementById('deliveryAddress').value.trim();
+        if (!address) {
+            document.getElementById('deliveryAddress').classList.add('is-invalid');
+            document.getElementById('deliveryAddress').focus();
+            return;
+        }
+        document.getElementById('deliveryAddress').classList.remove('is-invalid');
+
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đặt hàng...';
+
+        try {
+            const res = await fetch('/api/customer/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({
+                    restaurantId: parseInt(restaurantId),
+                    items: cart.map(i => ({ menuItemId: i.id, quantity: i.qty })),
+                    deliveryAddress: address,
+                    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.removeItem(CART_KEY);
+                window.location.href = `/customer/tracking?orderId=${data.orderId}`;
+            } else {
+                alert(data.error || 'Đặt hàng thất bại!');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+            }
+        } catch {
+            alert('Lỗi kết nối!');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+        }
+    }
+
+    renderCart();
+</script>
 </main>
 </body>
 </html>

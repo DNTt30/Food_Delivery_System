@@ -36,7 +36,11 @@ public class RestaurantApiController {
         if (authentication == null || !authentication.isAuthenticated()) return null;
         User user = userRepository.findByUsername(authentication.getName()).orElse(null);
         if (user == null || user.getRole() != Role.RESTAURANT) return null;
-        return restaurantProfileRepository.findByUser(user).orElse(null);
+        return restaurantProfileRepository.findByUser(user).orElseGet(() -> {
+            RestaurantProfile p = new RestaurantProfile();
+            p.setUser(user);
+            return restaurantProfileRepository.save(p);
+        });
     }
 
     // 1. Dashboard
@@ -56,7 +60,22 @@ public class RestaurantApiController {
         return ResponseEntity.ok(Map.of(
                 "totalNewOrders", newOrders,
                 "totalCompletedOrders", completedOrders,
-                "todayRevenue", revenue
+                "todayRevenue", revenue,
+                "isOpen", restaurant.isOpen()
+        ));
+    }
+
+    // 1b. Toggle mở/đóng cửa
+    @PutMapping("/toggle-status")
+    public ResponseEntity<?> toggleStatus(Authentication authentication) {
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(authentication);
+        if (restaurant == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        restaurant.setOpen(!restaurant.isOpen());
+        restaurantProfileRepository.save(restaurant);
+        return ResponseEntity.ok(Map.of(
+                "isOpen", restaurant.isOpen(),
+                "message", restaurant.isOpen() ? "Nhà hàng đang mở cửa, sẵn sàng nhận đơn!" : "Nhà hàng đã đóng cửa."
         ));
     }
 
@@ -136,10 +155,18 @@ public class RestaurantApiController {
         List<OrderDTO> dtos = orders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.PREPARING)
                 .map(o -> {
-                    List<OrderItemDTO> items = o.getOrderItems().stream().map(oi -> new OrderItemDTO(
-                            oi.getMenuItem().getName(), oi.getQuantity()
-                    )).collect(Collectors.toList());
-                    return new OrderDTO(o.getId(), o.getCustomer().getUser().getFullName(), items, o.getStatus().name());
+                    List<OrderItemDTO> items = (o.getOrderItems() == null ? java.util.Collections.<com.duong.salesmanagement.model.OrderItem>emptyList() : o.getOrderItems())
+                            .stream().map(oi -> new OrderItemDTO(
+                                    oi.getMenuItem().getName(), oi.getQuantity()
+                            )).collect(Collectors.toList());
+                    return new OrderDTO(
+                            o.getId(),
+                            o.getCustomer().getUser().getFullName(),
+                            items,
+                            o.getStatus().name(),
+                            o.getTotalAmount(),
+                            o.getDeliveryAddress()
+                    );
                 }).collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -197,12 +224,17 @@ public class RestaurantApiController {
         public String customerName;
         public List<OrderItemDTO> items;
         public String status;
+        public Double totalAmount;
+        public String deliveryAddress;
 
-        public OrderDTO(Long id, String customerName, List<OrderItemDTO> items, String status) {
+        public OrderDTO(Long id, String customerName, List<OrderItemDTO> items, String status,
+                        Double totalAmount, String deliveryAddress) {
             this.id = id;
             this.customerName = customerName;
             this.items = items;
             this.status = status;
+            this.totalAmount = totalAmount;
+            this.deliveryAddress = deliveryAddress;
         }
     }
 }

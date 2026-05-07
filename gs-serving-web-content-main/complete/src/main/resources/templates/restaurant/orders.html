@@ -1,150 +1,199 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
 <head>
-    <title>Restaurant - Quản lý Đơn hàng</title>
+    <title>Quản lý Đơn hàng</title>
 </head>
 <body>
 <main>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0">Quản lý Đơn Hàng Hôm Nay</h3>
-        <button class="btn btn-outline-secondary btn-sm" onclick="loadOrders()">🔄 Làm mới</button>
-    </div>
+<div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
 
-    <div id="loading" class="text-center my-4">
-        <div class="spinner-border text-warning" role="status"><span class="visually-hidden">Loading...</span></div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-warning"></i>Quản lý Đơn hàng</h4>
+        <small class="text-muted">Xác nhận và theo dõi các đơn hàng</small>
     </div>
+    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadOrders()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+    </button>
+</div>
 
-    <div class="row g-4 d-none" id="ordersBoard">
-        <!-- Đơn mới (PENDING) -->
-        <div class="col-lg-6">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="fw-bold mb-0 d-flex justify-content-between align-items-center">
-                        <span><span class="text-danger">🔴</span> Đơn Mới (Cần duyệt)</span>
-                        <span class="badge bg-danger rounded-pill px-3" id="countPending">0</span>
-                    </h5>
-                </div>
-                <div class="card-body bg-light" id="pendingList" style="min-height: 500px;">
-                    <!-- Orders -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Đang nấu (PREPARING) -->
-        <div class="col-lg-6">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h5 class="fw-bold mb-0 d-flex justify-content-between align-items-center">
-                        <span><span class="text-primary">🔵</span> Đang nấu</span>
-                        <span class="badge bg-primary rounded-pill px-3" id="countPreparing">0</span>
-                    </h5>
-                </div>
-                <div class="card-body bg-light" id="preparingList" style="min-height: 500px;">
-                    <!-- Orders -->
-                </div>
-            </div>
-        </div>
+<!-- Summary Chips -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <div class="badge rounded-pill bg-danger-subtle text-danger border border-danger fs-6 px-3 py-2">
+        <i class="bi bi-bell-fill me-1"></i>Chờ xác nhận: <span id="countPending">0</span>
     </div>
+    <div class="badge rounded-pill bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2">
+        <i class="bi bi-fire me-1"></i>Đang nấu: <span id="countPreparing">0</span>
+    </div>
+</div>
+
+<!-- Tab filters -->
+<div class="d-flex gap-2 mb-4">
+    <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-tab="active" onclick="switchTab('active', this)">Đang xử lý</button>
+    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn" data-tab="all" onclick="switchTab('all', this)">Tất cả hôm nay</button>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-warning"></div>
+    <p class="text-muted mt-2">Đang tải đơn hàng...</p>
+</div>
+
+<!-- Orders List -->
+<div id="orderList" class="d-none"></div>
+
+<div id="emptyOrders" class="text-center py-5 d-none">
+    <div style="font-size:4rem">📋</div>
+    <h5 class="fw-bold mt-2">Không có đơn hàng nào</h5>
+    <p class="text-muted">Các đơn hàng mới sẽ xuất hiện ở đây</p>
+</div>
+
+
+<style>
+.tab-btn.active { background: #212529 !important; color: white !important; border-color: #212529 !important; }
+.order-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
+.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+</style>
 
 <script>
+    const token = localStorage.getItem('jwt_token');
+    let allOrders = [];
+    let currentTab = 'active';
+
+    const STATUS_LABELS = {
+        PENDING: '<span class="badge bg-danger-subtle text-danger border border-danger">⏳ Chờ xác nhận</span>',
+        PREPARING: '<span class="badge bg-primary-subtle text-primary border border-primary">🍳 Đang nấu</span>',
+        DELIVERING: '<span class="badge bg-success-subtle text-success border border-success">🛵 Đang giao</span>',
+        COMPLETED: '<span class="badge bg-secondary-subtle text-secondary border border-secondary">✅ Hoàn thành</span>',
+        CANCELLED: '<span class="badge bg-danger-subtle text-danger">❌ Đã hủy</span>'
+    };
+
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+    function formatTime(dt) {
+        if (!dt) return '';
+        return new Date(dt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+
     async function loadOrders() {
         document.getElementById('loading').classList.remove('d-none');
-        document.getElementById('ordersBoard').classList.add('d-none');
-
+        document.getElementById('orderList').classList.add('d-none');
+        document.getElementById('emptyOrders').classList.add('d-none');
         try {
-            const res = await fetch('/api/restaurant/orders', {
-                headers: { 'Authorization': 'Bearer ' + globalToken }
-            });
-            if (res.status === 401) return globalLogout();
-            
-            const orders = await res.json();
-            
-            const pendingList = document.getElementById('pendingList');
-            const preparingList = document.getElementById('preparingList');
-            pendingList.innerHTML = '';
-            preparingList.innerHTML = '';
-            
-            let pCount = 0;
-            let prepCount = 0;
-
-            orders.forEach(o => {
-                const itemsHtml = o.items.map(i => `<li class="mb-1"><span class="fw-bold">${i.quantity}x</span> ${i.itemName}</li>`).join('');
-
-                if (o.status === 'PENDING') {
-                    pCount++;
-                    pendingList.insertAdjacentHTML('beforeend', `
-                        <div class="card border-0 shadow-sm mb-3 border-start border-4 border-danger">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                    <h6 class="fw-bold mb-0">Đơn: #${o.id}</h6>
-                                    <span class="small text-muted">Vừa xong</span>
-                                </div>
-                                <p class="mb-2 small"><i class="bi bi-person-fill text-muted me-1"></i> Khách hàng: <span class="fw-bold text-dark">${o.customerName}</span></p>
-                                <ul class="list-unstyled small mb-3 ps-1">${itemsHtml}</ul>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-success w-50 fw-bold" onclick="updateStatus(${o.id}, 'PREPARING')">Nhận đơn</button>
-                                    <button class="btn btn-sm btn-outline-danger w-50" onclick="updateStatus(${o.id}, 'CANCELLED')">Từ chối</button>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                } else if (o.status === 'PREPARING') {
-                    prepCount++;
-                    preparingList.insertAdjacentHTML('beforeend', `
-                        <div class="card border-0 shadow-sm mb-3 border-start border-4 border-primary bg-white">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                    <h6 class="fw-bold mb-0">Đơn: #${o.id}</h6>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary">Đang nấu</span>
-                                </div>
-                                <p class="mb-2 small"><i class="bi bi-person-fill text-muted me-1"></i> Khách hàng: <span class="fw-bold text-dark">${o.customerName}</span></p>
-                                <ul class="list-unstyled small mb-3 ps-1">${itemsHtml}</ul>
-                                <button class="btn btn-sm btn-primary w-100 fw-bold" onclick="updateStatus(${o.id}, 'COMPLETED')">Hoàn thành (Gọi Shipper)</button>
-                            </div>
-                        </div>
-                    `);
-                }
-            });
-
-            if (pCount === 0) pendingList.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-emoji-smile fs-1 d-block mb-2"></i>Không có đơn mới.</div>';
-            if (prepCount === 0) preparingList.innerHTML = '<div class="text-center text-muted mt-5"><i class="bi bi-check2-circle fs-1 d-block mb-2"></i>Không có đơn đang nấu.</div>';
-
-            document.getElementById('countPending').textContent = pCount;
-            document.getElementById('countPreparing').textContent = prepCount;
-
+            const res = await fetch('/api/restaurant/orders', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+            allOrders = await res.json();
             document.getElementById('loading').classList.add('d-none');
-            document.getElementById('ordersBoard').classList.remove('d-none');
-        } catch (err) {
-            console.error(err);
-            alert("Lỗi khi tải đơn hàng!");
+            updateCounts();
+            renderOrders();
+        } catch {
+            document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối</div>';
         }
     }
 
-    async function updateStatus(id, newStatus) {
+    function updateCounts() {
+        document.getElementById('countPending').textContent = allOrders.filter(o => o.status === 'PENDING').length;
+        document.getElementById('countPreparing').textContent = allOrders.filter(o => o.status === 'PREPARING').length;
+    }
+
+    function switchTab(tab, btn) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        let orders = allOrders;
+        if (currentTab === 'active') orders = orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING');
+        const el = document.getElementById('orderList');
+        const empty = document.getElementById('emptyOrders');
+
+        if (!orders.length) {
+            el.classList.add('d-none');
+            empty.classList.remove('d-none');
+            return;
+        }
+        empty.classList.add('d-none');
+        el.classList.remove('d-none');
+        el.innerHTML = '';
+
+        orders.forEach(o => {
+            const itemsList = (o.items || []).map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i.itemName} ×${i.quantity}</span>`).join('');
+            const actions = getActions(o);
+            el.insertAdjacentHTML('beforeend', `
+            <div class="card border-0 shadow-sm order-card mb-3" id="order-${o.id}">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">Đơn #${o.id}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-person me-1"></i>${o.customerName}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            ${STATUS_LABELS[o.status] || o.status}
+                        </div>
+                    </div>
+                    <div class="mb-3">${itemsList}</div>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <span class="fw-bold text-danger fs-5">${formatVND(o.totalAmount)}</span>
+                        <div class="d-flex gap-2 flex-wrap">${actions}</div>
+                    </div>
+                </div>
+            </div>`);
+        });
+    }
+
+    function getActions(order) {
+        if (order.status === 'PENDING') {
+            return `
+                <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'PREPARING')">
+                    <i class="bi bi-check-lg me-1"></i>Xác nhận
+                </button>
+                <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'CANCELLED')">
+                    <i class="bi bi-x-lg me-1"></i>Từ chối
+                </button>`;
+        } else if (order.status === 'PREPARING') {
+            return `
+                <button class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'DELIVERING')">
+                    <i class="bi bi-bicycle me-1"></i>Sẵn sàng giao
+                </button>`;
+        }
+        return '';
+    }
+
+    async function updateStatus(orderId, status) {
+        const labels = { PREPARING: 'xác nhận', DELIVERING: 'chuyển sang sẵn sàng giao', CANCELLED: 'từ chối' };
+        if (!confirm(`Bạn có chắc muốn ${labels[status] || status} đơn hàng #${orderId}?`)) return;
+
         try {
-            const res = await fetch(`/api/restaurant/orders/${id}/status`, {
+            const res = await fetch(`/api/restaurant/orders/${orderId}/status`, {
                 method: 'PUT',
-                headers: { 
-                    'Authorization': 'Bearer ' + globalToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: newStatus })
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ status })
             });
-
+            const d = await res.json();
             if (res.ok) {
-                loadOrders(); 
+                showToast(d.message || 'Cập nhật thành công!', 'success');
+                loadOrders();
             } else {
-                alert("Lỗi khi cập nhật trạng thái!");
+                showToast(d.error || 'Lỗi cập nhật trạng thái', 'danger');
             }
-        } catch (err) {
-            console.error(err);
-        }
+        } catch { showToast('Lỗi kết nối!', 'danger'); }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadOrders();
-        setInterval(loadOrders, 30000);
-    });
+    function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+        t.style.zIndex = 9999;
+        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    loadOrders();
+    // Auto-refresh every 30 seconds
+    setInterval(loadOrders, 30000);
 </script>
 </main>
 </body>

@@ -1,93 +1,111 @@
 # 🍔 Food Delivery Management System
 
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## 📌 Giới thiệu
+## 📌 Giới thiệu Dự án
 
-Hệ thống cung cấp giải pháp đặt món, quản lý đơn hàng và kết nối hiệu quả giữa **Khách hàng – Nhà hàng – Shipper**. Dự án được xây dựng với mục tiêu tối ưu hóa trải nghiệm người dùng và quy trình vận hành đơn hàng.
-
-## ⚙️ Chức năng chính
-
-- **Khách hàng:** Tìm kiếm món ăn, đặt hàng, quản lý giỏ hàng và theo dõi trạng thái đơn hàng.
-- **Nhà hàng/Admin:** Quản lý thực đơn, xử lý đơn hàng và cập nhật thông tin cửa hàng.
-- **Shipper:** Nhận đơn, cập nhật lộ trình và trạng thái giao hàng.
+Hệ thống **Food Delivery Management** là một giải pháp toàn diện kết nối **Khách hàng**, **Nhà hàng** và **Tài xế (Shipper)**. Dự án được xây dựng trên nền tảng **Spring Boot 3.3**, tập trung vào sự ổn định, hiệu năng cao và trải nghiệm người dùng hiện đại với giao diện Dashboard thông minh.
 
 ---
 
-## 🛠️ Công nghệ sử dụng
+## ⚙️ Chức năng Chính (Use Cases)
 
-- **Backend:** Java 17, Spring Boot 3.3.0
-- **Database:** MySQL (Aiven Cloud / Local)
-- **Security:** Spring Security & JWT
-- **Build Tool:** Maven
+Hệ thống hỗ trợ đầy đủ 20 Use Case quan trọng chia cho 4 nhóm người dùng:
+
+-   **👤 Khách hàng (Customer):** 
+    - Tìm kiếm nhà hàng & món ăn thông minh.
+    - Giỏ hàng Real-time (LocalStorage).
+    - Đặt hàng & Theo dõi lộ trình (Tracking Timeline).
+    - Đánh giá chất lượng dịch vụ.
+-   **🏪 Nhà hàng (Restaurant):**
+    - Quản lý thực đơn (CRUD Menu Items) với Upload ảnh.
+    - Dashboard thống kê doanh thu (Chart.js).
+    - Xử lý đơn hàng Real-time.
+-   **🛵 Tài xế (Driver):**
+    - Dashboard thu nhập.
+    - Nhận đơn và cập nhật trạng thái giao hàng.
+-   **🛡️ Quản trị viên (Admin):**
+    - Quản lý người dùng & Đối tác.
+    - Quản lý mã khuyến mãi (Vouchers).
+    - Báo cáo tổng quan toàn hệ thống.
 
 ---
 
-## 🚀 Hướng dẫn chạy dự án
+## 🛠️ Stack Công nghệ
 
-### 1. Yêu cầu hệ thống
+| Thành phần | Công nghệ sử dụng |
+| :--- | :--- |
+| **Backend** | Java 17, Spring Boot 3.3.0, Spring Data JPA |
+| **Bảo mật** | Spring Security, JWT (Stateless), OTP Email Verification |
+| **Database** | MySQL 8 (Aiven Cloud / Local), Hibernate |
+| **Frontend** | Thymeleaf, Bootstrap 5.3, Vanilla JS, Chart.js |
+| **Công cụ** | Maven, Git, Postman |
+
+---
+
+## 🚀 Hướng dẫn Chạy Dự án
+
+### 1. Yêu cầu Hệ thống
 - **Java JDK 17** trở lên.
-- **MySQL** (nếu chạy database cục bộ).
-- IDE khuyên dùng: IntelliJ IDEA hoặc VS Code.
+- **Maven 3.8+**.
+- **MySQL** (Hoặc dùng database cloud đã cấu hình sẵn).
 
-### 2. Clone dự án
-Mở Terminal và chạy lệnh:
+### 2. Clone & Cài đặt
 ```bash
 git clone https://github.com/DNTt30/Food_Delivery_System.git
 cd Food_Delivery_System/gs-serving-web-content-main/complete
 ```
 
-### 3. Cấu hình Database
-Chỉnh sửa cấu hình kết nối tại file:  
-`src/main/resources/application.properties`
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/food_delivery
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-```
-
-### 4. Khởi chạy ứng dụng
-Sử dụng Maven Wrapper (không cần cài đặt Maven thủ công):
-
-**Đối với Windows (PowerShell/CMD):**
+### 3. Khởi chạy
+Sử dụng Maven Wrapper:
 ```powershell
+# Windows
 .\mvnw spring-boot:run
-```
 
-**Đối với Linux/MacOS:**
-```bash
-chmod +x mvnw
+# Linux/MacOS
 ./mvnw spring-boot:run
 ```
 
-### 5. Truy cập ứng dụng
-Sau khi ứng dụng khởi chạy thành công, truy cập:  
+### 4. Truy cập
 👉 [http://localhost:8080](http://localhost:8080)
 
 ---
 
-## 👨‍💻 Đội ngũ phát triển
+## 📁 Cấu trúc Project chính
 
-| Tên thành viên | Mã sinh viên |
-| :--- | :--- |
-| **Dương Ngọc Tú** | 22010052 |
-| **Đinh Thị Như Quỳnh** | 23010844 |
-| **Ngô Minh Quân** | 23017112 |
+```text
+src/main/java/com/duong/salesmanagement/
+├── controller/     # API Endpoints & Web Controllers
+├── model/          # Entities (User, Order, MenuItem...)
+├── service/        # Business Logic & Email Service
+├── repository/     # Data Access Layer (JPA)
+└── security/       # JWT & Security Configuration
+```
 
 ---
-## 📝 Nhật ký cập nhật (Progress Log)
 
-### 📅 06/05/2026
-- **Giao diện Dashboard Nhà hàng:** Thiết kế lại hoàn toàn trang dashboard (`restaurant/dashboard.html`) với Thẻ thống kê (Stat Cards), biểu đồ **Chart.js**, và hiệu ứng **Skeleton Loader**.
-- **Hình ảnh & Banner:** 
-    - Thiết kế và thêm banner quảng cáo chuyên nghiệp cho Dashboard Khách hàng.
-    - Cập nhật hình ảnh món ăn thực tế (Pizza, Burger, Phở) vào hệ thống.
-- **Tính năng Upload ảnh:**
-    - Triển khai `FileUploadController.java` xử lý nhận file ảnh từ client.
-    - Tích hợp tính năng tải ảnh trực tiếp vào trang Quản lý Thực đơn của Nhà hàng.
-    - Hỗ trợ xem trước ảnh (Preview) và tự động điền URL sau khi tải lên thành công.
+## 👨‍💻 Đội ngũ Phát triển
+
+| Thành viên | MSSV | Vai trò |
+| :--- | :--- | :--- |
+| **Dương Ngọc Tú** | 22010052 | Fullstack Developer / Team Lead |
+| **Đinh Thị Như Quỳnh** | 23010844 | Frontend Developer / Documentation |
+| **Ngô Minh Quân** | 23017112 | Backend Developer / Database |
+
+---
+
+## 📝 Nhật ký Cập nhật Gần đây
+
+### 📅 08/05/2026
+- **Hoàn thiện 100% Use Cases:** Tích hợp đầy đủ các chức năng từ Admin đến Shipper.
+- **Nâng cấp Dashboard:** Sử dụng Chart.js cho các biểu đồ thống kê chuyên nghiệp.
+- **Tối ưu UI/UX:** Tinh chỉnh layout, header/footer đồng bộ và hiệu ứng loading.
+- **Bảo mật:** Hoàn thiện luồng OTP qua Gmail và phân quyền JWT chặt chẽ.
 
 ---
 *Dự án thuộc học phần thực hành Phát triển ứng dụng Web.*

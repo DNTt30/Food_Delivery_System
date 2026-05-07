@@ -1,0 +1,272 @@
+package com.duong.salesmanagement.controller;
+
+import com.duong.salesmanagement.model.*;
+import com.duong.salesmanagement.repository.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/admin")
+@SuppressWarnings("null")
+public class AdminApiController {
+
+    private final UserRepository userRepository;
+    private final RestaurantProfileRepository restaurantProfileRepository;
+    private final VoucherRepository voucherRepository;
+    private final FoodOrderRepository foodOrderRepository;
+
+    public AdminApiController(UserRepository userRepository,
+                              RestaurantProfileRepository restaurantProfileRepository,
+                              VoucherRepository voucherRepository,
+                              FoodOrderRepository foodOrderRepository) {
+        this.userRepository = userRepository;
+        this.restaurantProfileRepository = restaurantProfileRepository;
+        this.voucherRepository = voucherRepository;
+        this.foodOrderRepository = foodOrderRepository;
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return false;
+        User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+        return user != null && user.getRole() == Role.ADMIN;
+    }
+
+    // UC-19: Thống kê hệ thống
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats(Authentication authentication) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        long totalUsers = userRepository.count();
+        long totalRestaurants = restaurantProfileRepository.count();
+        List<FoodOrder> allOrders = foodOrderRepository.findAllByOrderByOrderTimeDesc();
+        long totalOrders = allOrders.size();
+        long pendingOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
+        long preparingOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PREPARING).count();
+        long deliveringOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERING).count();
+        long completedOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
+        double totalRevenue = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
+                .mapToDouble(FoodOrder::getTotalAmount).sum();
+
+        java.util.Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("totalUsers", totalUsers);
+        stats.put("totalRestaurants", totalRestaurants);
+        stats.put("totalOrders", totalOrders);
+        stats.put("pendingOrders", pendingOrders);
+        stats.put("preparingOrders", preparingOrders);
+        stats.put("deliveringOrders", deliveringOrders);
+        stats.put("completedOrders", completedOrders);
+        stats.put("totalRevenue", totalRevenue);
+        return ResponseEntity.ok(stats);
+    }
+
+    // UC-17: Quản lý tài khoản người dùng
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers(Authentication authentication) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        List<UserDTO> dtos = userRepository.findAll().stream()
+                .map(u -> new UserDTO(u.getId(), u.getUsername(), u.getFullName(),
+                        u.getEmail(), u.getRole().name(), u.isEnabled()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PutMapping("/users/{id}/toggle-status")
+    public ResponseEntity<?> toggleUserStatus(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) return ResponseEntity.notFound().build();
+        if (user.getRole() == Role.ADMIN)
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể khóa tài khoản Admin"));
+
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of(
+                "message", user.isEnabled() ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản",
+                "enabled", user.isEnabled()
+        ));
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) return ResponseEntity.notFound().build();
+        if (user.getRole() == Role.ADMIN)
+            return ResponseEntity.badRequest().body(Map.of("error", "Không thể xóa tài khoản Admin"));
+
+        userRepository.delete(user);
+        return ResponseEntity.ok(Map.of("message", "Đã xóa tài khoản"));
+    }
+
+    // UC-18: Quản lý nhà hàng (duyệt/khóa)
+    @GetMapping("/restaurants")
+    public ResponseEntity<?> getAllRestaurants(Authentication authentication) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        List<RestaurantAdminDTO> dtos = restaurantProfileRepository.findAll().stream()
+                .map(r -> new RestaurantAdminDTO(
+                        r.getId(),
+                        r.getRestaurantName(),
+                        r.getAddress(),
+                        r.getUser().getUsername(),
+                        r.getUser().getEmail(),
+                        r.getBannerUrl(),
+                        r.isOpen(),
+                        r.getUser().isEnabled(),
+                        r.getAverageRating()
+                )).collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PutMapping("/restaurants/{id}/toggle-open")
+    public ResponseEntity<?> toggleRestaurantOpen(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
+        if (restaurant == null) return ResponseEntity.notFound().build();
+
+        restaurant.setOpen(!restaurant.isOpen());
+        restaurantProfileRepository.save(restaurant);
+        return ResponseEntity.ok(Map.of(
+                "message", restaurant.isOpen() ? "Nhà hàng đã mở cửa" : "Nhà hàng đã đóng cửa",
+                "isOpen", restaurant.isOpen()
+        ));
+    }
+
+    @PutMapping("/restaurants/{id}/approve")
+    public ResponseEntity<?> approveRestaurant(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
+        if (restaurant == null) return ResponseEntity.notFound().build();
+
+        User owner = restaurant.getUser();
+        owner.setEnabled(true);
+        restaurant.setOpen(true);
+        userRepository.save(owner);
+        restaurantProfileRepository.save(restaurant);
+        return ResponseEntity.ok(Map.of("message", "Nhà hàng đã được duyệt và kích hoạt"));
+    }
+
+    // UC-20: Quản lý mã khuyến mãi
+    @GetMapping("/vouchers")
+    public ResponseEntity<?> getAllVouchers(Authentication authentication) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return ResponseEntity.ok(voucherRepository.findAll().stream()
+                .map(this::mapVoucher).collect(Collectors.toList()));
+    }
+
+    @PostMapping("/vouchers")
+    public ResponseEntity<?> createVoucher(Authentication authentication, @RequestBody VoucherRequest req) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        if (voucherRepository.findByCode(req.code).isPresent())
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher đã tồn tại"));
+
+        Voucher v = new Voucher();
+        v.setCode(req.code.toUpperCase());
+        v.setDiscountValue(req.discountValue);
+        v.setDiscountType(req.discountType != null ? DiscountType.valueOf(req.discountType) : DiscountType.PERCENTAGE);
+        if (req.expiryDate != null && !req.expiryDate.isBlank())
+            v.setExpirationDate(LocalDate.parse(req.expiryDate));
+        v.setActive(req.active);
+        voucherRepository.save(v);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo voucher thành công"));
+    }
+
+    @PutMapping("/vouchers/{id}")
+    public ResponseEntity<?> updateVoucher(Authentication authentication, @PathVariable Long id,
+                                            @RequestBody VoucherRequest req) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        Voucher v = voucherRepository.findById(id).orElse(null);
+        if (v == null) return ResponseEntity.notFound().build();
+
+        if (req.code != null && !req.code.isBlank()) v.setCode(req.code.toUpperCase());
+        v.setDiscountValue(req.discountValue);
+        if (req.discountType != null) v.setDiscountType(DiscountType.valueOf(req.discountType));
+        if (req.expiryDate != null && !req.expiryDate.isBlank())
+            v.setExpirationDate(LocalDate.parse(req.expiryDate));
+        v.setActive(req.active);
+        voucherRepository.save(v);
+        return ResponseEntity.ok(Map.of("message", "Cập nhật voucher thành công"));
+    }
+
+    @DeleteMapping("/vouchers/{id}")
+    public ResponseEntity<?> deleteVoucher(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        if (!voucherRepository.existsById(id)) return ResponseEntity.notFound().build();
+        voucherRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Đã xóa voucher"));
+    }
+
+    private Map<String, Object> mapVoucher(Voucher v) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", v.getId());
+        m.put("code", v.getCode());
+        m.put("discountValue", v.getDiscountValue());
+        m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENT");
+        m.put("expiryDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : null);
+        m.put("active", v.isActive());
+        return m;
+    }
+
+    // ---- DTOs ----
+    public static class UserDTO {
+        public Long id;
+        public String username;
+        public String fullName;
+        public String email;
+        public String role;
+        public boolean enabled;
+
+        public UserDTO(Long id, String username, String fullName, String email, String role, boolean enabled) {
+            this.id = id; this.username = username; this.fullName = fullName;
+            this.email = email; this.role = role; this.enabled = enabled;
+        }
+    }
+
+    public static class RestaurantAdminDTO {
+        public Long id;
+        public String restaurantName;
+        public String address;
+        public String ownerUsername;
+        public String ownerEmail;
+        public String bannerUrl;
+        public boolean open;
+        public boolean ownerEnabled;
+        public Double averageRating;
+
+        public RestaurantAdminDTO(Long id, String restaurantName, String address, String ownerUsername,
+                                  String ownerEmail, String bannerUrl, boolean open, boolean ownerEnabled,
+                                  Double averageRating) {
+            this.id = id; this.restaurantName = restaurantName; this.address = address;
+            this.ownerUsername = ownerUsername; this.ownerEmail = ownerEmail; this.bannerUrl = bannerUrl;
+            this.open = open; this.ownerEnabled = ownerEnabled; this.averageRating = averageRating;
+        }
+    }
+
+    public static class VoucherRequest {
+        public String code;
+        public Double discountValue;
+        public String discountType;
+        public String expiryDate;
+        public String startDate;
+        public Double minOrderAmount;
+        public Double maxDiscount;
+        public String description;
+        public boolean active;
+    }
+}

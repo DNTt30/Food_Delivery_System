@@ -1,35 +1,167 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'driver', ~{::main})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver - Đơn Mới</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Driver - Nhận đơn mới</title>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
-  <div class="container">
-    <a class="navbar-brand text-white fw-bold" href="/driver/new_orders">Driver Dashboard</a>
-    <div class="ms-auto d-flex gap-2">
-      <a class="btn btn-sm btn-light" href="/driver/delivering">Đơn đang giao</a>
-      <a class="btn btn-sm btn-light" href="/common/profile">Hồ sơ</a>
-    </div>
-  </div>
-</nav>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('driver')}"></div>
 
-<div class="container" style="max-width: 600px;">
-    <h4 class="mb-3 text-center">📱 Nhận đơn mới ("Nổ" đơn)</h4>
-    <div class="card shadow-sm mb-3 border-success border-2">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <h5 class="card-title text-success">Cơm Sườn Ninh Kiều</h5>
-                <h5 class="text-danger fw-bold">15.000 đ <small class="text-muted">(Phí ship)</small></h5>
-            </div>
-            <p class="mb-1"><strong>Lấy hàng:</strong> 123 Đường ABC, Quận 1</p>
-            <p class="mb-2"><strong>Giao đến:</strong> 456 Đường XYZ, Quận 3 (Cách 3km)</p>
-            <a href="/driver/delivering" class="btn btn-success w-100 fs-5 fw-bold py-2">Nhận Đơn Này</a>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-inbox-fill me-2 text-primary"></i>Nhận đơn mới</h4>
+        <small class="text-muted">Các đơn đã sẵn sàng để giao — hãy nhận và xuất phát!</small>
+    </div>
+    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadOrders()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+    </button>
+</div>
+
+<!-- Counter badge -->
+<div class="d-flex gap-2 mb-4">
+    <div class="badge rounded-pill bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2">
+        <i class="bi bi-box-seam me-1"></i>Chờ tài xế: <span id="orderCount">0</span>
     </div>
 </div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="text-muted mt-2">Đang tải đơn hàng...</p>
+</div>
+
+<!-- Orders -->
+<div id="orderList" class="d-none"></div>
+
+<div id="emptyOrders" class="text-center py-5 d-none">
+    <div style="font-size:4rem">📭</div>
+    <h5 class="fw-bold mt-2">Chưa có đơn nào chờ giao</h5>
+    <p class="text-muted">Hãy đặt mình trực tuyến để nhận đơn ngay khi có!</p>
+    <a href="/driver/dashboard" class="btn btn-primary rounded-pill px-4">Về Dashboard</a>
+</div>
+
+
+<style>
+.order-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
+.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
+</style>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+
+    async function loadOrders() {
+        document.getElementById('loading').classList.remove('d-none');
+        document.getElementById('orderList').classList.add('d-none');
+        document.getElementById('emptyOrders').classList.add('d-none');
+        try {
+            const res = await fetch('/api/driver/available-orders', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+            const orders = await res.json();
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('orderCount').textContent = orders.length;
+            if (!orders.length) {
+                document.getElementById('emptyOrders').classList.remove('d-none');
+                return;
+            }
+            renderOrders(orders);
+        } catch {
+            document.getElementById('loading').innerHTML =
+                '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    function formatVND(n) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    }
+
+    function renderOrders(orders) {
+        const el = document.getElementById('orderList');
+        el.innerHTML = '';
+        el.classList.remove('d-none');
+        orders.forEach(o => {
+            const items = (o.items || [])
+                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i.itemName} ×${i.quantity}</span>`)
+                .join('');
+            el.insertAdjacentHTML('beforeend', `
+            <div class="card border-0 shadow-sm order-card mb-3" id="order-${o.id}">
+                <div class="card-body p-4">
+                    <div class="row align-items-start gy-3">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary fw-semibold px-3">Đơn #${o.id}</span>
+                                <span class="badge bg-success-subtle text-success border border-success">Sẵn sàng lấy hàng</span>
+                            </div>
+                            <h6 class="fw-bold mb-1">
+                                <i class="bi bi-shop me-1 text-warning"></i>${o.restaurantName || 'Nhà hàng'}
+                            </h6>
+                            <div class="text-muted small mb-1">
+                                <i class="bi bi-geo-alt me-1 text-danger"></i>
+                                <strong>Lấy hàng:</strong> ${o.restaurantAddress || 'Địa chỉ nhà hàng'}
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <i class="bi bi-house me-1 text-primary"></i>
+                                <strong>Giao đến:</strong> ${o.deliveryAddress || 'Địa chỉ giao hàng'}
+                            </div>
+                            <div class="mb-1">${items}</div>
+                            <small class="text-muted"><i class="bi bi-person me-1"></i>${o.customerName || ''}</small>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <h5 class="fw-bold text-danger mb-1">${formatVND(o.totalAmount)}</h5>
+                            <p class="text-success small mb-3">
+                                <i class="bi bi-wallet me-1"></i>Thu nhập: <strong>${formatVND((o.totalAmount || 0) * 0.1)}</strong>
+                            </p>
+                            <button class="btn btn-primary rounded-pill px-4 fw-semibold w-100" onclick="acceptOrder(${o.id}, this)">
+                                <i class="bi bi-check-lg me-1"></i>Nhận đơn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>`);
+        });
+    }
+
+    async function acceptOrder(orderId, btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang nhận...';
+        try {
+            const res = await fetch(`/api/driver/orders/${orderId}/accept`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const d = await res.json();
+            if (res.ok) {
+                showToast('Nhận đơn thành công! Hãy đến lấy hàng.', 'success');
+                document.getElementById(`order-${orderId}`).remove();
+                const remaining = document.querySelectorAll('[id^="order-"]').length;
+                document.getElementById('orderCount').textContent = remaining;
+                if (!remaining) document.getElementById('emptyOrders').classList.remove('d-none');
+                setTimeout(() => window.location.href = '/driver/delivering', 1500);
+            } else {
+                showToast(d.error || 'Không thể nhận đơn!', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Nhận đơn';
+            }
+        } catch {
+            showToast('Lỗi kết nối!', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Nhận đơn';
+        }
+    }
+
+    function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+        t.style.zIndex = 9999;
+        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    loadOrders();
+    setInterval(loadOrders, 20000);
+</script>
+</main>
 </body>
 </html>

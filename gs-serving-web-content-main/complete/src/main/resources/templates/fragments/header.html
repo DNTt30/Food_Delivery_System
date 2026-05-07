@@ -1,53 +1,75 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<header th:fragment="header" class="main-header sticky-top bg-white shadow-sm">
+
+<!-- ═══════════════════════════════════════════════
+     LANDING PAGE HEADER  (index.html)
+     ═══════════════════════════════════════════════ -->
+<header th:fragment="header" class="sticky-top bg-white"
+        style="border-bottom:3px solid #ef4444;box-shadow:0 2px 20px rgba(0,0,0,0.08);">
     <nav class="navbar navbar-expand-lg navbar-light py-3">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                <div class="bg-warning rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                    <i class="bi bi-lightning-charge-fill text-dark"></i>
+                <div class="rounded-3 d-flex align-items-center justify-content-center"
+                     style="width:38px;height:38px;background:linear-gradient(135deg,#ef4444,#dc2626);">
+                    <i class="bi bi-motorcycle text-white" style="font-size:1.1rem;"></i>
                 </div>
-                <span class="fw-bold fs-4 tracking-tight">Antigravity<span class="text-warning">Food</span></span>
+                <div class="lh-1">
+                    <div class="fw-bold text-dark" style="font-size:1rem;">Food<span class="text-danger">Delivery</span></div>
+                    <div class="text-muted" style="font-size:0.6rem;letter-spacing:0.06em;">GIAO HÀNG TẬN NƠI</div>
+                </div>
             </a>
-            
-            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+
+            <button class="navbar-toggler border-0" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="mainNavbar">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-4">
+                <ul class="navbar-nav mx-auto gap-lg-3 mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/customer/home')">Khám phá</a>
+                        <a class="nav-link fw-semibold" href="javascript:void(0)"
+                           onclick="if(localStorage.getItem('jwt_token'))location.href='/customer/home';else location.href='/common/auth'">
+                            Khám phá
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/restaurant/dashboard')">Cửa hàng</a>
+                        <a class="nav-link fw-semibold" href="javascript:void(0)"
+                           onclick="if(localStorage.getItem('jwt_token'))location.href='/restaurant/dashboard';else location.href='/common/auth'">
+                            Cửa hàng
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/driver/dashboard')">Tài xế</a>
+                        <a class="nav-link fw-semibold" href="javascript:void(0)"
+                           onclick="if(localStorage.getItem('jwt_token'))location.href='/driver/dashboard';else location.href='/common/auth'">
+                            Tài xế
+                        </a>
                     </li>
                 </ul>
-                
-                <div class="d-flex align-items-center gap-3">
-                    <div id="authLinks" class="d-flex gap-2">
-                        <!-- Guest state -->
-                        <a href="/common/auth" class="btn btn-outline-dark px-4 fw-semibold">Đăng nhập</a>
-                        <a href="/common/auth?register=true" class="btn btn-warning px-4 fw-bold">Đăng ký</a>
+
+                <div class="d-flex align-items-center gap-2" id="authArea">
+                    <div id="guestLinks" class="d-flex gap-2">
+                        <a href="/common/auth" class="btn btn-outline-dark px-4 fw-semibold rounded-pill">Đăng nhập</a>
+                        <a href="/common/auth" class="btn btn-danger px-4 fw-bold rounded-pill">Đăng ký</a>
                     </div>
-                    
-                    <div id="userAccount" class="dropdown d-none">
-                        <button class="btn btn-light rounded-circle p-0 border-0 overflow-hidden shadow-sm" type="button" data-bs-toggle="dropdown" style="width: 42px; height: 42px;">
-                            <img id="headerUserAvatar" src="https://ui-avatars.com/api/?name=User&background=random" alt="User" class="img-fluid">
+                    <div id="userLinks" class="dropdown d-none">
+                        <button class="btn btn-light rounded-circle p-0 border-0 overflow-hidden shadow-sm"
+                                type="button" data-bs-toggle="dropdown"
+                                style="width:40px;height:40px;">
+                            <img id="hdrAvatar"
+                                 src="https://ui-avatars.com/api/?name=U&background=random"
+                                 class="img-fluid" alt="">
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2 p-2" style="min-width: 200px; border-radius: 12px;">
-                            <li>
-                                <div class="px-3 py-2 border-bottom mb-2">
-                                    <p id="headerUserName" class="fw-bold mb-0 text-truncate">User Name</p>
-                                    <small id="headerUserRole" class="text-muted text-uppercase" style="font-size: 0.7rem;">Role</small>
-                                </div>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2"
+                            style="border-radius:12px;min-width:190px;">
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <div class="fw-bold small" id="hdrName">User</div>
+                                <div class="text-muted" style="font-size:0.7rem;" id="hdrRole"></div>
                             </li>
-                            <li><a class="dropdown-item rounded-3 mb-1" href="/common/profile"><i class="bi bi-person me-2"></i>Hồ sơ</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><button class="dropdown-item text-danger rounded-3" onclick="globalLogout()"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
+                            <li><a class="dropdown-item rounded-3" href="/common/profile">
+                                <i class="bi bi-person me-2"></i>Hồ sơ</a></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li><button class="dropdown-item text-danger rounded-3" onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
+                                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
                         </ul>
                     </div>
                 </div>
@@ -55,38 +77,148 @@
         </div>
     </nav>
     <script>
-        function checkAuth(targetUrl) {
-            const token = localStorage.getItem('jwt_token');
+        document.addEventListener('DOMContentLoaded', function () {
+            var token = localStorage.getItem('jwt_token');
             if (token) {
-                window.location.href = targetUrl;
-            } else {
-                window.location.href = '/common/auth';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('jwt_token');
-            if (token) {
-                document.getElementById('authLinks').classList.add('d-none');
-                document.getElementById('userAccount').classList.remove('d-none');
-                
-                // Decode token simplified (assume data in localStorage or fetch)
-                fetch('/api/profile/me', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                }).then(res => res.json()).then(data => {
-                    if (data.fullName) {
-                        document.getElementById('headerUserName').textContent = data.fullName;
-                        document.getElementById('headerUserRole').textContent = data.role;
-                        document.getElementById('headerUserAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
-                    }
-                }).catch(() => {});
+                document.getElementById('guestLinks').classList.add('d-none');
+                document.getElementById('userLinks').classList.remove('d-none');
+                fetch('/api/profile/me', { headers: { 'Authorization': 'Bearer ' + token } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        var name = d.fullName || d.username || 'User';
+                        document.getElementById('hdrName').textContent = name;
+                        document.getElementById('hdrRole').textContent = d.role || '';
+                        document.getElementById('hdrAvatar').src =
+                            'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=dc2626&color=fff';
+                    }).catch(function() {});
             }
         });
-        
-        function globalLogout() {
-            localStorage.clear();
-            window.location.href = '/index.html';
-        }
     </script>
 </header>
+
+
+<!-- ═══════════════════════════════════════════════
+     DASHBOARD HEADER  (restaurant / driver / admin)
+     Nhận role qua Thymeleaf th:attr, JS đọc từ
+     data attribute → không dùng th:inline="javascript"
+     ═══════════════════════════════════════════════ -->
+<div th:fragment="dashboard_header(role)"
+     th:attr="data-portal-role=${role}"
+     id="dashboardHeader"
+     class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-3">
+
+    <!-- Left: icon trang + tên trang + breadcrumb -->
+    <div>
+        <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span id="dh-icon"></span>
+            <span id="dh-title">Dashboard</span>
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item">
+                    <a id="dh-portal-link" href="#" class="text-decoration-none fw-semibold">Portal</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" id="dh-page">Trang</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Right: tên user + avatar + dropdown -->
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-none d-md-block text-end lh-1">
+            <div class="fw-semibold small" id="dh-username">...</div>
+            <div class="text-muted" style="font-size:0.7rem;" id="dh-role-label"></div>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-light rounded-circle p-0 border-0 overflow-hidden shadow-sm"
+                    data-bs-toggle="dropdown"
+                    style="width:40px;height:40px;">
+                <img id="dh-avatar"
+                     src="https://ui-avatars.com/api/?name=U&background=random"
+                     class="img-fluid" alt="">
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2"
+                style="border-radius:12px;min-width:180px;">
+                <li><a class="dropdown-item rounded-3 py-2" href="/common/profile">
+                    <i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><button class="dropdown-item text-danger rounded-3 py-2" onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
+                    <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        /* ── Đọc role từ data attribute (an toàn, không dùng th:inline) ── */
+        var el   = document.getElementById('dashboardHeader');
+        var role = el ? (el.getAttribute('data-portal-role') || '') : '';
+
+        if (!role) {
+            var p = window.location.pathname;
+            role = p.startsWith('/admin') ? 'admin' : p.startsWith('/driver') ? 'driver' : 'restaurant';
+        }
+
+        /* ── Cấu hình theo role ── */
+        var PORTAL = {
+            restaurant: { name: 'Cổng Nhà Hàng', icon: 'bi-shop',        color: '#d97706', home: '/restaurant/dashboard' },
+            driver:     { name: 'Cổng Tài Xế',   icon: 'bi-bicycle',     color: '#2563eb', home: '/driver/dashboard'     },
+            admin:      { name: 'Quản Trị Viên',  icon: 'bi-shield-lock', color: '#dc2626', home: '/admin/dashboard'      }
+        };
+
+        var PAGES = {
+            '/restaurant/dashboard': { icon: 'bi-speedometer2', name: 'Tổng quan'          },
+            '/restaurant/orders':    { icon: 'bi-receipt',      name: 'Quản lý Đơn hàng'   },
+            '/restaurant/menu':      { icon: 'bi-card-list',    name: 'Quản lý Thực đơn'   },
+            '/driver/dashboard':     { icon: 'bi-speedometer2', name: 'Bảng điều khiển'    },
+            '/driver/new_orders':    { icon: 'bi-inbox',        name: 'Nhận đơn mới'       },
+            '/driver/delivering':    { icon: 'bi-geo-alt',      name: 'Đơn đang giao'      },
+            '/admin/dashboard':      { icon: 'bi-bar-chart',    name: 'Tổng quan'          },
+            '/admin/partners':       { icon: 'bi-people',       name: 'Quản lý Đối tác'    },
+            '/admin/promotions':     { icon: 'bi-tag',          name: 'Quản lý Khuyến mãi' }
+        };
+
+        var portal = PORTAL[role] || PORTAL['restaurant'];
+        var path   = window.location.pathname;
+        var page   = PAGES[path] || { icon: portal.icon, name: portal.name };
+
+        /* ── Gán vào DOM ── */
+        var iconEl = document.getElementById('dh-icon');
+        if (iconEl) iconEl.innerHTML = '<i class="bi ' + page.icon + '" style="color:' + portal.color + ';"></i>';
+
+        var titleEl = document.getElementById('dh-title');
+        if (titleEl) titleEl.textContent = page.name;
+
+        var pageEl = document.getElementById('dh-page');
+        if (pageEl) pageEl.textContent = page.name;
+
+        var portalLink = document.getElementById('dh-portal-link');
+        if (portalLink) { portalLink.textContent = portal.name; portalLink.href = portal.home; }
+
+        /* ── User info từ localStorage ── */
+        var ROLE_LABELS = {
+            ROLE_RESTAURANT: 'Nhà hàng', ROLE_DRIVER: 'Tài xế',
+            ROLE_ADMIN: 'Quản trị viên', ROLE_CUSTOMER: 'Khách hàng'
+        };
+        document.addEventListener('DOMContentLoaded', function () {
+            var username  = localStorage.getItem('username') || '';
+            var roleKey   = localStorage.getItem('role')     || '';
+            var roleLabel = ROLE_LABELS[roleKey] || roleKey || role;
+
+            var unEl = document.getElementById('dh-username');
+            if (unEl) unEl.textContent = username || 'Tài khoản';
+
+            var rlEl = document.getElementById('dh-role-label');
+            if (rlEl) rlEl.textContent = roleLabel;
+
+            var avEl = document.getElementById('dh-avatar');
+            if (avEl && username) {
+                avEl.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(username)
+                         + '&background=' + portal.color.replace('#', '') + '&color=fff';
+            }
+        });
+    })();
+    </script>
+</div>
+
 </html>

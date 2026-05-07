@@ -1,99 +1,226 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Customer - Trang chủ</title>
+    <title>Khám phá - Food Delivery</title>
 </head>
 <body>
 <main>
-    <div class="container mb-5">
-        <!-- Hero Banner -->
-        <div class="row align-items-center bg-white rounded-4 shadow-sm p-4 mb-5 border-start border-5 border-danger mx-0">
-            <div class="col-md-7">
-                <h2 class="fw-bold mb-3">Đói bụng? Đặt món ngay!</h2>
-                <p class="text-muted fs-5 mb-4">Giao hàng siêu tốc tận nơi với hàng ngàn món ngon đang chờ bạn.</p>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-danger px-4 py-2">Khám phá ngay</button>
-                    <button class="btn btn-outline-danger px-4 py-2">Xem khuyến mãi</button>
+<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
+<div class="container mb-5">
+
+    <!-- Hero Search Section -->
+    <div class="rounded-4 p-4 p-md-5 mb-4 text-white position-relative overflow-hidden"
+         style="background: linear-gradient(135deg, #ff4757 0%, #c0392b 100%);">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2 class="fw-bold display-6 mb-2">Hôm nay muốn ăn gì? 🍜</h2>
+                <p class="opacity-75 mb-4">Hơn 500 nhà hàng, giao hàng trong 20 phút</p>
+                <div class="input-group input-group-lg shadow">
+                    <span class="input-group-text bg-white border-0 ps-3">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control border-0"
+                           placeholder="Tìm món ăn, nhà hàng..."
+                           style="border-radius: 0;">
+                    <button class="btn btn-dark px-4 fw-bold" onclick="doSearch()" type="button">Tìm</button>
                 </div>
             </div>
-            <div class="col-md-5 text-center d-none d-md-block">
-                <img src="https://via.placeholder.com/400x250?text=Food+Banner" alt="Banner" class="img-fluid rounded-3">
+            <div class="col-md-6 text-center d-none d-md-block">
+                <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=250&fit=crop"
+                     class="rounded-4 shadow-lg" style="max-height:200px; object-fit:cover; width:100%;" alt="food">
             </div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0"><i class="bi bi-star-fill text-warning me-2"></i>Nhà hàng nổi bật</h4>
-            <div class="btn-group">
-                <button class="btn btn-sm btn-outline-secondary">Gần tôi</button>
-                <button class="btn btn-sm btn-outline-secondary">Đánh giá cao</button>
-            </div>
-        </div>
-
-        <div id="loading" class="text-center my-5">
-            <div class="spinner-border text-danger" role="status">
-                <span class="visually-hidden">Đang tải...</span>
-            </div>
-        </div>
-        
-        <div class="row g-4 d-none" id="restaurantList">
-            <!-- Render từ JS -->
         </div>
     </div>
 
-    <script>
-        const token = localStorage.getItem('jwt_token');
-        if (!token) {
-            window.location.href = '/index.html';
+    <!-- Category Filter -->
+    <div class="d-flex gap-2 mb-4 overflow-auto pb-2" id="categoryFilters">
+        <button class="btn btn-dark btn-sm rounded-pill px-3 fw-semibold flex-shrink-0 filter-btn active" data-filter="all" onclick="filterRestaurants('all', this)">
+            <i class="bi bi-grid-fill me-1"></i> Tất cả
+        </button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold flex-shrink-0 filter-btn" data-filter="open" onclick="filterRestaurants('open', this)">
+            <i class="bi bi-door-open me-1"></i> Đang mở
+        </button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold flex-shrink-0 filter-btn" data-filter="rated" onclick="filterRestaurants('rated', this)">
+            <i class="bi bi-star-fill text-warning me-1"></i> Đánh giá cao
+        </button>
+    </div>
+
+    <!-- Sort Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold m-0" id="resultTitle">
+            <i class="bi bi-shop me-2 text-danger"></i>Nhà hàng nổi bật
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+            <small class="text-muted" id="resultCount"></small>
+            <select class="form-select form-select-sm w-auto border-0 bg-light" onchange="sortRestaurants(this.value)">
+                <option value="default">Mặc định</option>
+                <option value="rating">Đánh giá cao nhất</option>
+                <option value="name">Tên A-Z</option>
+                <option value="open">Đang mở cửa</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Loading Skeleton -->
+    <div id="loading" class="row g-4">
+        <div class="col-md-4" th:each="i : ${#numbers.sequence(1,6)}">
+            <div class="card h-100 border-0">
+                <div style="height:180px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:12px 12px 0 0;"></div>
+                <div class="card-body">
+                    <div style="height:18px;background:#f0f0f0;border-radius:8px;margin-bottom:8px;"></div>
+                    <div style="height:14px;background:#f0f0f0;border-radius:8px;width:70%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Grid -->
+    <div class="row g-4 d-none" id="restaurantList"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div class="mb-3" style="font-size: 4rem;">🔍</div>
+        <h5 class="fw-bold">Không tìm thấy kết quả</h5>
+        <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
+        <button class="btn btn-outline-danger rounded-pill px-4" onclick="clearSearch()">Xem tất cả nhà hàng</button>
+    </div>
+</div>
+
+
+<style>
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.restaurant-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; border-radius: 16px !important; overflow: hidden; }
+.restaurant-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.12) !important; }
+.filter-btn.active { background-color: #212529 !important; color: white !important; border-color: #212529 !important; }
+.filter-btn:not(.active) { background-color: transparent; }
+.open-badge { background: linear-gradient(135deg, #10b981, #059669); }
+.closed-badge { background: #6c757d; }
+</style>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    let allRestaurants = [];
+    let currentFilter = 'all';
+
+    async function loadRestaurants(searchQuery = '') {
+        document.getElementById('loading').classList.remove('d-none');
+        document.getElementById('restaurantList').classList.add('d-none');
+        document.getElementById('emptyState').classList.add('d-none');
+
+        try {
+            const url = searchQuery
+                ? `/api/customer/restaurants?search=${encodeURIComponent(searchQuery)}`
+                : '/api/customer/restaurants';
+
+            const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+
+            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+
+            allRestaurants = await res.json();
+            document.getElementById('loading').classList.add('d-none');
+            renderRestaurants(allRestaurants);
+
+            if (searchQuery) {
+                document.getElementById('resultTitle').innerHTML = `<i class="bi bi-search me-2"></i>Kết quả cho "<b>${searchQuery}</b>"`;
+            } else {
+                document.getElementById('resultTitle').innerHTML = `<i class="bi bi-shop me-2 text-danger"></i>Nhà hàng nổi bật`;
+            }
+        } catch (err) {
+            document.getElementById('loading').innerHTML = '<div class="col-12 text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối máy chủ</div>';
+        }
+    }
+
+    function renderRestaurants(restaurants) {
+        const listEl = document.getElementById('restaurantList');
+        listEl.innerHTML = '';
+
+        if (!restaurants.length) {
+            listEl.classList.add('d-none');
+            document.getElementById('emptyState').classList.remove('d-none');
+            document.getElementById('resultCount').textContent = '';
+            return;
         }
 
-        async function loadRestaurants() {
-            try {
-                const res = await fetch('/api/customer/restaurants', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                
-                if (res.status === 401) {
-                    window.location.href = '/index.html';
-                    return;
-                }
+        document.getElementById('emptyState').classList.add('d-none');
+        document.getElementById('resultCount').textContent = `${restaurants.length} nhà hàng`;
+        listEl.classList.remove('d-none');
 
-                const data = await res.json();
-                document.getElementById('loading').classList.add('d-none');
-                
-                const listEl = document.getElementById('restaurantList');
-                listEl.classList.remove('d-none');
+        restaurants.forEach(r => {
+            const stars = r.rating ? '⭐ ' + r.rating.toFixed(1) : 'Mới';
+            const statusBadge = r.isOpen
+                ? '<span class="badge open-badge text-white"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem"></i>Mở cửa</span>'
+                : '<span class="badge closed-badge text-white">Đóng cửa</span>';
+            const imgSrc = r.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=220&fit=crop';
 
-                if (data.length === 0) {
-                    listEl.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-3"></i>Chưa có nhà hàng nào trên hệ thống.</div>';
-                    return;
-                }
-
-                data.forEach(r => {
-                    const card = `
-                    <div class="col-md-4 col-sm-6">
-                        <div class="card h-100 restaurant-card" style="cursor:pointer;" onclick="location.href='/customer/detail?id=${r.id}'">
-                            <img src="${r.imageUrl || 'https://via.placeholder.com/400x200'}" class="card-img-top" alt="${r.name}" style="height: 180px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title fw-bold text-truncate" title="${r.name}">${r.name}</h5>
-                                <p class="card-text text-muted small mb-2"><i class="bi bi-geo-alt-fill me-1 text-danger"></i>${r.address}</p>
-                                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                                    <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>${r.rating ? r.rating : 'Mới'}</span>
-                                    <span class="text-success small fw-bold"><i class="bi bi-clock me-1"></i>15-20 phút</span>
-                                </div>
-                            </div>
+            const card = `
+            <div class="col-lg-4 col-md-6">
+                <div class="card restaurant-card border-0 shadow-sm h-100" onclick="location.href='/customer/detail?id=${r.id}'">
+                    <div class="position-relative overflow-hidden" style="height:180px;">
+                        <img src="${imgSrc}" class="w-100 h-100" style="object-fit:cover;" alt="${r.name}"
+                             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=220&fit=crop'">
+                        <div class="position-absolute top-0 end-0 m-2">${statusBadge}</div>
+                        ${!r.isOpen ? '<div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-40"></div>' : ''}
+                    </div>
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold mb-1 text-truncate" title="${r.name}">${r.name}</h6>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-geo-alt text-danger me-1"></i>${r.address}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-warning fw-semibold small">${stars}</span>
+                            <span class="text-success small fw-semibold">
+                                <i class="bi bi-clock me-1"></i>15-25 phút
+                            </span>
                         </div>
                     </div>
-                    `;
-                    listEl.insertAdjacentHTML('beforeend', card);
-                });
-            } catch (err) {
-                console.error(err);
-                document.getElementById('loading').innerHTML = '<span class="text-danger">Lỗi kết nối máy chủ!</span>';
-            }
-        }
+                </div>
+            </div>`;
+            listEl.insertAdjacentHTML('beforeend', card);
+        });
+    }
 
+    function doSearch() {
+        const q = document.getElementById('searchInput').value.trim();
+        loadRestaurants(q);
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
         loadRestaurants();
-    </script>
+    }
+
+    function filterRestaurants(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        let filtered = [...allRestaurants];
+        if (filter === 'open') filtered = filtered.filter(r => r.isOpen);
+        else if (filter === 'rated') filtered = filtered.filter(r => r.rating && r.rating >= 4.0);
+        renderRestaurants(filtered);
+    }
+
+    function sortRestaurants(sortBy) {
+        let sorted = [...allRestaurants];
+        if (currentFilter === 'open') sorted = sorted.filter(r => r.isOpen);
+        else if (currentFilter === 'rated') sorted = sorted.filter(r => r.rating >= 4.0);
+
+        if (sortBy === 'rating') sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        else if (sortBy === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
+        else if (sortBy === 'open') sorted.sort((a, b) => (b.isOpen ? 1 : 0) - (a.isOpen ? 1 : 0));
+        renderRestaurants(sorted);
+    }
+
+    // Enter key to search
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doSearch();
+    });
+
+    loadRestaurants();
+</script>
 </main>
 </body>
 </html>

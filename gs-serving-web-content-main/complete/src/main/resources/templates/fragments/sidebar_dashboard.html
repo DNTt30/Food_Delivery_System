@@ -2,27 +2,27 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="sidebar(role)" class="bg-dark text-white p-3 vh-100 position-fixed" style="width: 250px; left: 0; top: 0; z-index: 1000; overflow-y: auto;">
     <div class="text-center mb-4 mt-2">
-        <h4 class="text-warning fw-bold"><i class="bi bi-box-seam"></i> Food Portal</h4>
-        <p class="text-muted small mb-0 text-uppercase" th:text="${role}">Role Name</p>
+        <h4 class="text-warning fw-bold"><i class="bi bi-bicycle"></i> Food Portal</h4>
+        <p class="text-muted small mb-0 text-uppercase" th:text="${role}">Role</p>
     </div>
-    
+
     <hr class="border-secondary">
 
     <!-- Restaurant Navigation -->
     <ul class="nav nav-pills flex-column mb-auto" th:if="${role == 'restaurant'}">
         <li class="nav-item mb-1">
             <a href="/restaurant/dashboard" class="nav-link text-white sidebar-link">
-                <i class="bi bi-speedometer2 me-2"></i> Tổng quan
+                <i class="bi bi-speedometer2 me-2"></i>Tổng quan
             </a>
         </li>
         <li class="nav-item mb-1">
             <a href="/restaurant/orders" class="nav-link text-white sidebar-link">
-                <i class="bi bi-receipt me-2"></i> Đơn hàng
+                <i class="bi bi-receipt me-2"></i>Đơn hàng
             </a>
         </li>
         <li class="nav-item mb-1">
             <a href="/restaurant/menu" class="nav-link text-white sidebar-link">
-                <i class="bi bi-card-list me-2"></i> Thực đơn
+                <i class="bi bi-card-list me-2"></i>Thực đơn
             </a>
         </li>
     </ul>
@@ -31,17 +31,17 @@
     <ul class="nav nav-pills flex-column mb-auto" th:if="${role == 'driver'}">
         <li class="nav-item mb-1">
             <a href="/driver/dashboard" class="nav-link text-white sidebar-link">
-                <i class="bi bi-bicycle me-2"></i> Bảng điều khiển
+                <i class="bi bi-speedometer2 me-2"></i>Bảng điều khiển
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="/driver/active_order" class="nav-link text-white sidebar-link">
-                <i class="bi bi-geo-alt me-2"></i> Đơn đang giao
+            <a href="/driver/new_orders" class="nav-link text-white sidebar-link">
+                <i class="bi bi-inbox me-2"></i>Nhận đơn mới
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="/driver/history" class="nav-link text-white sidebar-link">
-                <i class="bi bi-clock-history me-2"></i> Lịch sử
+            <a href="/driver/delivering" class="nav-link text-white sidebar-link">
+                <i class="bi bi-geo-alt me-2"></i>Đơn đang giao
             </a>
         </li>
     </ul>
@@ -50,34 +50,36 @@
     <ul class="nav nav-pills flex-column mb-auto" th:if="${role == 'admin'}">
         <li class="nav-item mb-1">
             <a href="/admin/dashboard" class="nav-link text-white sidebar-link">
-                <i class="bi bi-bar-chart me-2"></i> Dashboard
+                <i class="bi bi-bar-chart me-2"></i>Tổng quan
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="/admin/users" class="nav-link text-white sidebar-link">
-                <i class="bi bi-people me-2"></i> Người dùng
+            <a href="/admin/partners" class="nav-link text-white sidebar-link">
+                <i class="bi bi-people me-2"></i>Người dùng & NR
             </a>
         </li>
         <li class="nav-item mb-1">
-            <a href="/admin/restaurants" class="nav-link text-white sidebar-link">
-                <i class="bi bi-shop me-2"></i> Nhà hàng
+            <a href="/admin/promotions" class="nav-link text-white sidebar-link">
+                <i class="bi bi-tag me-2"></i>Khuyến mãi
             </a>
         </li>
     </ul>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var currentPath = window.location.pathname;
-            var links = document.querySelectorAll('.sidebar-link');
-            links.forEach(function(link) {
-                if (link.getAttribute('href') === currentPath) {
-                    if (currentPath.startsWith('/restaurant')) {
-                        link.classList.add('active', 'bg-warning', 'text-dark');
+            const path = window.location.pathname;
+            document.querySelectorAll('.sidebar-link').forEach(function(link) {
+                const href = link.getAttribute('href');
+                const isActive = href === path || (href !== '/admin/dashboard' && href !== '/driver/dashboard' && href !== '/restaurant/dashboard' && path.startsWith(href));
+                if (isActive || href === path) {
+                    link.classList.add('active');
+                    if (path.startsWith('/restaurant')) {
+                        link.classList.add('bg-warning', 'text-dark');
                         link.classList.remove('text-white');
-                    } else if (currentPath.startsWith('/admin')) {
-                        link.classList.add('active', 'bg-danger');
+                    } else if (path.startsWith('/admin')) {
+                        link.classList.add('bg-danger');
                     } else {
-                        link.classList.add('active', 'bg-primary');
+                        link.classList.add('bg-primary');
                     }
                 }
             });
@@ -86,16 +88,23 @@
 
     <hr class="border-secondary mt-auto">
     <div class="dropdown">
-        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-person-circle fs-4 me-2"></i>
-            <strong>Tài khoản</strong>
+            <strong id="sidebarUsername">Tài khoản</strong>
         </a>
         <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-            <li><a class="dropdown-item" href="/common/profile">Hồ sơ cá nhân</a></li>
-            <li><a class="dropdown-item" href="#">Cài đặt</a></li>
+            <li><a class="dropdown-item" href="/common/profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><button class="dropdown-item text-danger" onclick="globalLogout()">Đăng xuất</button></li>
+            <li><button class="dropdown-item text-danger"
+                        onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
+                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
         </ul>
     </div>
+
+    <script>
+        const _u = localStorage.getItem('username');
+        if (_u) document.getElementById('sidebarUsername').textContent = _u;
+    </script>
 </div>
 </html>

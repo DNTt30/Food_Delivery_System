@@ -1,180 +1,309 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Customer - Chi tiết Nhà hàng</title>
+    <title>Chi tiết nhà hàng</title>
 </head>
 <body>
 <main>
-<div class="container" style="max-width: 900px;">
-    <nav aria-label="breadcrumb">
+<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
+<div class="container mb-5" style="max-width: 960px;">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/customer/home" class="text-decoration-none text-danger">Trang chủ</a></li>
-            <li class="breadcrumb-item active" aria-current="page" id="breadcrumbName">Chi tiết</li>
+            <li class="breadcrumb-item"><a href="/customer/home" class="text-danger text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active" id="breadcrumbName">Chi tiết</li>
         </ol>
     </nav>
-    
-    <div id="loading" class="text-center my-5">
-        <div class="spinner-border text-danger" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+        <p class="text-muted mt-2">Đang tải thông tin nhà hàng...</p>
     </div>
-    
-    <div id="restaurantInfo" class="d-none">
-        <!-- Banner/Header Info -->
-        <div class="card shadow-sm border-0 mb-4 bg-white overflow-hidden">
-            <div style="height: 200px; background-color: #f8f9fa; background-image: url('https://via.placeholder.com/900x300'); background-size: cover; background-position: center;"></div>
-            <div class="card-body p-4 position-relative">
-                <div class="d-flex justify-content-between align-items-start">
+
+    <!-- Content (hidden until loaded) -->
+    <div id="content" class="d-none">
+
+        <!-- Restaurant Banner + Info -->
+        <div class="card border-0 shadow-sm mb-4 overflow-hidden rounded-4">
+            <div id="bannerContainer" style="height:220px;overflow:hidden;">
+                <img id="bannerImg" src="" alt="Banner"
+                     style="width:100%;height:100%;object-fit:cover;"
+                     onerror="this.parentElement.style.background='linear-gradient(135deg,#ff4757,#c0392b)'">
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div>
-                        <h2 class="fw-bold mb-2" id="resName">Tên Nhà Hàng</h2>
-                        <p class="text-muted mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="resAddress">Địa chỉ</span></p>
-                        <div class="d-flex gap-3 align-items-center mt-3">
-                            <span class="badge bg-warning text-dark fs-6 rounded-pill px-3 py-2" id="resRating"><i class="bi bi-star-fill me-1"></i>0.0</span>
-                            <span class="badge bg-success fs-6 rounded-pill px-3 py-2" id="resStatus">Mở cửa</span>
-                            <span class="text-muted small"><i class="bi bi-clock me-1"></i>Giao trong 20 phút</span>
+                        <h2 class="fw-bold mb-1" id="resName"></h2>
+                        <p class="text-muted mb-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="resAddress"></span></p>
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill" id="resRating"></span>
+                            <span class="badge fs-6 px-3 py-2 rounded-pill" id="resStatus"></span>
+                            <span class="badge bg-light text-dark border fs-6 px-3 py-2 rounded-pill">
+                                <i class="bi bi-clock me-1"></i>15–25 phút
+                            </span>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-outline-danger rounded-circle p-2" title="Yêu thích"><i class="bi bi-heart fs-5"></i></button>
+                    <button onclick="viewCart()" class="btn btn-danger rounded-pill px-4 fw-bold">
+                        <i class="bi bi-bag me-1"></i>Giỏ hàng (<span id="cartCount">0</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu -->
+        <h5 class="fw-bold mb-3"><i class="bi bi-menu-button-wide-fill text-danger me-2"></i>Thực đơn</h5>
+
+        <!-- Menu search -->
+        <div class="input-group mb-4">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="menuSearch" class="form-control border-start-0" placeholder="Tìm món ăn..." oninput="filterMenu(this.value)">
+        </div>
+
+        <div class="row g-3" id="menuList"></div>
+
+        <div id="menuEmpty" class="text-center py-5 d-none">
+            <p class="text-muted">Không tìm thấy món ăn phù hợp</p>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Cart Button (mobile) -->
+<div id="floatingCart" class="d-none position-fixed bottom-0 start-0 end-0 p-3 d-md-none" style="z-index:999;">
+    <button onclick="viewCart()" class="btn btn-danger w-100 py-3 fw-bold rounded-pill shadow-lg">
+        <i class="bi bi-bag me-2"></i>Xem giỏ hàng (<span id="cartCountMobile">0</span> món)
+        — <span id="cartTotalMobile"></span>
+    </button>
+</div>
+
+<!-- Add to Cart Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold" id="modalName"></h5>
+                    <p class="text-muted small mb-0" id="modalDesc"></p>
+                </div>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <img id="modalImg" src="" alt="" class="w-100 rounded-3 mb-3" style="height:160px;object-fit:cover;">
+                <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3">
+                    <h5 class="text-danger fw-bold mb-0" id="modalPrice"></h5>
+                    <div class="input-group" style="width:130px;">
+                        <button class="btn btn-outline-secondary" onclick="changeQty(-1)">−</button>
+                        <input type="number" class="form-control text-center border-secondary" id="modalQty" value="1" min="1" max="99">
+                        <button class="btn btn-outline-secondary" onclick="changeQty(1)">+</button>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <h4 class="mb-3 fw-bold">Thực đơn nổi bật</h4>
-        <div class="row g-3" id="menuList">
-            <!-- Menu items rendered here -->
-        </div>
-    </div>
-</div>
-
-<!-- Modal Thêm vào giỏ hàng -->
-<div class="modal fade" id="addToCartModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold" id="modalItemName">Tên Món Ăn</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex align-items-center mb-3">
-            <h4 class="text-danger mb-0 fw-bold" id="modalItemPrice">0 đ</h4>
-        </div>
-        <p class="text-muted" id="modalItemDesc">Mô tả món ăn</p>
-        
-        <div class="bg-light p-3 rounded-3 mt-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="fw-semibold">Số lượng</span>
-                <div class="input-group" style="width: 120px;">
-                    <button class="btn btn-outline-secondary" type="button" onclick="changeQty(-1)">-</button>
-                    <input type="text" class="form-control text-center" id="modalItemQuantity" value="1" readonly>
-                    <button class="btn btn-outline-secondary" type="button" onclick="changeQty(1)">+</button>
-                </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-danger w-100 py-2 fw-bold rounded-pill" onclick="confirmAddToCart()">
+                    <i class="bi bi-bag-plus me-2"></i>Thêm vào giỏ
+                </button>
             </div>
         </div>
-      </div>
-      <div class="modal-footer border-0 pt-0">
-        <button type="button" class="btn btn-danger w-100 py-2 fs-5 fw-bold" onclick="addToCart()">Thêm vào giỏ</button>
-      </div>
     </div>
-  </div>
 </div>
 
+
+<style>
+.menu-card { transition: transform 0.15s, box-shadow 0.15s; }
+.menu-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important; }
+</style>
+
 <script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
     const urlParams = new URLSearchParams(window.location.search);
     const restaurantId = urlParams.get('id');
-    let currentSelectedItem = null;
-    let addToCartModal = null;
+    let selectedItem = null;
+    let modalInstance = null;
+    let allMenuItems = [];
 
-    document.addEventListener("DOMContentLoaded", () => {
-        addToCartModal = new bootstrap.Modal(document.getElementById('addToCartModal'));
-        if (!restaurantId) {
-            window.location.href = '/customer/home';
-        } else {
-            loadRestaurantDetail();
-        }
+    // Cart stored in localStorage per restaurant
+    const CART_KEY = 'fd_cart_' + restaurantId;
+    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!restaurantId) { window.location.href = '/customer/home'; return; }
+        modalInstance = new bootstrap.Modal(document.getElementById('cartModal'));
+        loadDetail();
+        updateCartUI();
     });
 
-    function changeQty(delta) {
-        let input = document.getElementById('modalItemQuantity');
-        let val = parseInt(input.value) + delta;
-        if (val >= 1) input.value = val;
+    function getCart() { return JSON.parse(localStorage.getItem(CART_KEY) || '[]'); }
+    function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); }
+
+    function updateCartUI() {
+        cart = getCart();
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const count = cart.reduce((s, i) => s + i.qty, 0);
+        document.getElementById('cartCount').textContent = count;
+        const mob = document.getElementById('cartCountMobile');
+        const totMob = document.getElementById('cartTotalMobile');
+        if (mob) mob.textContent = count;
+        if (totMob) totMob.textContent = formatVND(total);
+        const floatCart = document.getElementById('floatingCart');
+        if (count > 0) floatCart.classList.remove('d-none');
+        else floatCart.classList.add('d-none');
     }
 
-    async function loadRestaurantDetail() {
+    function formatVND(n) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    }
+
+    async function loadDetail() {
         try {
             const res = await fetch(`/api/customer/restaurants/${restaurantId}`, {
-                headers: { 'Authorization': 'Bearer ' + globalToken }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
-
-            if (res.status === 401) return window.location.href = '/index.html';
-            if (res.status === 404) return window.location.href = '/customer/home';
+            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+            if (res.status === 404) { window.location.href = '/customer/home'; return; }
 
             const data = await res.json();
             document.getElementById('loading').classList.add('d-none');
-            document.getElementById('restaurantInfo').classList.remove('d-none');
+            document.getElementById('content').classList.remove('d-none');
+            document.title = data.name + ' - Food Delivery';
 
-            document.getElementById('resName').textContent = data.name;
             document.getElementById('breadcrumbName').textContent = data.name;
+            document.getElementById('resName').textContent = data.name;
             document.getElementById('resAddress').textContent = data.address;
-            document.getElementById('resRating').innerHTML = `<i class="bi bi-star-fill me-1"></i>${data.rating ? data.rating : 'Mới'}`;
-            
+            document.getElementById('resRating').innerHTML = `<i class="bi bi-star-fill me-1"></i>${data.rating ? data.rating.toFixed(1) : 'Mới'}`;
+
             const statusEl = document.getElementById('resStatus');
             if (data.isOpen) {
-                statusEl.textContent = 'Đang mở cửa';
-                statusEl.className = 'badge bg-success fs-6 rounded-pill px-3 py-2';
+                statusEl.className = 'badge bg-success fs-6 px-3 py-2 rounded-pill';
+                statusEl.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.4rem"></i>Đang mở cửa';
             } else {
-                statusEl.textContent = 'Đóng cửa';
-                statusEl.className = 'badge bg-secondary fs-6 rounded-pill px-3 py-2';
+                statusEl.className = 'badge bg-secondary fs-6 px-3 py-2 rounded-pill';
+                statusEl.textContent = 'Đã đóng cửa';
             }
 
-            const listEl = document.getElementById('menuList');
-            listEl.innerHTML = '';
-            
-            if (!data.menuItems || data.menuItems.length === 0) {
-                listEl.innerHTML = '<div class="col-12 text-center text-muted py-5 border rounded bg-light">Nhà hàng chưa có món ăn nào.</div>';
-                return;
+            if (data.bannerUrl) {
+                document.getElementById('bannerImg').src = data.bannerUrl;
+            } else {
+                document.getElementById('bannerContainer').style.background = 'linear-gradient(135deg, #ff4757 0%, #c0392b 100%)';
+                document.getElementById('bannerImg').style.display = 'none';
             }
 
-            data.menuItems.forEach(item => {
-                const card = `
-                <div class="col-md-6">
-                    <div class="card h-100 shadow-sm border-0 d-flex flex-row overflow-hidden p-2">
-                        <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="rounded-3" style="width: 110px; height: 110px; object-fit: cover;">
-                        <div class="card-body py-1 pe-1 ps-3 d-flex flex-column">
-                            <h6 class="card-title mb-1 fw-bold">${item.name}</h6>
-                            <p class="card-text text-muted small mb-2 text-truncate" style="max-width: 200px;" title="${item.description || ''}">${item.description || 'Chưa có mô tả'}</p>
-                            <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <span class="text-danger fw-bold">${formatGlobalCurrency(item.price)}</span>
-                                <button class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick='openModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                                    <i class="bi bi-plus-lg"></i> Thêm
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-                listEl.insertAdjacentHTML('beforeend', card);
-            });
+            // Store restaurant info for cart
+            localStorage.setItem('fd_restaurant_' + restaurantId, JSON.stringify({ id: data.id, name: data.name }));
+
+            allMenuItems = data.menuItems || [];
+            renderMenu(allMenuItems);
 
         } catch (err) {
-            console.error(err);
+            document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-5"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
         }
     }
 
-    function openModal(item) {
-        currentSelectedItem = item;
-        document.getElementById('modalItemName').textContent = item.name;
-        document.getElementById('modalItemPrice').textContent = formatGlobalCurrency(item.price);
-        document.getElementById('modalItemDesc').textContent = item.description || 'Không có mô tả';
-        document.getElementById('modalItemQuantity').value = 1;
-        addToCartModal.show();
+    function filterMenu(q) {
+        if (!q.trim()) { renderMenu(allMenuItems); return; }
+        const filtered = allMenuItems.filter(item =>
+            item.name.toLowerCase().includes(q.toLowerCase()) ||
+            (item.description && item.description.toLowerCase().includes(q.toLowerCase()))
+        );
+        renderMenu(filtered);
     }
 
-    function addToCart() {
-        const qty = parseInt(document.getElementById('modalItemQuantity').value);
-        alert(`Đã thêm ${qty} phần ${currentSelectedItem.name} vào giỏ hàng!`);
-        addToCartModal.hide();
+    function renderMenu(items) {
+        const listEl = document.getElementById('menuList');
+        const emptyEl = document.getElementById('menuEmpty');
+        listEl.innerHTML = '';
+
+        if (!items.length) {
+            emptyEl.classList.remove('d-none');
+            return;
+        }
+        emptyEl.classList.add('d-none');
+
+        items.forEach(item => {
+            const img = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop';
+            const cartItems = getCart();
+            const existingQty = cartItems.find(c => c.id === item.id)?.qty || 0;
+            const card = `
+            <div class="col-12 col-sm-6">
+                <div class="card border-0 shadow-sm h-100 menu-card" style="border-radius:14px;overflow:hidden;">
+                    <div class="d-flex h-100">
+                        <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="fw-bold mb-1">${item.name}</h6>
+                                <p class="text-muted small mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${item.description || 'Không có mô tả'}</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="text-danger fw-bold">${formatVND(item.price)}</span>
+                                ${existingQty > 0
+                                    ? `<button class="btn btn-danger btn-sm rounded-pill px-3" onclick='openModal(${JSON.stringify(item).replace(/'/g,"&#39;")})'>
+                                         <i class="bi bi-check me-1"></i>${existingQty} trong giỏ
+                                       </button>`
+                                    : `<button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick='openModal(${JSON.stringify(item).replace(/'/g,"&#39;")})'>
+                                         <i class="bi bi-plus-lg me-1"></i>Thêm
+                                       </button>`
+                                }
+                            </div>
+                        </div>
+                        <img src="${img}" alt="${item.name}" style="width:110px;height:110px;object-fit:cover;flex-shrink:0;align-self:center;margin:8px 8px 8px 0;border-radius:10px;"
+                             onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop'">
+                    </div>
+                </div>
+            </div>`;
+            listEl.insertAdjacentHTML('beforeend', card);
+        });
+    }
+
+    function openModal(item) {
+        selectedItem = item;
+        document.getElementById('modalName').textContent = item.name;
+        document.getElementById('modalDesc').textContent = item.description || '';
+        document.getElementById('modalPrice').textContent = formatVND(item.price);
+        document.getElementById('modalImg').src = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=200&fit=crop';
+        const c = getCart().find(i => i.id === item.id);
+        document.getElementById('modalQty').value = c ? c.qty : 1;
+        modalInstance.show();
+    }
+
+    function changeQty(delta) {
+        const input = document.getElementById('modalQty');
+        let v = parseInt(input.value) + delta;
+        if (v < 1) v = 1;
+        if (v > 99) v = 99;
+        input.value = v;
+    }
+
+    function confirmAddToCart() {
+        const qty = parseInt(document.getElementById('modalQty').value);
+        let cart = getCart();
+        const existing = cart.find(i => i.id === selectedItem.id);
+        if (existing) {
+            existing.qty = qty;
+        } else {
+            cart.push({ id: selectedItem.id, name: selectedItem.name, price: selectedItem.price, qty });
+        }
+        saveCart(cart);
+        updateCartUI();
+        renderMenu(allMenuItems);
+        modalInstance.hide();
+
+        // Show toast
+        showToast(`Đã cập nhật giỏ hàng: ${selectedItem.name}`);
+    }
+
+    function viewCart() {
+        window.location.href = `/customer/cart?restaurantId=${restaurantId}`;
+    }
+
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.className = 'position-fixed top-0 end-0 m-3 toast align-items-center text-bg-success border-0 show';
+        t.style.zIndex = 9999;
+        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
     }
 </script>
 </main>

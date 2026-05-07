@@ -5,6 +5,8 @@
 </head>
 <body>
 <main>
+    <!-- Header cho Dashboard Nhà hàng -->
+    <div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
 
 <style>
     .stat-card {
@@ -127,12 +129,17 @@
 </div>
 
 <!-- Page Header -->
-<div class="page-header d-flex justify-content-between align-items-start mb-4">
+<div class="page-header d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
     <div>
         <h3 class="mb-1">📊 Tổng Quan Hôm Nay</h3>
         <p class="subtitle mb-0" id="currentDate">Đang tải dữ liệu...</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <!-- Toggle mở/đóng cửa -->
+        <button id="toggleStatusBtn" class="btn quick-action-btn px-4 fw-bold" onclick="toggleRestaurantStatus()" style="min-width:160px;">
+            <span id="toggleStatusIcon"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i></span>
+            <span id="toggleStatusLabel">Đang tải...</span>
+        </button>
         <a href="/restaurant/orders" class="btn btn-warning quick-action-btn text-dark">
             <i class="bi bi-receipt"></i> Xử lý đơn
         </a>
@@ -499,6 +506,9 @@
             const completedOrders = data.totalCompletedOrders || 0;
             const revenue = data.todayRevenue || 0;
 
+            // Cập nhật nút mở/đóng cửa
+            updateStatusBtn(data.isOpen);
+
             // Fill stat cards
             document.getElementById('totalNewOrders').textContent = newOrders;
             document.getElementById('totalCompletedOrders').textContent = completedOrders;
@@ -528,9 +538,53 @@
         }
     }
 
+    function updateStatusBtn(isOpen) {
+        const btn = document.getElementById('toggleStatusBtn');
+        const label = document.getElementById('toggleStatusLabel');
+        if (isOpen) {
+            btn.className = 'btn quick-action-btn px-4 fw-bold btn-success';
+            label.textContent = 'Đang mở cửa';
+        } else {
+            btn.className = 'btn quick-action-btn px-4 fw-bold btn-secondary';
+            label.textContent = 'Đang đóng cửa';
+        }
+    }
+
+    async function toggleRestaurantStatus() {
+        const btn = document.getElementById('toggleStatusBtn');
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/restaurant/toggle-status', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + globalToken }
+            });
+            const d = await res.json();
+            if (res.ok) {
+                updateStatusBtn(d.isOpen);
+                showToast(d.message, d.isOpen ? 'success' : 'secondary');
+            } else {
+                showToast('Không thể cập nhật trạng thái!', 'danger');
+            }
+        } catch {
+            showToast('Lỗi kết nối!', 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+        t.style.zIndex = 9999;
+        t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
-
+    
+    <!-- Footer cho Dashboard Nhà hàng -->
 </main>
 </body>
 </html>

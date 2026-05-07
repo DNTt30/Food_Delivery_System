@@ -53,17 +53,13 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <div th:replace="~{fragments/navbar_customer :: navbar}"></div>
-
     <!-- Main Content injected here -->
-    <div class="py-4 min-vh-100">
+    <main class="py-4 min-vh-100">
         <th:block th:replace="${content}"></th:block>
-    </div>
+    </main>
 
-    <!-- Footer -->
-    <div th:replace="~{fragments/footer :: footer}"></div>
-
+    <!-- Footer chung cho toàn bộ customer pages -->
+    <div th:replace="~{fragments/footer :: footer_customer}"></div>
     <!-- Scripts -->
     <div th:replace="~{fragments/scripts :: scripts}"></div>
 </body>

@@ -1,48 +1,253 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer - Lịch sử</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Lịch sử đơn hàng - Food Delivery</title>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-  <div class="container">
-    <a class="navbar-brand" href="/customer/home">FoodApp Customer</a>
-  </div>
-</nav>
-<div class="container">
-    <h4 class="mb-3">Lịch sử đơn hàng</h4>
-    <div class="card shadow-sm">
-        <table class="table table-hover mb-0">
-            <thead class="table-light"><tr><th>Mã đơn</th><th>Ngày đặt</th><th>Nhà hàng</th><th>Tổng tiền</th><th>Thao tác</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td>#12344</td><td>20/10/2025</td><td>Cơm Sườn Ninh Kiều</td><td>70.000 đ</td>
-                    <td><button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reviewModal">Đánh giá</button></td>
-                </tr>
-            </tbody>
-        </table>
+<body>
+<main>
+<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
+<div class="container mb-5" style="max-width: 800px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <h4 class="fw-bold mb-0"><i class="bi bi-clock-history text-danger me-2"></i>Lịch sử đơn hàng</h4>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="d-flex gap-2 mb-4 overflow-auto">
+        <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-status="ALL" onclick="filterOrders('ALL', this)">Tất cả</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PENDING" onclick="filterOrders('PENDING', this)">Chờ xác nhận</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PREPARING" onclick="filterOrders('PREPARING', this)">Đang nấu</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="DELIVERING" onclick="filterOrders('DELIVERING', this)">Đang giao</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="filterOrders('COMPLETED', this)">Hoàn thành</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="CANCELLED" onclick="filterOrders('CANCELLED', this)">Đã hủy</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-danger"></div>
+        <p class="text-muted mt-2">Đang tải đơn hàng...</p>
+    </div>
+
+    <!-- Orders List -->
+    <div id="orderList" class="d-none"></div>
+
+    <!-- Empty -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div style="font-size:4rem">📦</div>
+        <h5 class="fw-bold mt-2">Chưa có đơn hàng nào</h5>
+        <p class="text-muted">Hãy đặt món ngay hôm nay!</p>
+        <a href="/customer/home" class="btn btn-danger rounded-pill px-4 mt-2">Đặt món ngay</a>
     </div>
 </div>
+
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Đánh giá đơn hàng</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <label>Điểm đánh giá (1-5 sao):</label>
-        <input type="number" class="form-control mb-3" min="1" max="5" value="5">
-        <label>Nhận xét:</label>
-        <textarea class="form-control" rows="3" placeholder="Đồ ăn rất ngon..."></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-success">Gửi đánh giá</button>
-      </div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-star-fill text-warning me-2"></i>Đánh giá đơn hàng</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewOrderId">
+                <p class="text-muted small mb-3" id="reviewRestaurantName"></p>
+                <div class="mb-3">
+                    <label class="fw-semibold mb-2 d-block">Chất lượng món ăn & dịch vụ</label>
+                    <div class="d-flex gap-2" id="starRating">
+                        <i class="bi bi-star fs-2 text-warning star" data-val="1" onclick="selectStar(1)" style="cursor:pointer;"></i>
+                        <i class="bi bi-star fs-2 text-warning star" data-val="2" onclick="selectStar(2)" style="cursor:pointer;"></i>
+                        <i class="bi bi-star fs-2 text-warning star" data-val="3" onclick="selectStar(3)" style="cursor:pointer;"></i>
+                        <i class="bi bi-star fs-2 text-warning star" data-val="4" onclick="selectStar(4)" style="cursor:pointer;"></i>
+                        <i class="bi bi-star fs-2 text-warning star" data-val="5" onclick="selectStar(5)" style="cursor:pointer;"></i>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-semibold mb-2">Nhận xét của bạn</label>
+                    <textarea id="reviewComment" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                </div>
+                <div id="reviewAlert" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-warning fw-bold w-100 py-2 rounded-pill" onclick="submitReview()" id="btnSubmitReview">
+                    <i class="bi bi-send me-2"></i>Gửi đánh giá
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<style>
+.tab-btn.active { background: #212529 !important; color: white !important; border-color: #212529 !important; }
+.order-card { transition: box-shadow 0.2s; }
+.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+.status-PENDING { background: #fff8e1; color: #d97706; border-left: 4px solid #f59e0b; }
+.status-PREPARING { background: #eff6ff; color: #1d4ed8; border-left: 4px solid #3b82f6; }
+.status-DELIVERING { background: #f0fdf4; color: #15803d; border-left: 4px solid #22c55e; }
+.status-COMPLETED { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
+.status-CANCELLED { background: #fef2f2; color: #dc2626; border-left: 4px solid #ef4444; }
+</style>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    let allOrders = [];
+    let selectedRating = 0;
+    let reviewModalInstance = null;
+
+    const STATUS_LABELS = {
+        PENDING: '⏳ Chờ xác nhận',
+        PREPARING: '🍳 Đang chuẩn bị',
+        DELIVERING: '🛵 Đang giao hàng',
+        COMPLETED: '✅ Hoàn thành',
+        CANCELLED: '❌ Đã hủy'
+    };
+
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+    function formatDate(dt) {
+        if (!dt) return '';
+        const d = new Date(dt);
+        return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        reviewModalInstance = new bootstrap.Modal(document.getElementById('reviewModal'));
+        loadOrders();
+    });
+
+    async function loadOrders() {
+        try {
+            const res = await fetch('/api/customer/orders', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+            allOrders = await res.json();
+            document.getElementById('loading').classList.add('d-none');
+            renderOrders(allOrders);
+        } catch {
+            document.getElementById('loading').innerHTML = '<div class="text-center text-danger"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    function filterOrders(status, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filtered = status === 'ALL' ? allOrders : allOrders.filter(o => o.status === status);
+        renderOrders(filtered);
+    }
+
+    function renderOrders(orders) {
+        const el = document.getElementById('orderList');
+        const empty = document.getElementById('emptyState');
+        if (!orders.length) {
+            el.classList.add('d-none');
+            empty.classList.remove('d-none');
+            return;
+        }
+        empty.classList.add('d-none');
+        el.classList.remove('d-none');
+        el.innerHTML = '';
+
+        orders.forEach(o => {
+            const itemSummary = (o.items || []).map(i => `${i.itemName} ×${i.quantity}`).join(', ');
+            const isActive = ['PENDING', 'PREPARING', 'DELIVERING'].includes(o.status);
+            const isCompleted = o.status === 'COMPLETED';
+            const isPending = o.status === 'PENDING';
+            const img = o.restaurantImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop';
+
+            el.insertAdjacentHTML('beforeend', `
+            <div class="card border-0 shadow-sm rounded-4 mb-3 order-card overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <img src="${img}" class="rounded-3 flex-shrink-0" style="width:64px;height:64px;object-fit:cover;"
+                             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop'">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0">${o.restaurantName}</h6>
+                                    <small class="text-muted">${formatDate(o.orderTime)}</small>
+                                </div>
+                                <span class="badge rounded-pill px-3 py-2 status-${o.status} fw-semibold"
+                                      style="font-size:0.78rem;">${STATUS_LABELS[o.status] || o.status}</span>
+                            </div>
+                            <p class="text-muted small mt-2 mb-2" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">${itemSummary || 'Không có món'}</p>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <span class="fw-bold text-danger">${formatVND(o.totalAmount)}</span>
+                                <div class="d-flex gap-2">
+                                    ${isActive ? `<a href="/customer/tracking?orderId=${o.id}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">Theo dõi</a>` : ''}
+                                    ${isPending ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
+                                    ${isCompleted ? `<button class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" onclick="openReview(${o.id}, '${o.restaurantName.replace(/'/g,"&#39;")}')"><i class="bi bi-star me-1"></i>Đánh giá</button>` : ''}
+                                    ${!isActive ? `<button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="reorder(${o.id})"><i class="bi bi-arrow-repeat me-1"></i>Đặt lại</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`);
+        });
+    }
+
+    async function cancelOrder(orderId) {
+        if (!confirm('Hủy đơn hàng này?')) return;
+        try {
+            const res = await fetch(`/api/customer/orders/${orderId}/cancel`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            if (res.ok) { alert('Đã hủy đơn!'); loadOrders(); }
+            else alert(data.error || 'Không thể hủy');
+        } catch { alert('Lỗi kết nối!'); }
+    }
+
+    function openReview(orderId, restaurantName) {
+        document.getElementById('reviewOrderId').value = orderId;
+        document.getElementById('reviewRestaurantName').textContent = restaurantName;
+        document.getElementById('reviewComment').value = '';
+        document.getElementById('reviewAlert').className = 'alert d-none';
+        selectedRating = 0;
+        selectStar(0);
+        reviewModalInstance.show();
+    }
+
+    function selectStar(val) {
+        selectedRating = val;
+        document.querySelectorAll('.star').forEach(s => {
+            const v = parseInt(s.dataset.val);
+            s.className = v <= val ? 'bi bi-star-fill fs-2 text-warning star' : 'bi bi-star fs-2 text-warning star';
+        });
+    }
+
+    async function submitReview() {
+        if (!selectedRating) { alert('Vui lòng chọn số sao!'); return; }
+        const orderId = document.getElementById('reviewOrderId').value;
+        const btn = document.getElementById('btnSubmitReview');
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/customer/orders/${orderId}/review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ rating: selectedRating, comment: document.getElementById('reviewComment').value })
+            });
+            const data = await res.json();
+            const alertEl = document.getElementById('reviewAlert');
+            if (res.ok) {
+                alertEl.className = 'alert alert-success';
+                alertEl.textContent = '✅ Cảm ơn bạn đã đánh giá!';
+                setTimeout(() => { reviewModalInstance.hide(); loadOrders(); }, 1500);
+            } else {
+                alertEl.className = 'alert alert-danger';
+                alertEl.textContent = data.error || 'Gửi đánh giá thất bại';
+            }
+        } catch { alert('Lỗi kết nối!'); }
+        finally { btn.disabled = false; }
+    }
+
+    function reorder(orderId) {
+        const order = allOrders.find(o => o.id === orderId);
+        if (order) alert('Tính năng đặt lại sẽ sớm được ra mắt!');
+    }
+</script>
+</main>
 </body>
 </html>

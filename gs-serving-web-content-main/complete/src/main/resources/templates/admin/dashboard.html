@@ -1,117 +1,235 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'admin', ~{::main})}">
 <head>
-    <title>Admin - Quản trị Hệ thống</title>
+    <title>Admin - Bảng điều khiển</title>
 </head>
 <body>
 <main>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-bold mb-0">Quản trị Hệ thống</h3>
-        <button class="btn btn-primary fw-bold"><i class="bi bi-download me-1"></i> Xuất Báo cáo</button>
-    </div>
-    
-    <!-- KPI Cards -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-3">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted fw-bold mb-0">TỔNG NGƯỜI DÙNG</h6>
-                        <div class="bg-primary bg-opacity-10 text-primary rounded p-2"><i class="bi bi-people fs-5"></i></div>
-                    </div>
-                    <h3 class="fw-bold mb-1">12,450</h3>
-                    <p class="text-success small fw-bold mb-0"><i class="bi bi-arrow-up-right me-1"></i>+5.2% tháng này</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted fw-bold mb-0">NHÀ HÀNG</h6>
-                        <div class="bg-warning bg-opacity-10 text-warning rounded p-2"><i class="bi bi-shop fs-5"></i></div>
-                    </div>
-                    <h3 class="fw-bold mb-1">342</h3>
-                    <p class="text-success small fw-bold mb-0"><i class="bi bi-arrow-up-right me-1"></i>+12 đối tác mới</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted fw-bold mb-0">SHIPPER ONILNE</h6>
-                        <div class="bg-success bg-opacity-10 text-success rounded p-2"><i class="bi bi-bicycle fs-5"></i></div>
-                    </div>
-                    <h3 class="fw-bold mb-1">85 / 150</h3>
-                    <p class="text-muted small fw-bold mb-0">Đang hoạt động</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-white shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="text-muted fw-bold mb-0">TỔNG DOANH THU</h6>
-                        <div class="bg-danger bg-opacity-10 text-danger rounded p-2"><i class="bi bi-cash-stack fs-5"></i></div>
-                    </div>
-                    <h3 class="fw-bold mb-1">2.4B đ</h3>
-                    <p class="text-danger small fw-bold mb-0"><i class="bi bi-arrow-down-right me-1"></i>-1.5% tháng này</p>
-                </div>
-            </div>
-        </div>
-    </div>
+<div th:replace="~{fragments/header :: dashboard_header('admin')}"></div>
 
-    <div class="row g-4">
-        <!-- Biểu đồ -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0">Lượng Đơn Hàng (7 ngày qua)</h6>
-                    <select class="form-select form-select-sm w-auto"><option>Tuần này</option><option>Tháng này</option></select>
-                </div>
-                <div class="card-body bg-light d-flex align-items-center justify-content-center">
-                    <span class="text-muted"><i class="bi bi-graph-up text-primary me-2"></i>Biểu đồ Chart.js sẽ chèn ở đây</span>
-                </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2 text-danger"></i>Tổng quan hệ thống</h4>
+        <small class="text-muted" id="lastUpdated">Đang tải dữ liệu...</small>
+    </div>
+    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadDashboard()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+    </button>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #eff6ff, #fff);">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-2"><i class="bi bi-people text-primary fs-4"></i></div>
+                <a href="/admin/partners" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 small">Quản lý</a>
             </div>
+            <h3 class="fw-bold text-primary" id="statUsers">—</h3>
+            <p class="text-muted small mb-0">Tổng người dùng</p>
         </div>
-        <!-- Cảnh báo hệ thống -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-danger mb-0"><i class="bi bi-exclamation-triangle-fill me-1"></i> Cảnh báo hệ thống</h6>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #fff8e1, #fff);">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="bg-warning bg-opacity-10 rounded-3 p-2"><i class="bi bi-shop text-warning fs-4"></i></div>
+                <a href="/admin/partners" class="btn btn-sm btn-outline-warning rounded-pill px-2 py-0 small">Duyệt</a>
+            </div>
+            <h3 class="fw-bold text-warning" id="statRestaurants">—</h3>
+            <p class="text-muted small mb-0">Nhà hàng đối tác</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #f0fdf4, #fff);">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="bg-success bg-opacity-10 rounded-3 p-2"><i class="bi bi-receipt text-success fs-4"></i></div>
+                <span class="badge bg-success-subtle text-success border border-success small" id="pendingBadge">0 chờ</span>
+            </div>
+            <h3 class="fw-bold text-success" id="statOrders">—</h3>
+            <p class="text-muted small mb-0">Tổng đơn hàng</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #fdf4ff, #fff);">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="rounded-3 p-2" style="background:rgba(139,92,246,0.1)"><i class="bi bi-cash-stack fs-4" style="color:#7c3aed;"></i></div>
+                <span class="badge small" style="background:rgba(139,92,246,0.1);color:#7c3aed;border:1px solid rgba(139,92,246,0.3);">Platform fee</span>
+            </div>
+            <h3 class="fw-bold" id="statRevenue" style="color:#7c3aed;">—</h3>
+            <p class="text-muted small mb-0">Tổng doanh thu</p>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions + Chart -->
+<div class="row g-4 mb-4">
+    <!-- Revenue Chart -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow me-2 text-danger"></i>Biểu đồ doanh thu</h6>
+                <small class="text-muted">Dữ liệu tổng hợp từ hệ thống</small>
+            </div>
+            <canvas id="revenueChart" height="220"></canvas>
+        </div>
+    </div>
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Truy cập nhanh</h6>
+            <div class="d-flex flex-column gap-2">
+                <a href="/admin/partners" class="btn btn-outline-primary rounded-pill py-2 fw-semibold text-start">
+                    <i class="bi bi-people me-2"></i>Quản lý người dùng
+                </a>
+                <a href="/admin/partners" class="btn btn-outline-warning rounded-pill py-2 fw-semibold text-start">
+                    <i class="bi bi-shop me-2"></i>Duyệt nhà hàng
+                </a>
+                <a href="/admin/promotions" class="btn btn-outline-success rounded-pill py-2 fw-semibold text-start">
+                    <i class="bi bi-tag me-2"></i>Quản lý khuyến mãi
+                </a>
+            </div>
+
+            <!-- System Status -->
+            <hr class="my-3">
+            <h6 class="fw-bold mb-3 small text-muted">TRẠNG THÁI HỆ THỐNG</h6>
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><i class="bi bi-server me-1"></i>API Server</small>
+                    <span class="badge bg-success-subtle text-success border border-success small">Online</span>
                 </div>
-                <div class="card-body p-0">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item p-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <strong class="text-dark">Quá tải khu vực Quận 1</strong>
-                                <small class="text-muted">10p trước</small>
-                            </div>
-                            <p class="small text-muted mb-0">Tỷ lệ đơn/shipper đang là 5:1. Cần điều phối thêm tài xế.</p>
-                        </li>
-                        <li class="list-group-item p-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <strong class="text-dark">Nhà hàng phản hồi chậm</strong>
-                                <small class="text-muted">30p trước</small>
-                            </div>
-                            <p class="small text-muted mb-0">"Cơm gà Xối Mỡ" có 3 đơn chưa nhận sau 15 phút.</p>
-                        </li>
-                        <li class="list-group-item p-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <strong class="text-dark">Lỗi Payment Gateway</strong>
-                                <small class="text-muted">2h trước</small>
-                            </div>
-                            <p class="small text-muted mb-0">VNPAY timeout 5 giao dịch. Đã auto-retry thành công.</p>
-                        </li>
-                    </ul>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><i class="bi bi-database me-1"></i>Database</small>
+                    <span class="badge bg-success-subtle text-success border border-success small">Connected</span>
                 </div>
-                <div class="card-footer bg-white text-center border-top-0 py-3">
-                    <a href="#" class="text-decoration-none fw-bold small">Xem tất cả cảnh báo</a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><i class="bi bi-envelope me-1"></i>Email SMTP</small>
+                    <span class="badge bg-success-subtle text-success border border-success small">Active</span>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Recent Orders Summary -->
+<div class="card border-0 shadow-sm rounded-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Thống kê nhanh</h6>
+        <span class="badge bg-danger-subtle text-danger border border-danger" id="pendingCount">0 đơn đang chờ</span>
+    </div>
+    <div class="row g-3 text-center">
+        <div class="col-6 col-md-3">
+            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                <i class="bi bi-hourglass-split text-warning fs-4 d-block mb-1"></i>
+                <h5 class="fw-bold text-warning mb-0" id="sumPending">0</h5>
+                <small class="text-muted">Chờ xác nhận</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                <i class="bi bi-fire text-primary fs-4 d-block mb-1"></i>
+                <h5 class="fw-bold text-primary mb-0" id="sumPreparing">0</h5>
+                <small class="text-muted">Đang nấu</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                <i class="bi bi-bicycle text-success fs-4 d-block mb-1"></i>
+                <h5 class="fw-bold text-success mb-0" id="sumDelivering">0</h5>
+                <small class="text-muted">Đang giao</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="bg-secondary bg-opacity-10 rounded-3 p-3">
+                <i class="bi bi-check-circle text-secondary fs-4 d-block mb-1"></i>
+                <h5 class="fw-bold text-secondary mb-0" id="sumCompleted">0</h5>
+                <small class="text-muted">Hoàn thành</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const token = localStorage.getItem('jwt_token');
+    let chartInstance = null;
+
+    function formatVND(n) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    }
+
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/admin/stats', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+            const d = await res.json();
+
+            document.getElementById('statUsers').textContent = (d.totalUsers || 0).toLocaleString('vi-VN');
+            document.getElementById('statRestaurants').textContent = (d.totalRestaurants || 0).toLocaleString('vi-VN');
+            document.getElementById('statOrders').textContent = (d.totalOrders || 0).toLocaleString('vi-VN');
+            document.getElementById('statRevenue').textContent = formatVND(d.totalRevenue || 0);
+            document.getElementById('pendingBadge').textContent = (d.pendingOrders || 0) + ' chờ';
+            document.getElementById('pendingCount').textContent = (d.pendingOrders || 0) + ' đơn đang chờ';
+            document.getElementById('sumPending').textContent = d.pendingOrders || 0;
+            document.getElementById('sumPreparing').textContent = d.preparingOrders || 0;
+            document.getElementById('sumDelivering').textContent = d.deliveringOrders || 0;
+            document.getElementById('sumCompleted').textContent = d.completedOrders || 0;
+
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent =
+                'Cập nhật lúc ' + now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+            renderChart(d);
+        } catch(e) {
+            document.getElementById('lastUpdated').textContent = 'Lỗi tải dữ liệu';
+        }
+    }
+
+    function renderChart(d) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const labels = ['Đơn chờ', 'Đang nấu', 'Đang giao', 'Hoàn thành'];
+        const values = [
+            d.pendingOrders || 0,
+            d.preparingOrders || 0,
+            d.deliveringOrders || 0,
+            d.completedOrders || 0
+        ];
+
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Số đơn hàng',
+                    data: values,
+                    backgroundColor: ['rgba(245,158,11,0.7)', 'rgba(59,130,246,0.7)', 'rgba(16,185,129,0.7)', 'rgba(107,114,128,0.7)'],
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.parsed.y + ' đơn'
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    loadDashboard();
+</script>
 </main>
 </body>
 </html>
