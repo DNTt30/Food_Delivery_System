@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class WebController {
 
+    // 0. Landing Page
+    @GetMapping("/")
+    public String index() { return "index"; }
+
     // 1. Auth & Chung
     @GetMapping("/common/auth")
     public String authPage() { return "common/auth"; }

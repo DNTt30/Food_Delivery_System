@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<header th:fragment="header" class="main-header sticky-top bg-white shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-light py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <div class="bg-warning rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-lightning-charge-fill text-dark"></i>
+                </div>
+                <span class="fw-bold fs-4 tracking-tight">Antigravity<span class="text-warning">Food</span></span>
+            </a>
+            
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-4">
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/customer/home')">Khám phá</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/restaurant/dashboard')">Cửa hàng</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold" href="javascript:void(0)" onclick="checkAuth('/driver/dashboard')">Tài xế</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <div id="authLinks" class="d-flex gap-2">
+                        <!-- Guest state -->
+                        <a href="/common/auth" class="btn btn-outline-dark px-4 fw-semibold">Đăng nhập</a>
+                        <a href="/common/auth?register=true" class="btn btn-warning px-4 fw-bold">Đăng ký</a>
+                    </div>
+                    
+                    <div id="userAccount" class="dropdown d-none">
+                        <button class="btn btn-light rounded-circle p-0 border-0 overflow-hidden shadow-sm" type="button" data-bs-toggle="dropdown" style="width: 42px; height: 42px;">
+                            <img id="headerUserAvatar" src="https://ui-avatars.com/api/?name=User&background=random" alt="User" class="img-fluid">
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2 p-2" style="min-width: 200px; border-radius: 12px;">
+                            <li>
+                                <div class="px-3 py-2 border-bottom mb-2">
+                                    <p id="headerUserName" class="fw-bold mb-0 text-truncate">User Name</p>
+                                    <small id="headerUserRole" class="text-muted text-uppercase" style="font-size: 0.7rem;">Role</small>
+                                </div>
+                            </li>
+                            <li><a class="dropdown-item rounded-3 mb-1" href="/common/profile"><i class="bi bi-person me-2"></i>Hồ sơ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item text-danger rounded-3" onclick="globalLogout()"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <script>
+        function checkAuth(targetUrl) {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                window.location.href = targetUrl;
+            } else {
+                window.location.href = '/common/auth';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                document.getElementById('authLinks').classList.add('d-none');
+                document.getElementById('userAccount').classList.remove('d-none');
+                
+                // Decode token simplified (assume data in localStorage or fetch)
+                fetch('/api/profile/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                }).then(res => res.json()).then(data => {
+                    if (data.fullName) {
+                        document.getElementById('headerUserName').textContent = data.fullName;
+                        document.getElementById('headerUserRole').textContent = data.role;
+                        document.getElementById('headerUserAvatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
+                    }
+                }).catch(() => {});
+            }
+        });
+        
+        function globalLogout() {
+            localStorage.clear();
+            window.location.href = '/index.html';
+        }
+    </script>
+</header>
+</html>

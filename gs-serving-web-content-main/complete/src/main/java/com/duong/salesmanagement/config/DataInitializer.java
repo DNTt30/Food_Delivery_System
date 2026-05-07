@@ -78,6 +78,7 @@ public class DataInitializer implements CommandLineRunner {
                         profile.setUser(user);
                         profile.setRestaurantName("Tasty Food Restaurant");
                         profile.setAddress("123 Food Street, Food City");
+                        profile.setBannerUrl("https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1000&auto=format&fit=crop");
                         profile.setOpen(true);
                         profile.setAverageRating(4.5);
                         return restaurantProfileRepository.save(profile);

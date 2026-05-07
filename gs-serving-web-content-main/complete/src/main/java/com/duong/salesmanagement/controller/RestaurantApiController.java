@@ -2,6 +2,7 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
+import com.duong.salesmanagement.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,16 +20,16 @@ public class RestaurantApiController {
     private final UserRepository userRepository;
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final MenuItemRepository menuItemRepository;
-    private final FoodOrderRepository foodOrderRepository;
+    private final OrderService orderService;
 
     public RestaurantApiController(UserRepository userRepository,
                                    RestaurantProfileRepository restaurantProfileRepository,
                                    MenuItemRepository menuItemRepository,
-                                   FoodOrderRepository foodOrderRepository) {
+                                   OrderService orderService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
-        this.foodOrderRepository = foodOrderRepository;
+        this.orderService = orderService;
     }
 
     private RestaurantProfile getAuthenticatedRestaurant(Authentication authentication) {
@@ -44,7 +45,7 @@ public class RestaurantApiController {
         RestaurantProfile restaurant = getAuthenticatedRestaurant(authentication);
         if (restaurant == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        List<FoodOrder> orders = foodOrderRepository.findByRestaurant(restaurant);
+        List<FoodOrder> orders = orderService.getRestaurantOrders(restaurant);
         long newOrders = orders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
         long completedOrders = orders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
         double revenue = orders.stream()
@@ -130,7 +131,7 @@ public class RestaurantApiController {
         RestaurantProfile restaurant = getAuthenticatedRestaurant(authentication);
         if (restaurant == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        List<FoodOrder> orders = foodOrderRepository.findByRestaurant(restaurant);
+        List<FoodOrder> orders = orderService.getRestaurantOrders(restaurant);
         // Lấy PENDING và PREPARING để hiển thị trong UI xử lý
         List<OrderDTO> dtos = orders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.PREPARING)
@@ -149,18 +150,14 @@ public class RestaurantApiController {
         RestaurantProfile restaurant = getAuthenticatedRestaurant(authentication);
         if (restaurant == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        FoodOrder order = foodOrderRepository.findById(id).orElse(null);
-        if (order == null || !order.getRestaurant().getId().equals(restaurant.getId())) {
-            return ResponseEntity.notFound().build();
-        }
-
         try {
             OrderStatus newStatus = OrderStatus.valueOf(body.get("status"));
-            order.setStatus(newStatus);
-            foodOrderRepository.save(order);
+            orderService.updateOrderStatus(id, newStatus, restaurant);
             return ResponseEntity.ok(Map.of("message", "Order status updated"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid status"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 

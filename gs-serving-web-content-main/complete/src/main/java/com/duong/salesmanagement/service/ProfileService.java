@@ -68,6 +68,7 @@ public class ProfileService {
                     });
             dto.setRestaurantName(profile.getRestaurantName());
             dto.setAddress(profile.getAddress());
+            dto.setBannerUrl(profile.getBannerUrl());
             // optionally we could include isOpen, but we omitted from ProfileDTO for now
         }
 
@@ -113,6 +114,7 @@ public class ProfileService {
                     });
             if (dto.getRestaurantName() != null) profile.setRestaurantName(dto.getRestaurantName());
             if (dto.getAddress() != null) profile.setAddress(dto.getAddress());
+            if (dto.getBannerUrl() != null) profile.setBannerUrl(dto.getBannerUrl());
             restaurantProfileRepository.save(profile);
         }
     }

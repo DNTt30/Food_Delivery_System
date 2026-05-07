@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/main_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Antigravity Food - Giao đồ ăn siêu tốc</title>
+</head>
+<body>
+<main>
+    <!-- Hero Section -->
+    <section class="hero-section py-5 overflow-hidden" style="background: linear-gradient(135deg, #fff 0%, #fff9e6 100%);">
+        <div class="container py-lg-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 animate-fade-in">
+                    <h1 class="display-3 fw-bold tracking-tight mb-4">
+                        Hương vị tuyệt vời <br>
+                        <span class="text-warning">Giao ngay tận cửa</span>
+                    </h1>
+                    <p class="lead text-muted mb-5 pe-lg-5">
+                        Đặt món từ hàng ngàn nhà hàng uy tín. Đảm bảo nóng hổi, giao nhanh chỉ từ 15 phút. Trải nghiệm ẩm thực đẳng cấp ngay hôm nay.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <button onclick="checkAuth('/customer/home')" class="btn btn-warning btn-lg px-5 py-3 fw-bold shadow">Đặt món ngay</button>
+                        <a href="#how-it-works" class="btn btn-outline-dark btn-lg px-5 py-3 fw-bold">Tìm hiểu thêm</a>
+                    </div>
+                    <div class="mt-5 d-flex align-items-center gap-4">
+                        <div class="d-flex -space-x-2">
+                            <img src="https://ui-avatars.com/api/?name=J&background=random" class="rounded-circle border border-white" style="width: 40px; height: 40px;" alt="">
+                            <img src="https://ui-avatars.com/api/?name=K&background=random" class="rounded-circle border border-white" style="width: 40px; height: 40px; margin-left: -15px;" alt="">
+                            <img src="https://ui-avatars.com/api/?name=L&background=random" class="rounded-circle border border-white" style="width: 40px; height: 40px; margin-left: -15px;" alt="">
+                        </div>
+                        <p class="mb-0 small text-muted fw-semibold">
+                            <i class="bi bi-star-fill text-warning"></i> 4.9/5 (10k+ đánh giá)
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-6 position-relative">
+                    <div class="hero-image-container position-relative animate-fade-in" style="animation-delay: 0.2s;">
+                        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1000&auto=format&fit=crop" class="img-fluid rounded-circle shadow-lg" style="width: 100%; aspect-ratio: 1; object-fit: cover; border: 15px solid white;" alt="Hero Food">
+                        <div class="position-absolute top-0 start-0 bg-white p-3 rounded-4 shadow-lg animate-fade-in" style="animation-delay: 0.6s;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-2 rounded-circle">
+                                    <i class="bi bi-clock-history text-success fs-4"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-0 fw-bold small">Giao hàng nhanh</p>
+                                    <small class="text-muted">15-20 Phút</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="how-it-works" class="py-5 bg-white">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h6 class="text-warning text-uppercase fw-bold tracking-widest small mb-2">Quy trình</h6>
+                <h2 class="fw-bold fs-1 tracking-tight">Giao hàng dễ dàng trong 3 bước</h2>
+            </div>
+            <div class="row g-4 mt-4">
+                <div class="col-md-4 text-center px-lg-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow-sm" style="width: 80px; height: 80px;">
+                        <i class="bi bi-search fs-2 text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Tìm kiếm món ăn</h4>
+                    <p class="text-muted small">Chọn từ danh sách hàng ngàn món ngon từ các nhà hàng nổi tiếng.</p>
+                </div>
+                <div class="col-md-4 text-center px-lg-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow-sm" style="width: 80px; height: 80px;">
+                        <i class="bi bi-credit-card fs-2 text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Thanh toán dễ dàng</h4>
+                    <p class="text-muted small">Nhiều phương thức thanh toán an toàn và tiện lợi cho bạn.</p>
+                </div>
+                <div class="col-md-4 text-center px-lg-5">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow-sm" style="width: 80px; height: 80px;">
+                        <i class="bi bi-bicycle fs-2 text-warning"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Nhận hàng tận nơi</h4>
+                    <p class="text-muted small">Tài xế của chúng tôi sẽ giao hàng đến tận cửa nhà bạn.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function checkAuth(targetUrl) {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                window.location.href = targetUrl;
+            } else {
+                window.location.href = '/common/auth';
+            }
+        }
+    </script>
+</main>
+</body>
+</html>

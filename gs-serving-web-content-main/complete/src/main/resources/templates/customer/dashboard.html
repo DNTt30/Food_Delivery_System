@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - Food Delivery Team 14</title>
+    <title>Customer Dashboard - Food Delivery Team 12</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
@@ -129,6 +129,19 @@
             <button class="btn btn-outline-success btn-sm fw-bold">Theo dõi ngay</button>
         </div>
 
+        <!-- Banner Quảng Cáo -->
+        <div id="promoCarousel" class="carousel slide mb-5 shadow-sm" data-bs-ride="carousel" style="border-radius: 15px; overflow: hidden;">
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img src="/images/banner.png" class="d-block w-100" alt="Special Offer" style="height: 350px; object-fit: cover;">
+                    <div class="carousel-caption d-none d-md-block" style="background: rgba(0,0,0,0.5); border-radius: 10px;">
+                        <h2 class="fw-bold">Ưu đãi cực khủng!</h2>
+                        <p>Giảm ngay 50% cho đơn hàng đầu tiên.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-end mb-4">
             <h4 class="fw-bold mb-0">🔥 Thực đơn hôm nay</h4>
         </div>
@@ -165,10 +178,10 @@
                     console.warn(error);
                     // DỮ LIỆU MẪU (Mock Data): Dùng để demo giao diện khi Backend chưa chạy
                     const mockFoods = [
-                        { id: 1, name: "Pizza Hải Sản Phô Mai", price: 129000, imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=350&fit=crop", restaurant: "Pizza Hut" },
-                        { id: 2, name: "Burger Bò Tảng 2 Lớp", price: 75000, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&h=350&fit=crop", restaurant: "KFC Phenikaa" },
-                        { id: 3, name: "Mì Ý Sốt Bò Bằm", price: 65000, imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=500&h=350&fit=crop", restaurant: "Pasta Station" },
-                        { id: 4, name: "Gà Rán Sốt Cay Hàn Quốc", price: 89000, imageUrl: "https://images.unsplash.com/photo-1569691899455-88464f6d3ab1?w=500&h=350&fit=crop", restaurant: "Don Chicken" }
+                        { id: 1, name: "Pizza Pepperoni Đặc Biệt", price: 129000, imageUrl: "/images/pizza.png", restaurant: "Pizza Hut" },
+                        { id: 2, name: "Burger Bò Tảng 2 Lớp", price: 75000, imageUrl: "/images/burger.png", restaurant: "KFC Phenikaa" },
+                        { id: 3, name: "Phở Bò Gia Truyền", price: 65000, imageUrl: "/images/pho.png", restaurant: "Phở Lý Quốc Sư" },
+                        { id: 4, name: "Gà Rán Sốt Cay", price: 89000, imageUrl: "https://images.unsplash.com/photo-1569691899455-88464f6d3ab1?w=500&h=350&fit=crop", restaurant: "Don Chicken" }
                     ];
                     renderFoods(mockFoods);
                 });

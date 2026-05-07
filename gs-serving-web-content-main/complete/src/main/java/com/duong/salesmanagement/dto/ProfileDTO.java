@@ -18,6 +18,7 @@ public class ProfileDTO {
     // Restaurant specific
     private String restaurantName;
     private String address;
+    private String bannerUrl;
 
     // Getters and Setters
     public String getUsername() { return username; }
@@ -46,4 +47,7 @@ public class ProfileDTO {
 
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    public String getBannerUrl() { return bannerUrl; }
+    public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
 }

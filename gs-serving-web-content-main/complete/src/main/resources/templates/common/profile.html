@@ -1,168 +1,243 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html th:replace="~{layouts/main_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ Sơ Chung</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .dynamic-field { display: none; }
-    </style>
+    <title>Hồ Sơ Cá Nhân - Antigravity Food</title>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-  <div class="container">
-    <a class="navbar-brand" href="#">Quản Lý Tài Khoản</a>
-    <button class="btn btn-sm btn-outline-light ms-auto me-2" onclick="history.back()">Quay Lại</button>
-    <button class="btn btn-sm btn-danger" onclick="logout()">Đăng xuất</button>
-  </div>
-</nav>
-
-<div class="container" style="max-width: 600px;">
+<body>
+<main>
+<div class="container py-5" style="max-width: 800px;">
     <!-- Thêm div để hiển thị thông báo -->
     <div id="alertMessage" class="alert d-none" role="alert"></div>
 
-    <h3 class="mb-3">Thông Tin Hồ Sơ</h3>
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Thông Tin Hồ Sơ</h2>
+            <p class="text-muted small mb-0">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
+        </div>
+        <span id="roleBadge" class="badge bg-secondary text-uppercase shadow-sm" style="font-size: 0.9rem;">Đang tải...</span>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0 overflow-hidden">
+        <div class="bg-warning p-1"></div>
+        <div class="card-body p-4 p-md-5">
             <form id="profileForm">
-                <div class="mb-3">
-                    <label>Họ và Tên</label>
-                    <input type="text" id="fullName" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Email</label>
-                    <input type="email" id="email" class="form-control" disabled>
-                </div>
-                
-                <!-- Các trường chung của Customer / Driver -->
-                <div class="mb-3 dynamic-field" id="fieldPhoneNumber">
-                    <label>Số điện thoại</label>
-                    <input type="text" id="phoneNumber" class="form-control">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Họ và Tên</label>
+                        <input type="text" id="fullName" class="form-control form-control-lg" placeholder="Nhập họ tên" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Email</label>
+                        <input type="email" id="email" class="form-control form-control-lg bg-light" disabled>
+                    </div>
                 </div>
                 
-                <!-- Trường riêng của Customer -->
-                <div class="mb-3 dynamic-field" id="fieldDeliveryAddress">
-                    <label>Địa chỉ giao hàng mặc định</label>
-                    <input type="text" id="deliveryAddress" class="form-control">
+                <hr class="my-4 opacity-25">
+                
+                <!-- Section Title for Role-specific info -->
+                <div id="roleInfoTitle" class="mb-4">
+                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle text-warning"></i> Thông tin bổ sung
+                    </h5>
                 </div>
 
-                <!-- Trường riêng của Driver -->
-                <div class="mb-3 dynamic-field" id="fieldLicensePlate">
-                    <label>Biển số xe</label>
-                    <input type="text" id="licensePlate" class="form-control">
+                <!-- Customer Fields -->
+                <div class="dynamic-field" id="fieldCustomer" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Số điện thoại</label>
+                        <input type="text" id="phoneNumber" class="form-control" placeholder="09xxx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Địa chỉ giao hàng mặc định</label>
+                        <input type="text" id="deliveryAddress" class="form-control" placeholder="Số nhà, tên đường...">
+                    </div>
                 </div>
 
-                <!-- Trường riêng của Restaurant -->
-                <div class="mb-3 dynamic-field" id="fieldRestaurantName">
-                    <label>Tên Nhà Hàng</label>
-                    <input type="text" id="restaurantName" class="form-control">
-                </div>
-                <div class="mb-3 dynamic-field" id="fieldAddress">
-                    <label>Địa chỉ</label>
-                    <input type="text" id="address" class="form-control">
+                <!-- Driver Fields -->
+                <div class="dynamic-field" id="fieldDriver" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Số điện thoại</label>
+                        <input type="text" id="driverPhone" class="form-control" placeholder="09xxx">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Biển số xe</label>
+                        <input type="text" id="licensePlate" class="form-control" placeholder="29A-XXXXX">
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
+                <!-- Restaurant Fields -->
+                <div class="dynamic-field" id="fieldRestaurant" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Tên Nhà Hàng</label>
+                        <input type="text" id="restaurantName" class="form-control" placeholder="Tên quán ăn">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Địa chỉ kinh doanh</label>
+                        <input type="text" id="address" class="form-control" placeholder="Địa chỉ nhà hàng">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Banner Cửa Hàng</label>
+                        <input type="file" id="bannerFile" class="form-control" accept="image/*" onchange="uploadBanner(this)">
+                        <input type="hidden" id="bannerUrl">
+                        <div class="mt-3 border rounded-4 p-2 bg-light text-center shadow-inner" style="min-height: 160px; overflow: hidden;">
+                            <img id="bannerPreview" src="" alt="Banner Preview" class="img-fluid rounded-3 d-none" style="max-height: 200px; width: 100%; object-fit: cover;">
+                            <div id="bannerPlaceholder" class="text-muted small py-5">
+                                <i class="bi bi-image fs-1 d-block mb-2 opacity-25"></i>
+                                Chưa có banner
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <button type="submit" class="btn btn-warning btn-lg px-5 shadow-sm fw-bold">
+                        <i class="bi bi-save2 me-2"></i>Lưu Thay Đổi
+                    </button>
+                </div>
             </form>
         </div>
     </div>
     
-    <h3 class="mb-3">Đổi Mật Khẩu</h3>
-    <div class="card shadow-sm">
-        <div class="card-body">
+    <div class="d-flex align-items-center mb-4">
+        <h3 class="fw-bold mb-0">Bảo mật</h3>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5 overflow-hidden">
+        <div class="bg-danger p-1"></div>
+        <div class="card-body p-4 p-md-5">
             <form id="passwordForm">
-                <div class="mb-3">
-                    <label>Mật khẩu cũ</label>
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-muted text-uppercase">Mật khẩu cũ</label>
                     <input type="password" id="oldPassword" class="form-control" required>
                 </div>
-                <div class="mb-3">
-                    <label>Mật khẩu mới</label>
-                    <input type="password" id="newPassword" class="form-control" required>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Mật khẩu mới</label>
+                        <input type="password" id="newPassword" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Xác nhận mật khẩu</label>
+                        <input type="password" id="confirmPassword" class="form-control" required>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label>Xác nhận mật khẩu mới</label>
-                    <input type="password" id="confirmPassword" class="form-control" required>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-dark btn-lg px-4 fw-semibold">
+                        <i class="bi bi-shield-lock me-2"></i>Đổi Mật Khẩu
+                    </button>
                 </div>
-                <button type="submit" class="btn btn-warning">Đổi Mật Khẩu</button>
             </form>
         </div>
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
     const token = localStorage.getItem('jwt_token');
     
-    // Nếu chưa đăng nhập, đá về trang auth
     if (!token) {
         window.location.href = '/index.html';
     }
 
-    // Hàm hiển thị thông báo
     function showAlert(message, type) {
         const alertBox = document.getElementById('alertMessage');
         alertBox.textContent = message;
-        alertBox.className = `alert alert-${type} d-block`;
-        setTimeout(() => { alertBox.className = 'alert d-none'; }, 3000);
+        alertBox.className = `alert alert-${type} d-block shadow-sm rounded-3 animate__animated animate__fadeInDown`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => { alertBox.className = 'alert d-none'; }, 4000);
     }
 
-    function logout() {
-        localStorage.removeItem('jwt_token');
-        localStorage.removeItem('role');
-        window.location.href = '/index.html';
+    function previewBanner(url) {
+        const img = document.getElementById('bannerPreview');
+        const placeholder = document.getElementById('bannerPlaceholder');
+        if (url) {
+            img.src = url;
+            img.classList.remove('d-none');
+            placeholder.classList.add('d-none');
+        } else {
+            img.src = '';
+            img.classList.add('d-none');
+            placeholder.classList.remove('d-none');
+        }
     }
 
-    // Lấy thông tin profile khi load trang
+    async function uploadBanner(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload/image', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                document.getElementById('bannerUrl').value = data.url;
+                previewBanner(data.url);
+                showAlert('Tải ảnh lên thành công!', 'success');
+            } else {
+                showAlert(data.error || 'Tải ảnh thất bại', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('Lỗi kết nối khi tải ảnh', 'danger');
+        }
+    }
+
     async function loadProfile() {
         try {
             const res = await fetch('/api/profile/me', {
                 method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
+                headers: { 'Authorization': 'Bearer ' + token }
             });
 
-            if (res.status === 401) {
-                logout();
-                return;
+            if (res.status === 401) { 
+                localStorage.clear();
+                window.location.href = '/index.html';
+                return; 
             }
 
             const data = await res.json();
             if (res.ok) {
-                // Điền thông tin chung
+                // Info common
                 document.getElementById('fullName').value = data.fullName || '';
                 document.getElementById('email').value = data.email || '';
                 
-                // Hiển thị các trường tùy theo role
                 const role = data.role;
+                const badge = document.getElementById('roleBadge');
+                badge.textContent = role;
+                
+                // Reset all dynamic fields
+                document.querySelectorAll('.dynamic-field').forEach(el => el.style.display = 'none');
+
                 if (role === 'CUSTOMER') {
-                    document.getElementById('fieldPhoneNumber').style.display = 'block';
-                    document.getElementById('fieldDeliveryAddress').style.display = 'block';
-                    
+                    badge.className = 'badge bg-info text-uppercase shadow-sm';
+                    document.getElementById('fieldCustomer').style.display = 'block';
                     document.getElementById('phoneNumber').value = data.phoneNumber || '';
                     document.getElementById('deliveryAddress').value = data.deliveryAddress || '';
                 } 
                 else if (role === 'DRIVER') {
-                    document.getElementById('fieldPhoneNumber').style.display = 'block';
-                    document.getElementById('fieldLicensePlate').style.display = 'block';
-                    
-                    document.getElementById('phoneNumber').value = data.phoneNumber || '';
+                    badge.className = 'badge bg-success text-uppercase shadow-sm';
+                    document.getElementById('fieldDriver').style.display = 'block';
+                    document.getElementById('driverPhone').value = data.phoneNumber || '';
                     document.getElementById('licensePlate').value = data.licensePlate || '';
                 }
                 else if (role === 'RESTAURANT') {
-                    document.getElementById('fieldRestaurantName').style.display = 'block';
-                    document.getElementById('fieldAddress').style.display = 'block';
-                    
+                    badge.className = 'badge bg-warning text-dark text-uppercase shadow-sm';
+                    document.getElementById('fieldRestaurant').style.display = 'block';
                     document.getElementById('restaurantName').value = data.restaurantName || '';
                     document.getElementById('address').value = data.address || '';
+                    document.getElementById('bannerUrl').value = data.bannerUrl || '';
+                    previewBanner(data.bannerUrl);
                 }
-                // ADMIN có thể không có profile thêm, chỉ có Full Name
             } else {
-                showAlert(data.error || 'Không thể tải thông tin hồ sơ', 'danger');
+                showAlert(data.error || 'Lỗi tải hồ sơ', 'danger');
             }
         } catch (err) {
             console.error(err);
-            showAlert('Lỗi kết nối đến máy chủ', 'danger');
+            showAlert('Lỗi kết nối máy chủ', 'danger');
         }
     }
 
@@ -170,14 +245,24 @@
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const role = document.getElementById('roleBadge').textContent;
         const payload = {
-            fullName: document.getElementById('fullName').value,
-            phoneNumber: document.getElementById('phoneNumber').value,
-            deliveryAddress: document.getElementById('deliveryAddress').value,
-            licensePlate: document.getElementById('licensePlate').value,
-            restaurantName: document.getElementById('restaurantName').value,
-            address: document.getElementById('address').value
+            fullName: document.getElementById('fullName').value
         };
+
+        if (role === 'CUSTOMER') {
+            payload.phoneNumber = document.getElementById('phoneNumber').value;
+            payload.deliveryAddress = document.getElementById('deliveryAddress').value;
+        } 
+        else if (role === 'DRIVER') {
+            payload.phoneNumber = document.getElementById('driverPhone').value;
+            payload.licensePlate = document.getElementById('licensePlate').value;
+        }
+        else if (role === 'RESTAURANT') {
+            payload.restaurantName = document.getElementById('restaurantName').value;
+            payload.address = document.getElementById('address').value;
+            payload.bannerUrl = document.getElementById('bannerUrl').value;
+        }
 
         try {
             const res = await fetch('/api/profile/me', {
@@ -191,6 +276,7 @@
             const data = await res.json();
             if (res.ok) {
                 showAlert(data.message, 'success');
+                loadProfile(); // Reload to sync UI
             } else {
                 showAlert(data.error || 'Cập nhật thất bại', 'danger');
             }
@@ -238,5 +324,7 @@
     // Chạy khi load trang
     loadProfile();
 </script>
+</main>
 </body>
 </html>
+

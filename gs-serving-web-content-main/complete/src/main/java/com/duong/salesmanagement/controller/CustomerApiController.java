@@ -1,14 +1,14 @@
 package com.duong.salesmanagement.controller;
 
-import com.duong.salesmanagement.model.MenuItem;
-import com.duong.salesmanagement.model.RestaurantProfile;
-import com.duong.salesmanagement.repository.MenuItemRepository;
-import com.duong.salesmanagement.repository.RestaurantProfileRepository;
+import com.duong.salesmanagement.model.*;
+import com.duong.salesmanagement.repository.*;
+import com.duong.salesmanagement.service.OrderService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -18,11 +18,27 @@ public class CustomerApiController {
 
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final MenuItemRepository menuItemRepository;
+    private final OrderService orderService;
+    private final UserRepository userRepository;
+    private final CustomerProfileRepository customerProfileRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
-                                 MenuItemRepository menuItemRepository) {
+                                 MenuItemRepository menuItemRepository,
+                                 OrderService orderService,
+                                 UserRepository userRepository,
+                                 CustomerProfileRepository customerProfileRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
+        this.orderService = orderService;
+        this.userRepository = userRepository;
+        this.customerProfileRepository = customerProfileRepository;
+    }
+
+    private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+        if (user == null || user.getRole() != Role.CUSTOMER) return null;
+        return customerProfileRepository.findByUser(user).orElse(null);
     }
 
     // 1. Get list of restaurants
@@ -67,6 +83,26 @@ public class CustomerApiController {
         );
 
         return ResponseEntity.ok(detailDTO);
+    }
+
+    // 3. Place order
+    @PostMapping("/orders")
+    public ResponseEntity<?> placeOrder(Authentication authentication, @RequestBody PlaceOrderRequest request) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(request.restaurantId).orElse(null);
+        if (restaurant == null) return ResponseEntity.notFound().build();
+
+        try {
+            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                    "message", "Order placed successfully",
+                    "orderId", order.getId()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // DTOs
@@ -118,5 +154,11 @@ public class CustomerApiController {
             this.isOpen = isOpen;
             this.menuItems = menuItems;
         }
+    }
+
+    public static class PlaceOrderRequest {
+        public Long restaurantId;
+        public List<OrderService.OrderItemRequest> items;
+        public String deliveryAddress;
     }
 }

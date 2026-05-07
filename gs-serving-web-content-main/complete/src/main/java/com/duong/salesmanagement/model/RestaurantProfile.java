@@ -16,6 +16,7 @@ public class RestaurantProfile {
 
     private String restaurantName;
     private String address;
+    private String bannerUrl;
     private boolean isOpen;
     private Double averageRating;
 
@@ -29,6 +30,8 @@ public class RestaurantProfile {
     public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+    public String getBannerUrl() { return bannerUrl; }
+    public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
     public boolean isOpen() { return isOpen; }
     public void setOpen(boolean open) { isOpen = open; }
     public Double getAverageRating() { return averageRating; }

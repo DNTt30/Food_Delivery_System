@@ -80,13 +80,14 @@ Sau khi ứng dụng khởi chạy thành công, truy cập:
 ## 📝 Nhật ký cập nhật (Progress Log)
 
 ### 📅 06/05/2026
-- **Giao diện Dashboard Nhà hàng:** Thiết kế lại hoàn toàn trang dashboard (`restaurant/dashboard.html`) với:
-    - Thẻ thống kê (Stat Cards) cho Đơn mới, Đơn hoàn thành và Doanh thu.
-    - Biểu đồ doanh thu 7 ngày và biểu đồ tròn trạng thái đơn hàng bằng **Chart.js**.
-    - Hiệu ứng **Skeleton Loader** khi tải dữ liệu.
-    - Xử lý thông báo yêu cầu đăng nhập thân thiện thay vì trang lỗi trắng.
-- **Bảo mật (Spring Security):** Cập nhật `SecurityConfig.java` cho phép truy cập `/error` để cải thiện trải nghiệm người dùng khi gặp lỗi hệ thống.
-- **Sửa lỗi giao diện:** Khắc phục lỗi `SpelEvaluationException` liên quan đến `requestURI` trong `sidebar_dashboard.html` bằng cách chuyển sang dùng JavaScript để xử lý trạng thái "Active" của menu, đảm bảo tương thích với Spring Boot 3.
+- **Giao diện Dashboard Nhà hàng:** Thiết kế lại hoàn toàn trang dashboard (`restaurant/dashboard.html`) với Thẻ thống kê (Stat Cards), biểu đồ **Chart.js**, và hiệu ứng **Skeleton Loader**.
+- **Hình ảnh & Banner:** 
+    - Thiết kế và thêm banner quảng cáo chuyên nghiệp cho Dashboard Khách hàng.
+    - Cập nhật hình ảnh món ăn thực tế (Pizza, Burger, Phở) vào hệ thống.
+- **Tính năng Upload ảnh:**
+    - Triển khai `FileUploadController.java` xử lý nhận file ảnh từ client.
+    - Tích hợp tính năng tải ảnh trực tiếp vào trang Quản lý Thực đơn của Nhà hàng.
+    - Hỗ trợ xem trước ảnh (Preview) và tự động điền URL sau khi tải lên thành công.
 
 ---
 *Dự án thuộc học phần thực hành Phát triển ứng dụng Web.*
