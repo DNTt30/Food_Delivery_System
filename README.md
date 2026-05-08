@@ -13,26 +13,62 @@ Hệ thống **Food Delivery Management** là một giải pháp toàn diện k�
 
 ---
 
+## 🏗️ Kiến trúc Hệ thống
+
+```mermaid
+graph TD
+    subgraph Client_Side
+        B[Browser - Thymeleaf]
+        JS[Vanilla JS / Fetch API]
+    end
+
+    subgraph Server_Side
+        direction TB
+        Auth[Spring Security / JWT]
+        Controller[Controllers]
+        Service[Business Services]
+        Repo[Spring Data JPA]
+        
+        B <--> Auth
+        JS <--> Controller
+        Controller --> Service
+        Service --> Repo
+    end
+
+    subgraph Database_Cloud
+        DB[(MySQL - Aiven Cloud)]
+        Repo <--> DB
+    end
+    
+    subgraph External_Services
+        SMTP[Gmail SMTP - OTP]
+        Service --> SMTP
+    end
+```
+
+---
+
 ## ⚙️ Chức năng Chính (Use Cases)
 
-Hệ thống hỗ trợ đầy đủ 20 Use Case quan trọng chia cho 4 nhóm người dùng:
+Hệ thống đã hoàn thiện **20/20 Use Case (100%)** chia cho 4 nhóm người dùng:
 
--   **👤 Khách hàng (Customer):** 
-    - Tìm kiếm nhà hàng & món ăn thông minh.
-    - Giỏ hàng Real-time (LocalStorage).
-    - Đặt hàng & Theo dõi lộ trình (Tracking Timeline).
-    - Đánh giá chất lượng dịch vụ.
--   **🏪 Nhà hàng (Restaurant):**
-    - Quản lý thực đơn (CRUD Menu Items) với Upload ảnh.
-    - Dashboard thống kê doanh thu (Chart.js).
-    - Xử lý đơn hàng Real-time.
--   **🛵 Tài xế (Driver):**
-    - Dashboard thu nhập.
-    - Nhận đơn và cập nhật trạng thái giao hàng.
--   **🛡️ Quản trị viên (Admin):**
-    - Quản lý người dùng & Đối tác.
-    - Quản lý mã khuyến mãi (Vouchers).
-    - Báo cáo tổng quan toàn hệ thống.
+### 👤 Khách hàng (Customer)
+-   **Tìm kiếm & Đặt hàng:** Search thông minh, filter nhà hàng, giỏ hàng Real-time (LocalStorage).
+-   **Theo dõi đơn hàng:** Tracking Timeline với chế độ tự động cập nhật mỗi 15 giây.
+-   **Đánh giá:** Gửi feedback và số sao sau khi nhận hàng.
+
+### 🏪 Nhà hàng (Restaurant)
+-   **Quản lý thực đơn:** CRUD món ăn chuyên nghiệp, upload hình ảnh banner/món ăn.
+-   **Quản lý đơn hàng:** Tiếp nhận, chế biến và bàn giao cho tài xế với flow mượt mà.
+-   **Dashboard:** Thống kê doanh thu trực quan bằng **Chart.js** (Bar & Doughnut charts).
+
+### 🛵 Tài xế (Driver)
+-   **Nhận đơn:** Xem danh sách các đơn hàng đang chờ và nhận đơn theo khu vực.
+-   **Giao hàng:** Cập nhật trạng thái "Đang giao" và "Hoàn thành". Thu nhập tự động tính 10% phí ship.
+
+### 🛡️ Quản trị viên (Admin)
+-   **Quản trị:** Khóa/mở tài khoản, duyệt đối tác nhà hàng mới.
+-   **Khuyến mãi:** Hệ thống Voucher linh hoạt (giảm % hoặc số tiền cố định).
 
 ---
 
@@ -44,7 +80,7 @@ Hệ thống hỗ trợ đầy đủ 20 Use Case quan trọng chia cho 4 nhóm n
 | **Bảo mật** | Spring Security, JWT (Stateless), OTP Email Verification |
 | **Database** | MySQL 8 (Aiven Cloud / Local), Hibernate |
 | **Frontend** | Thymeleaf, Bootstrap 5.3, Vanilla JS, Chart.js |
-| **Công cụ** | Maven, Git, Postman |
+| **Email** | Gmail SMTP Server |
 
 ---
 
@@ -106,6 +142,7 @@ src/main/java/com/duong/salesmanagement/
 - **Nâng cấp Dashboard:** Sử dụng Chart.js cho các biểu đồ thống kê chuyên nghiệp.
 - **Tối ưu UI/UX:** Tinh chỉnh layout, header/footer đồng bộ và hiệu ứng loading.
 - **Bảo mật:** Hoàn thiện luồng OTP qua Gmail và phân quyền JWT chặt chẽ.
+- **Kiến trúc:** Cập nhật sơ đồ kiến trúc hệ thống và luồng dữ liệu JWT.
 
 ---
 *Dự án thuộc học phần thực hành Phát triển ứng dụng Web.*

@@ -17,15 +17,18 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final MenuItemRepository menuItemRepository;
     private final ReviewRepository reviewRepository;
+    private final DriverProfileRepository driverProfileRepository;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
                         MenuItemRepository menuItemRepository,
-                        ReviewRepository reviewRepository) {
+                        ReviewRepository reviewRepository,
+                        DriverProfileRepository driverProfileRepository) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
         this.reviewRepository = reviewRepository;
+        this.driverProfileRepository = driverProfileRepository;
     }
 
     @Transactional
@@ -66,6 +69,8 @@ public class OrderService {
     @Transactional
     public void updateOrderStatus(Long orderId, OrderStatus newStatus, RestaurantProfile restaurant) {
         if (orderId == null) throw new IllegalArgumentException("Order ID cannot be null");
+        if (newStatus != OrderStatus.PREPARING && newStatus != OrderStatus.CANCELLED)
+            throw new RuntimeException("Nhà hàng chỉ được xác nhận (PREPARING) hoặc từ chối (CANCELLED) đơn hàng");
         FoodOrder order = foodOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         if (!order.getRestaurant().getId().equals(restaurant.getId()))
@@ -115,6 +120,8 @@ public class OrderService {
             throw new RuntimeException("Đơn hàng đã được nhận bởi tài xế khác");
         order.setDriver(driver);
         order.setStatus(OrderStatus.DELIVERING);
+        driver.setAvailable(false);
+        driverProfileRepository.save(driver);
         return foodOrderRepository.save(order);
     }
 
@@ -128,6 +135,8 @@ public class OrderService {
             throw new RuntimeException("Đơn hàng không đang trong trạng thái giao");
         order.setStatus(OrderStatus.COMPLETED);
         foodOrderRepository.save(order);
+        driver.setAvailable(true);
+        driverProfileRepository.save(driver);
     }
 
     public List<FoodOrder> getRestaurantOrders(RestaurantProfile restaurant) {

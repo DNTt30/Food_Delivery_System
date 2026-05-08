@@ -82,7 +82,7 @@
         el.classList.remove('d-none');
         orders.forEach(o => {
             const items = (o.items || [])
-                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i.itemName} ×${i.quantity}</span>`)
+                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i}</span>`)
                 .join('');
             el.insertAdjacentHTML('beforeend', `
             <div class="card border-0 shadow-sm order-card mb-3" id="order-${o.id}">

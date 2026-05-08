@@ -22,7 +22,7 @@
       vertex="1" parent="1">
       <mxGeometry x="20" y="90" width="170" height="115" as="geometry"/>
     </mxCell>
-    <mxCell id="e_role_b" value="CUSTOMER&lt;br&gt;RESTAURANT&lt;br&gt;DRIVER&lt;br&gt;ADMIN"
+    <mxCell id="e_role_b" value="ADMIN&lt;br&gt;CUSTOMER&lt;br&gt;RESTAURANT&lt;br&gt;DRIVER"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;fontSize=10;"
       vertex="1" parent="e_role">
       <mxGeometry y="30" width="170" height="85" as="geometry"/>
@@ -34,7 +34,7 @@
       vertex="1" parent="1">
       <mxGeometry x="20" y="235" width="170" height="180" as="geometry"/>
     </mxCell>
-    <mxCell id="e_os_b" value="PENDING&lt;br&gt;CONFIRMED&lt;br&gt;PREPARING&lt;br&gt;DELIVERING&lt;br&gt;DELIVERED&lt;br&gt;CANCELLED"
+    <mxCell id="e_os_b" value="PENDING&lt;br&gt;CONFIRMED&lt;br&gt;PREPARING&lt;br&gt;READY_FOR_PICKUP&lt;br&gt;DELIVERING&lt;br&gt;COMPLETED&lt;br&gt;CANCELLED"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;fontSize=10;"
       vertex="1" parent="e_os">
       <mxGeometry y="30" width="170" height="150" as="geometry"/>
@@ -46,7 +46,7 @@
       vertex="1" parent="1">
       <mxGeometry x="20" y="445" width="170" height="100" as="geometry"/>
     </mxCell>
-    <mxCell id="e_pm_b" value="CASH&lt;br&gt;VNPAY&lt;br&gt;MOMO"
+    <mxCell id="e_pm_b" value="CASH_ON_DELIVERY&lt;br&gt;CREDIT_CARD&lt;br&gt;MOMO_E_WALLET&lt;br&gt;ZALOPAY"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;fontSize=10;"
       vertex="1" parent="e_pm">
       <mxGeometry y="30" width="170" height="70" as="geometry"/>
@@ -84,7 +84,7 @@
       vertex="1" parent="1">
       <mxGeometry x="720" y="80" width="220" height="185" as="geometry"/>
     </mxCell>
-    <mxCell id="c_user_a" value="– id : Long&lt;br&gt;– username : String&lt;br&gt;– password : String&lt;br&gt;– fullName : String&lt;br&gt;– role : Role"
+    <mxCell id="c_user_a" value="– id : Long&lt;br&gt;– username : String&lt;br&gt;– password : String&lt;br&gt;– fullName : String&lt;br&gt;– email : String&lt;br&gt;– role : Role&lt;br&gt;– enabled : boolean"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;"
       vertex="1" parent="c_user">
       <mxGeometry y="30" width="220" height="90" as="geometry"/>
@@ -110,7 +110,7 @@
       vertex="1" parent="1">
       <mxGeometry x="285" y="380" width="215" height="155" as="geometry"/>
     </mxCell>
-    <mxCell id="c_cust_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– phoneNumber : String&lt;br&gt;– deliveryAddress : String"
+    <mxCell id="c_cust_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– phoneNumber : String&lt;br&gt;– deliveryAddress : String&lt;br&gt;– orders : List&lt;FoodOrder&gt;"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;"
       vertex="1" parent="c_cust">
       <mxGeometry y="30" width="215" height="75" as="geometry"/>
@@ -132,7 +132,7 @@
       vertex="1" parent="1">
       <mxGeometry x="560" y="380" width="225" height="185" as="geometry"/>
     </mxCell>
-    <mxCell id="c_rest_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– restaurantName : String&lt;br&gt;– address : String&lt;br&gt;– isOpen : boolean&lt;br&gt;– averageRating : Double"
+    <mxCell id="c_rest_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– restaurantName : String&lt;br&gt;– address : String&lt;br&gt;– bannerUrl : String&lt;br&gt;– isOpen : boolean&lt;br&gt;– averageRating : Double"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;"
       vertex="1" parent="c_rest">
       <mxGeometry y="30" width="225" height="110" as="geometry"/>
@@ -154,7 +154,7 @@
       vertex="1" parent="1">
       <mxGeometry x="855" y="380" width="210" height="160" as="geometry"/>
     </mxCell>
-    <mxCell id="c_drv_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– licensePlate : String&lt;br&gt;– phoneNumber : String&lt;br&gt;– isAvailable : boolean"
+    <mxCell id="c_drv_a" value="– id : Long&lt;br&gt;– user : User&lt;br&gt;– licensePlate : String&lt;br&gt;– phoneNumber : String&lt;br&gt;– isAvailable : boolean&lt;br&gt;– orders : List&lt;FoodOrder&gt;"
       style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;"
       vertex="1" parent="c_drv">
       <mxGeometry y="30" width="210" height="92" as="geometry"/>

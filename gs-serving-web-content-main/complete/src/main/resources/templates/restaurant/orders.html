@@ -148,16 +148,13 @@
         if (order.status === 'PENDING') {
             return `
                 <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'PREPARING')">
-                    <i class="bi bi-check-lg me-1"></i>Xác nhận
+                    <i class="bi bi-check-lg me-1"></i>Xác nhận & Bắt đầu nấu
                 </button>
                 <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'CANCELLED')">
                     <i class="bi bi-x-lg me-1"></i>Từ chối
                 </button>`;
         } else if (order.status === 'PREPARING') {
-            return `
-                <button class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'DELIVERING')">
-                    <i class="bi bi-bicycle me-1"></i>Sẵn sàng giao
-                </button>`;
+            return `<span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>`;
         }
         return '';
     }

@@ -135,7 +135,7 @@
 
         orders.forEach(o => {
             const items = (o.items || [])
-                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i.itemName} ×${i.quantity}</span>`)
+                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i}</span>`)
                 .join('');
             const isDelivering = o.status === 'DELIVERING';
             const isCompleted = o.status === 'COMPLETED';

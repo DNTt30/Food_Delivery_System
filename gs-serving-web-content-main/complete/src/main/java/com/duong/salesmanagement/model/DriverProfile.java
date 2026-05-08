@@ -1,6 +1,7 @@
 package com.duong.salesmanagement.model;
 
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "driver_profiles")
@@ -18,6 +19,9 @@ public class DriverProfile {
     private String phoneNumber;
     private boolean isAvailable;
 
+    @OneToMany(mappedBy = "driver", fetch = FetchType.LAZY)
+    private List<FoodOrder> orders;
+
     public DriverProfile() {}
 
     public Long getId() { return id; }
@@ -30,4 +34,6 @@ public class DriverProfile {
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
+    public List<FoodOrder> getOrders() { return orders; }
+    public void setOrders(List<FoodOrder> orders) { this.orders = orders; }
 }
