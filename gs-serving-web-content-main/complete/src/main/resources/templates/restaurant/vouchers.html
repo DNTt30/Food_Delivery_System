@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
+<head>
+    <title>Quản lý Khuyến mãi – Nhà hàng</title>
+</head>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
+
+<style>
+    .voucher-card { border-radius:14px;border:none;transition:box-shadow .2s,transform .2s;overflow:hidden; }
+    .voucher-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.1)!important;transform:translateY(-2px); }
+    .voucher-code { font-family:'Courier New',monospace;font-size:1.2rem;font-weight:700;
+                    letter-spacing:.08em;background:#fef3c7;color:#92400e;
+                    padding:4px 12px;border-radius:8px;border:1.5px dashed #f59e0b; }
+    .discount-badge { font-size:1.6rem;font-weight:800; }
+    .status-pill { font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px; }
+    .form-label { font-size:.85rem;font-weight:600;color:#374151; }
+    .modal-content { border-radius:16px;border:none; }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-tag-fill me-2" style="color:#f59e0b;"></i>Quản lý Khuyến mãi</h4>
+        <small class="text-muted">Tạo và quản lý các mã giảm giá cho nhà hàng</small>
+    </div>
+    <button class="btn btn-warning fw-bold rounded-pill px-4" onclick="openCreateModal()">
+        <i class="bi bi-plus-lg me-1"></i>Tạo Voucher mới
+    </button>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center" style="border-radius:12px;">
+            <div class="fw-bold fs-4 text-warning" id="totalVouchers">0</div>
+            <div class="small text-muted">Tổng voucher</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center" style="border-radius:12px;">
+            <div class="fw-bold fs-4 text-success" id="activeVouchers">0</div>
+            <div class="small text-muted">Đang hoạt động</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center" style="border-radius:12px;">
+            <div class="fw-bold fs-4 text-danger" id="inactiveVouchers">0</div>
+            <div class="small text-muted">Đã tắt</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 text-center" style="border-radius:12px;">
+            <div class="fw-bold fs-4 text-info" id="expiredVouchers">0</div>
+            <div class="small text-muted">Hết hạn</div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-warning" role="status"></div>
+    <p class="text-muted mt-2">Đang tải danh sách voucher...</p>
+</div>
+
+<!-- Voucher Grid -->
+<div id="voucherGrid" class="row g-3 d-none"></div>
+
+<!-- Empty -->
+<div id="emptyState" class="text-center py-5 d-none">
+    <div style="font-size:4rem">🎟️</div>
+    <h5 class="fw-bold mt-2">Chưa có voucher nào</h5>
+    <p class="text-muted">Hãy tạo voucher đầu tiên để thu hút khách hàng!</p>
+    <button class="btn btn-warning rounded-pill px-4 fw-bold" onclick="openCreateModal()">
+        <i class="bi bi-plus-lg me-1"></i>Tạo Voucher ngay
+    </button>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="voucherModalTitle">Tạo Voucher mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editVoucherId">
+                <div class="mb-3">
+                    <label class="form-label">Mã voucher <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control text-uppercase fw-bold" id="vCode"
+                           placeholder="VD: GIAM20, FREESHIP..." maxlength="30"
+                           style="letter-spacing:.05em;font-family:'Courier New',monospace;">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Loại giảm giá</label>
+                        <select class="form-select" id="vType" onchange="updateValueLabel()">
+                            <option value="PERCENTAGE">Giảm phần trăm (%)</option>
+                            <option value="FIXED">Giảm số tiền (đ)</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" id="vValueLabel">Giá trị giảm (%)</label>
+                        <input type="number" class="form-control" id="vValue"
+                               placeholder="VD: 20" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ngày hết hạn</label>
+                    <input type="date" class="form-control" id="vExpiry">
+                </div>
+                <div class="form-check form-switch mb-1">
+                    <input class="form-check-input" type="checkbox" id="vActive" checked>
+                    <label class="form-check-label fw-semibold" for="vActive">Kích hoạt ngay</label>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                        data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-warning fw-bold rounded-pill px-4"
+                        onclick="saveVoucher()" id="saveVoucherBtn">
+                    <i class="bi bi-check-lg me-1"></i>Lưu Voucher
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem('jwt_token');
+let vouchers = [];
+
+function updateValueLabel() {
+    const t = document.getElementById('vType').value;
+    document.getElementById('vValueLabel').textContent = t === 'PERCENTAGE' ? 'Giá trị giảm (%)' : 'Số tiền giảm (₫)';
+}
+
+function isExpired(dateStr) {
+    if (!dateStr) return false;
+    return new Date(dateStr) < new Date();
+}
+
+function fmtDate(d) {
+    if (!d) return 'Không giới hạn';
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+async function loadVouchers() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('voucherGrid').classList.add('d-none');
+    document.getElementById('emptyState').classList.add('d-none');
+
+    try {
+        const res = await fetch('/api/restaurant/vouchers', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.status === 401 || res.status === 403) { window.location.href='/common/auth'; return; }
+        vouchers = await res.json();
+        renderVouchers();
+    } catch {
+        document.getElementById('loading').innerHTML = '<div class="text-danger text-center py-4">Lỗi kết nối</div>';
+    }
+}
+
+function renderVouchers() {
+    document.getElementById('loading').classList.add('d-none');
+
+    const total    = vouchers.length;
+    const active   = vouchers.filter(v => v.isActive && !isExpired(v.expirationDate)).length;
+    const inactive = vouchers.filter(v => !v.isActive).length;
+    const expired  = vouchers.filter(v => v.isActive && isExpired(v.expirationDate)).length;
+
+    document.getElementById('totalVouchers').textContent    = total;
+    document.getElementById('activeVouchers').textContent   = active;
+    document.getElementById('inactiveVouchers').textContent = inactive;
+    document.getElementById('expiredVouchers').textContent  = expired;
+
+    if (!total) { document.getElementById('emptyState').classList.remove('d-none'); return; }
+
+    const grid = document.getElementById('voucherGrid');
+    grid.classList.remove('d-none');
+    grid.innerHTML = '';
+
+    vouchers.forEach(v => {
+        const expired    = isExpired(v.expirationDate);
+        const statusText = expired ? 'Hết hạn' : (v.isActive ? 'Hoạt động' : 'Đã tắt');
+        const statusCls  = expired ? 'bg-warning-subtle text-warning' :
+                           (v.isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger');
+        const discountText = v.discountType === 'PERCENTAGE'
+                ? `${v.discountValue}%` : new Intl.NumberFormat('vi-VN').format(v.discountValue || 0) + '₫';
+
+        grid.insertAdjacentHTML('beforeend', `
+        <div class="col-md-6 col-xl-4">
+        <div class="card voucher-card shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="voucher-code">${esc(v.code)}</span>
+                    <span class="status-pill ${statusCls}">${statusText}</span>
+                </div>
+                <div class="discount-badge text-warning mb-1">−${esc(discountText)}</div>
+                <div class="small text-muted mb-3">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    Hết hạn: ${fmtDate(v.expirationDate)}
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 flex-fill"
+                            onclick="openEditModal(${v.id})">
+                        <i class="bi bi-pencil me-1"></i>Sửa
+                    </button>
+                    ${!expired ? `
+                    <button class="btn btn-sm rounded-pill px-3 flex-fill
+                            ${v.isActive ? 'btn-outline-warning' : 'btn-outline-success'}"
+                            onclick="toggleVoucher(${v.id})">
+                        <i class="bi bi-${v.isActive ? 'pause' : 'play'}-fill me-1"></i>
+                        ${v.isActive ? 'Tắt' : 'Bật'}
+                    </button>` : ''}
+                    <button class="btn btn-outline-danger btn-sm rounded-pill px-2"
+                            onclick="deleteVoucher(${v.id}, '${esc(v.code)}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        </div>`);
+    });
+}
+
+function openCreateModal() {
+    document.getElementById('voucherModalTitle').textContent = 'Tạo Voucher mới';
+    document.getElementById('editVoucherId').value = '';
+    document.getElementById('vCode').value = '';
+    document.getElementById('vType').value = 'PERCENTAGE';
+    document.getElementById('vValue').value = '';
+    document.getElementById('vExpiry').value = '';
+    document.getElementById('vActive').checked = true;
+    updateValueLabel();
+    new bootstrap.Modal(document.getElementById('voucherModal')).show();
+}
+
+function openEditModal(id) {
+    const v = vouchers.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('voucherModalTitle').textContent = 'Sửa Voucher';
+    document.getElementById('editVoucherId').value = v.id;
+    document.getElementById('vCode').value   = v.code || '';
+    document.getElementById('vType').value   = v.discountType || 'PERCENTAGE';
+    document.getElementById('vValue').value  = v.discountValue || '';
+    document.getElementById('vExpiry').value = v.expirationDate || '';
+    document.getElementById('vActive').checked = v.isActive;
+    updateValueLabel();
+    new bootstrap.Modal(document.getElementById('voucherModal')).show();
+}
+
+async function saveVoucher() {
+    const id    = document.getElementById('editVoucherId').value;
+    const code  = document.getElementById('vCode').value.trim();
+    const type  = document.getElementById('vType').value;
+    const value = parseFloat(document.getElementById('vValue').value);
+    const exp   = document.getElementById('vExpiry').value;
+    const active = document.getElementById('vActive').checked;
+
+    if (!code) { alert('Vui lòng nhập mã voucher'); return; }
+    if (isNaN(value) || value <= 0) { alert('Vui lòng nhập giá trị giảm hợp lệ'); return; }
+
+    const payload = { code, discountType: type, discountValue: value,
+                      expirationDate: exp || null, isActive: active };
+    const url    = id ? `/api/restaurant/vouchers/${id}` : '/api/restaurant/vouchers';
+    const method = id ? 'PUT' : 'POST';
+
+    const btn = document.getElementById('saveVoucherBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+
+    try {
+        const res = await fetch(url, {
+            method, headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+            body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('voucherModal'))?.hide();
+            showToast(d.message || 'Lưu thành công!', 'success');
+            loadVouchers();
+        } else {
+            showToast(d.error || 'Lỗi lưu voucher', 'danger');
+        }
+    } catch { showToast('Lỗi kết nối!', 'danger'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Lưu Voucher'; }
+}
+
+async function toggleVoucher(id) {
+    const res = await fetch(`/api/restaurant/vouchers/${id}/toggle`, {
+        method: 'PATCH', headers: { 'Authorization':'Bearer '+token }
+    });
+    const d = await res.json();
+    showToast(d.message || 'Đã cập nhật', res.ok ? 'success' : 'danger');
+    if (res.ok) loadVouchers();
+}
+
+async function deleteVoucher(id, code) {
+    if (!confirm(`Bạn có chắc muốn xóa voucher "${code}"?`)) return;
+    const res = await fetch(`/api/restaurant/vouchers/${id}`, {
+        method: 'DELETE', headers: { 'Authorization':'Bearer '+token }
+    });
+    const d = await res.json();
+    showToast(d.message || 'Đã xóa', res.ok ? 'success' : 'danger');
+    if (res.ok) loadVouchers();
+}
+
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+    t.style.zIndex = 9999;
+    t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+loadVouchers();
+</script>
+
+</main>
+</body>
+</html>

@@ -1,215 +1,371 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
 <head>
-    <title>Quản lý Đơn hàng</title>
+    <title>Quản lý Đơn hàng – Nhà hàng</title>
 </head>
 <body>
 <main>
 <div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+    .tab-btn.active { background:#212529!important;color:#fff!important;border-color:#212529!important; }
+    .order-card { border-radius:14px!important;transition:box-shadow .2s,transform .2s; }
+    .order-card:hover { box-shadow:0 8px 28px rgba(0,0,0,.11)!important;transform:translateY(-2px); }
+    .status-badge { font-size:.75rem;font-weight:600;padding:4px 12px;border-radius:30px; }
+    .contact-chip { display:inline-flex;align-items:center;gap:6px;border-radius:30px;padding:5px 14px;
+                    font-size:.8rem;font-weight:600;text-decoration:none;border:1.5px solid; }
+    .contact-chip:hover { opacity:.85; }
+    .item-chip { display:inline-flex;align-items:center;gap:4px;
+                 background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;
+                 padding:3px 10px;font-size:.8rem;margin:2px; }
+    .section-divider { font-size:.68rem;font-weight:700;letter-spacing:.07em;
+                       text-transform:uppercase;color:#9ca3af;margin:0 0 6px; }
+    .order-meta-row { font-size:.82rem;color:#6b7280;display:flex;align-items:center;gap:6px; }
+    .skeleton { background:linear-gradient(90deg,#e9ecef 25%,#f8f9fa 50%,#e9ecef 75%);
+                background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px; }
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    #filterStatus { border-radius:20px;font-size:.85rem;padding:6px 16px;border:1.5px solid #dee2e6; }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
         <h4 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-warning"></i>Quản lý Đơn hàng</h4>
-        <small class="text-muted">Xác nhận và theo dõi các đơn hàng</small>
+        <small class="text-muted">Xác nhận và theo dõi tất cả đơn hàng của nhà hàng</small>
     </div>
-    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadOrders()">
-        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
-    </button>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <select id="filterStatus" onchange="loadOrders()">
+            <option value="ACTIVE">Đang xử lý</option>
+            <option value="ALL">Tất cả</option>
+            <option value="PENDING">Chờ xác nhận</option>
+            <option value="PREPARING">Đang nấu</option>
+            <option value="DELIVERING">Đang giao</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="CANCELLED">Đã hủy</option>
+        </select>
+        <button class="btn btn-outline-secondary rounded-pill px-3 btn-sm" onclick="loadOrders()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+        </button>
+    </div>
 </div>
 
 <!-- Summary Chips -->
-<div class="d-flex gap-2 mb-4 flex-wrap">
-    <div class="badge rounded-pill bg-danger-subtle text-danger border border-danger fs-6 px-3 py-2">
-        <i class="bi bi-bell-fill me-1"></i>Chờ xác nhận: <span id="countPending">0</span>
-    </div>
-    <div class="badge rounded-pill bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2">
-        <i class="bi bi-fire me-1"></i>Đang nấu: <span id="countPreparing">0</span>
-    </div>
-</div>
-
-<!-- Tab filters -->
-<div class="d-flex gap-2 mb-4">
-    <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-tab="active" onclick="switchTab('active', this)">Đang xử lý</button>
-    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn" data-tab="all" onclick="switchTab('all', this)">Tất cả hôm nay</button>
+<div class="d-flex gap-2 mb-4 flex-wrap" id="summaryChips">
+    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger fs-6 px-3 py-2">
+        <i class="bi bi-bell-fill me-1"></i>Chờ xác nhận: <span id="cntPending">0</span>
+    </span>
+    <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2">
+        <i class="bi bi-fire me-1"></i>Đang nấu: <span id="cntPreparing">0</span>
+    </span>
+    <span class="badge rounded-pill bg-success-subtle text-success border border-success fs-6 px-3 py-2">
+        <i class="bi bi-truck me-1"></i>Đang giao: <span id="cntDelivering">0</span>
+    </span>
+    <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary fs-6 px-3 py-2">
+        <i class="bi bi-check2-all me-1"></i>Hôm nay hoàn thành: <span id="cntCompleted">0</span>
+    </span>
 </div>
 
 <!-- Loading -->
 <div id="loading" class="text-center py-5">
-    <div class="spinner-border text-warning"></div>
+    <div class="spinner-border text-warning" role="status"></div>
     <p class="text-muted mt-2">Đang tải đơn hàng...</p>
 </div>
 
-<!-- Orders List -->
-<div id="orderList" class="d-none"></div>
+<!-- Orders Grid -->
+<div id="orderList" class="d-none row g-3"></div>
 
+<!-- Empty State -->
 <div id="emptyOrders" class="text-center py-5 d-none">
     <div style="font-size:4rem">📋</div>
     <h5 class="fw-bold mt-2">Không có đơn hàng nào</h5>
     <p class="text-muted">Các đơn hàng mới sẽ xuất hiện ở đây</p>
 </div>
 
-
-<style>
-.tab-btn.active { background: #212529 !important; color: white !important; border-color: #212529 !important; }
-.order-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
-.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
-</style>
+<!-- Order Detail Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modalTitle">Chi tiết đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="text-center py-4"><div class="spinner-border text-warning"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    const token = localStorage.getItem('jwt_token');
-    let allOrders = [];
-    let currentTab = 'active';
+const token = localStorage.getItem('jwt_token');
+let allOrders = [];
 
-    const STATUS_LABELS = {
-        PENDING: '<span class="badge bg-danger-subtle text-danger border border-danger">⏳ Chờ xác nhận</span>',
-        PREPARING: '<span class="badge bg-primary-subtle text-primary border border-primary">🍳 Đang nấu</span>',
-        DELIVERING: '<span class="badge bg-success-subtle text-success border border-success">🛵 Đang giao</span>',
-        COMPLETED: '<span class="badge bg-secondary-subtle text-secondary border border-secondary">✅ Hoàn thành</span>',
-        CANCELLED: '<span class="badge bg-danger-subtle text-danger">❌ Đã hủy</span>'
-    };
+const STATUS_LABELS = {
+    PENDING:    '<span class="status-badge" style="background:#fee2e2;color:#dc2626;">⏳ Chờ xác nhận</span>',
+    PREPARING:  '<span class="status-badge" style="background:#dbeafe;color:#2563eb;">🍳 Đang nấu</span>',
+    DELIVERING: '<span class="status-badge" style="background:#d1fae5;color:#059669;">🛵 Đang giao</span>',
+    COMPLETED:  '<span class="status-badge" style="background:#e5e7eb;color:#374151;">✅ Hoàn thành</span>',
+    CANCELLED:  '<span class="status-badge" style="background:#fde8e8;color:#b91c1c;">❌ Đã hủy</span>'
+};
 
-    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
-    function formatTime(dt) {
-        if (!dt) return '';
-        return new Date(dt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+function fmtVND(n) {
+    return new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(n || 0);
+}
+function fmtTime(dt) {
+    if (!dt) return '';
+    const d = Array.isArray(dt) ? new Date(dt[0],dt[1]-1,dt[2],dt[3]||0,dt[4]||0) : new Date(dt);
+    return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadOrders() {
+    const status = document.getElementById('filterStatus').value;
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('orderList').classList.add('d-none');
+    document.getElementById('emptyOrders').classList.add('d-none');
+
+    try {
+        const res = await fetch(`/api/restaurant/orders?status=${status}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+        allOrders = await res.json();
+        document.getElementById('loading').classList.add('d-none');
+        updateSummaryChips();
+        renderOrders(allOrders);
+    } catch (e) {
+        document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối</div>';
     }
+}
 
-    async function loadOrders() {
-        document.getElementById('loading').classList.remove('d-none');
-        document.getElementById('orderList').classList.add('d-none');
-        document.getElementById('emptyOrders').classList.add('d-none');
-        try {
-            const res = await fetch('/api/restaurant/orders', { headers: { 'Authorization': 'Bearer ' + token } });
-            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
-            allOrders = await res.json();
-            document.getElementById('loading').classList.add('d-none');
-            updateCounts();
-            renderOrders();
-        } catch {
-            document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối</div>';
-        }
-    }
+function updateSummaryChips() {
+    // Always fetch ALL for summary counts
+    fetch('/api/restaurant/orders?status=ALL', { headers: { 'Authorization': 'Bearer ' + token } })
+        .then(r => r.json()).then(all => {
+            document.getElementById('cntPending').textContent    = all.filter(o => o.status==='PENDING').length;
+            document.getElementById('cntPreparing').textContent  = all.filter(o => o.status==='PREPARING').length;
+            document.getElementById('cntDelivering').textContent = all.filter(o => o.status==='DELIVERING').length;
+            document.getElementById('cntCompleted').textContent  = all.filter(o => o.status==='COMPLETED').length;
+        }).catch(()=>{});
+}
 
-    function updateCounts() {
-        document.getElementById('countPending').textContent = allOrders.filter(o => o.status === 'PENDING').length;
-        document.getElementById('countPreparing').textContent = allOrders.filter(o => o.status === 'PREPARING').length;
-    }
+function renderOrders(orders) {
+    const el    = document.getElementById('orderList');
+    const empty = document.getElementById('emptyOrders');
 
-    function switchTab(tab, btn) {
-        currentTab = tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderOrders();
-    }
+    if (!orders.length) { el.classList.add('d-none'); empty.classList.remove('d-none'); return; }
+    empty.classList.add('d-none');
+    el.classList.remove('d-none');
+    el.innerHTML = '';
 
-    function renderOrders() {
-        let orders = allOrders;
-        if (currentTab === 'active') orders = orders.filter(o => o.status === 'PENDING' || o.status === 'PREPARING');
-        const el = document.getElementById('orderList');
-        const empty = document.getElementById('emptyOrders');
+    orders.forEach(o => {
+        const itemsList = (o.items || []).map(i =>
+            `<span class="item-chip"><i class="bi bi-dot text-warning"></i>${esc(i.itemName)} ×${i.quantity}</span>`
+        ).join('');
 
-        if (!orders.length) {
-            el.classList.add('d-none');
-            empty.classList.remove('d-none');
-            return;
-        }
-        empty.classList.add('d-none');
-        el.classList.remove('d-none');
-        el.innerHTML = '';
+        const actions  = getActions(o);
+        const contacts = getContactBtns(o);
 
-        orders.forEach(o => {
-            const itemsList = (o.items || []).map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i.itemName} ×${i.quantity}</span>`).join('');
-            const actions = getActions(o);
-            el.insertAdjacentHTML('beforeend', `
-            <div class="card border-0 shadow-sm order-card mb-3" id="order-${o.id}">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="fw-bold mb-0">Đơn #${o.id}</h6>
-                            <small class="text-muted">
-                                <i class="bi bi-person me-1"></i>${o.customerName}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            ${STATUS_LABELS[o.status] || o.status}
+        el.insertAdjacentHTML('beforeend', `
+        <div class="col-lg-6">
+        <div class="card border-0 shadow-sm order-card h-100" id="order-${o.id}">
+            <div class="card-body p-4">
+                <!-- Header row -->
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="fw-bold mb-1">Đơn #${o.id}</h6>
+                        <div class="order-meta-row">
+                            <i class="bi bi-clock"></i>${fmtTime(o.orderTime)}
                         </div>
                     </div>
-                    <div class="mb-3">${itemsList}</div>
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <span class="fw-bold text-danger fs-5">${formatVND(o.totalAmount)}</span>
-                        <div class="d-flex gap-2 flex-wrap">${actions}</div>
+                    <div class="text-end">
+                        ${STATUS_LABELS[o.status] || o.status}
                     </div>
                 </div>
-            </div>`);
+
+                <!-- Customer info -->
+                <div class="mb-2">
+                    <div class="section-divider">Khách hàng</div>
+                    <div class="order-meta-row mb-1">
+                        <i class="bi bi-person-fill text-primary"></i>
+                        <strong>${esc(o.customerName || '—')}</strong>
+                        ${o.customerPhone ? `<a href="tel:${esc(o.customerPhone)}" class="ms-2 text-primary text-decoration-none small"><i class="bi bi-telephone-fill"></i> ${esc(o.customerPhone)}</a>` : ''}
+                    </div>
+                    ${o.deliveryAddress ? `<div class="order-meta-row"><i class="bi bi-geo-alt-fill text-danger"></i>${esc(o.deliveryAddress)}</div>` : ''}
+                </div>
+
+                <!-- Driver info (if assigned) -->
+                ${o.driverName ? `
+                <div class="mb-2">
+                    <div class="section-divider">Tài xế</div>
+                    <div class="order-meta-row">
+                        <i class="bi bi-person-badge-fill text-success"></i>
+                        <strong>${esc(o.driverName)}</strong>
+                        ${o.driverPhone ? `<a href="tel:${esc(o.driverPhone)}" class="ms-2 text-success text-decoration-none small"><i class="bi bi-telephone-fill"></i> ${esc(o.driverPhone)}</a>` : ''}
+                    </div>
+                </div>` : ''}
+
+                <!-- Items -->
+                <div class="mb-3">
+                    <div class="section-divider">Món ăn</div>
+                    <div>${itemsList}</div>
+                </div>
+
+                <!-- Footer -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+                    <span class="fw-bold text-danger fs-5">${fmtVND(o.totalAmount)}</span>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        ${contacts}
+                        ${actions}
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                onclick="showDetail(${o.id})">
+                            <i class="bi bi-eye me-1"></i>Chi tiết
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>`);
+    });
+}
+
+function getActions(o) {
+    if (o.status === 'PENDING') return `
+        <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold"
+                onclick="updateStatus(${o.id},'PREPARING')">
+            <i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu
+        </button>
+        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold"
+                onclick="updateStatus(${o.id},'CANCELLED')">
+            <i class="bi bi-x-lg me-1"></i>Từ chối
+        </button>`;
+    if (o.status === 'PREPARING') return `
+        <span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Chờ tài xế...</span>`;
+    return '';
+}
+
+function getContactBtns(o) {
+    const canContact = o.status === 'PREPARING' || o.status === 'DELIVERING';
+    if (!canContact) return '';
+    let btns = '';
+    if (o.customerPhone) {
+        btns += `<a href="tel:${esc(o.customerPhone)}" class="contact-chip" style="color:#2563eb;border-color:#93c5fd;">
+                    <i class="bi bi-telephone-fill"></i>Gọi KH
+                 </a>`;
+    }
+    btns += `<button class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                     onclick="openChat(${o.id},'CUSTOMER','Khách hàng')">
+                <i class="bi bi-chat-dots me-1"></i>Chat KH
+             </button>`;
+    if (o.driverName) {
+        if (o.driverPhone) {
+            btns += `<a href="tel:${esc(o.driverPhone)}" class="contact-chip" style="color:#059669;border-color:#6ee7b7;">
+                        <i class="bi bi-telephone-fill"></i>Gọi TX
+                     </a>`;
+        }
+        btns += `<button class="btn btn-outline-success btn-sm rounded-pill px-3"
+                         onclick="openChat(${o.id},'DRIVER','Tài xế')">
+                    <i class="bi bi-chat-dots me-1"></i>Chat TX
+                 </button>`;
+    }
+    return btns;
+}
+
+async function updateStatus(orderId, status) {
+    const labels = { PREPARING:'xác nhận và bắt đầu nấu', CANCELLED:'từ chối' };
+    if (!confirm(`Bạn có chắc muốn ${labels[status] || status} đơn hàng #${orderId}?`)) return;
+    try {
+        const res = await fetch(`/api/restaurant/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+            body: JSON.stringify({ status })
         });
+        const d = await res.json();
+        if (res.ok) { showToast(d.message || 'Cập nhật thành công!', 'success'); loadOrders(); }
+        else showToast(d.error || 'Lỗi cập nhật', 'danger');
+    } catch { showToast('Lỗi kết nối!', 'danger'); }
+}
+
+async function showDetail(orderId) {
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+    document.getElementById('modalTitle').textContent = `Chi tiết đơn #${orderId}`;
+    document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-warning"></div></div>';
+    modal.show();
+    try {
+        const res = await fetch(`/api/restaurant/orders/${orderId}`, {
+            headers: { 'Authorization':'Bearer '+token }
+        });
+        const o = await res.json();
+        const itemsHtml = (o.items || []).map(i => `
+            <tr>
+                <td>${esc(i.itemName)}</td>
+                <td class="text-center">${i.quantity}</td>
+                <td class="text-end">${fmtVND(i.price)}</td>
+                <td class="text-end">${fmtVND((i.price||0)*i.quantity)}</td>
+            </tr>`).join('');
+
+        document.getElementById('modalBody').innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="section-divider">Thông tin khách hàng</div>
+                    <p class="mb-1"><i class="bi bi-person-fill text-primary me-2"></i><strong>${esc(o.customerName||'—')}</strong></p>
+                    ${o.customerPhone ? `<p class="mb-1"><i class="bi bi-telephone me-2"></i><a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a></p>` : ''}
+                    ${o.deliveryAddress ? `<p class="mb-1"><i class="bi bi-geo-alt text-danger me-2"></i>${esc(o.deliveryAddress)}</p>` : ''}
+                </div>
+                <div class="col-md-6">
+                    <div class="section-divider">Trạng thái & Tài xế</div>
+                    <p class="mb-1">${STATUS_LABELS[o.status] || o.status}</p>
+                    ${o.driverName ? `<p class="mb-1"><i class="bi bi-person-badge text-success me-2"></i>${esc(o.driverName)}
+                        ${o.driverPhone ? `<a href="tel:${esc(o.driverPhone)}" class="ms-2">${esc(o.driverPhone)}</a>` : ''}</p>` : '<p class="text-muted small mb-1">Chưa có tài xế</p>'}
+                </div>
+                <div class="col-12">
+                    <div class="section-divider">Danh sách món</div>
+                    <table class="table table-sm">
+                        <thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Thành tiền</th></tr></thead>
+                        <tbody>${itemsHtml}</tbody>
+                        <tfoot><tr><td colspan="3" class="text-end fw-bold">Tổng cộng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr></tfoot>
+                    </table>
+                </div>
+                ${(o.status==='PENDING'||o.status==='PREPARING') ? `
+                <div class="col-12 d-flex gap-2 justify-content-end">
+                    ${o.status==='PENDING' ? `<button class="btn btn-success rounded-pill px-4" onclick="updateStatus(${o.id},'PREPARING')">
+                        <i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu
+                    </button>
+                    <button class="btn btn-outline-danger rounded-pill px-4" onclick="updateStatus(${o.id},'CANCELLED')">
+                        <i class="bi bi-x-lg me-1"></i>Từ chối
+                    </button>` : '<span class="text-muted small align-self-center"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>'}
+                </div>` : ''}
+            </div>`;
+    } catch (e) {
+        document.getElementById('modalBody').innerHTML = '<div class="text-danger text-center py-3">Lỗi tải chi tiết đơn hàng</div>';
     }
+}
 
-    function getActions(order) {
-        const chatBtn = `<button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold" onclick="openOrderChat(${order.id})">
-                            <i class="bi bi-chat-dots me-1"></i>Chat
-                         </button>`;
-        if (order.status === 'PENDING') {
-            return `
-                <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'PREPARING')">
-                    <i class="bi bi-check-lg me-1"></i>Xác nhận & Bắt đầu nấu
-                </button>
-                <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'CANCELLED')">
-                    <i class="bi bi-x-lg me-1"></i>Từ chối
-                </button>
-                ${chatBtn}`;
-        } else if (order.status === 'PREPARING') {
-            return `<span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>
-                    ${chatBtn}`;
-        }
-        return '';
+function openChat(orderId, targetRole, label) {
+    if (typeof window.openShopeeChat === 'function') {
+        window.openShopeeChat(orderId, targetRole, label);
+    } else {
+        alert('Chat Component chưa sẵn sàng');
     }
+}
 
-    async function updateStatus(orderId, status) {
-        const labels = { PREPARING: 'xác nhận', DELIVERING: 'chuyển sang sẵn sàng giao', CANCELLED: 'từ chối' };
-        if (!confirm(`Bạn có chắc muốn ${labels[status] || status} đơn hàng #${orderId}?`)) return;
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+    t.style.zIndex = 9999;
+    t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
 
-        try {
-            const res = await fetch(`/api/restaurant/orders/${orderId}/status`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ status })
-            });
-            const d = await res.json();
-            if (res.ok) {
-                showToast(d.message || 'Cập nhật thành công!', 'success');
-                loadOrders();
-            } else {
-                showToast(d.error || 'Lỗi cập nhật trạng thái', 'danger');
-            }
-        } catch { showToast('Lỗi kết nối!', 'danger'); }
-    }
-
-    function showToast(msg, type) {
-        const t = document.createElement('div');
-        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
-        t.style.zIndex = 9999;
-        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    }
-
-    loadOrders();
-    setInterval(loadOrders, 30000);
+loadOrders();
+setInterval(loadOrders, 30000); // Auto-refresh every 30s
 </script>
 
-<!-- Chat widget — nhà hàng dùng kênh RESTAURANT -->
-<script>
-    window.MY_ROLE = 'RESTAURANT';
-    window.openOrderChat = function(orderId) {
-        if (typeof window.openShopeeChat === 'function') {
-            window.openShopeeChat(orderId, 'CUSTOMER', 'Khách hàng');
-        } else {
-            alert("Chat Component chưa sẵn sàng");
-        }
-    };
-</script>
-
+<!-- Chat Widget -->
+<script>window.MY_ROLE = 'RESTAURANT';</script>
 <div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
+
 </main>
 </body>
 </html>

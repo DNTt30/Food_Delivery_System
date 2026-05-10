@@ -46,6 +46,12 @@ public class WebController {
     @GetMapping("/restaurant/orders")
     public String restaurantOrders() { return "restaurant/orders"; }
 
+    @GetMapping("/restaurant/vouchers")
+    public String restaurantVouchers() { return "restaurant/vouchers"; }
+
+    @GetMapping("/restaurant/reviews")
+    public String restaurantReviews() { return "restaurant/reviews"; }
+
     // 4. Driver
     @GetMapping("/driver/dashboard")
     public String driverDashboard() { return "driver/dashboard"; }

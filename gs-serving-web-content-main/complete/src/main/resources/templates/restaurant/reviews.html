@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
+<head>
+    <title>Đánh giá – Nhà hàng</title>
+</head>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
+
+<style>
+    .review-card { border-radius:14px;border:none;transition:box-shadow .2s,transform .2s; }
+    .review-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.09)!important;transform:translateY(-2px); }
+    .star-display { font-size:1.1rem; }
+    .avg-score { font-size:4rem;font-weight:800;line-height:1;color:#f59e0b; }
+    .avg-label { font-size:.85rem;color:#9ca3af; }
+    .bar-row { display:flex;align-items:center;gap:10px;margin-bottom:6px; }
+    .bar-fill { height:8px;border-radius:4px;background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .bar-bg   { flex:1;height:8px;border-radius:4px;background:#f3f4f6;overflow:hidden; }
+    .customer-avatar { width:36px;height:36px;border-radius:50%;
+                       background:linear-gradient(135deg,#667eea,#764ba2);
+                       color:#fff;font-weight:700;font-size:.9rem;
+                       display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .review-comment { font-size:.9rem;color:#374151;line-height:1.6; }
+    .review-date { font-size:.75rem;color:#9ca3af; }
+    .filter-btn { border-radius:20px;font-size:.82rem;padding:5px 16px; }
+    .filter-btn.active { background:#212529!important;color:#fff!important;border-color:#212529!important; }
+</style>
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="bi bi-star-fill me-2" style="color:#f59e0b;"></i>Đánh giá của khách hàng</h4>
+        <small class="text-muted">Theo dõi phản hồi và cải thiện chất lượng dịch vụ</small>
+    </div>
+    <button class="btn btn-outline-secondary rounded-pill px-3 btn-sm" onclick="loadReviews()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+    </button>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-warning" role="status"></div>
+    <p class="text-muted mt-2">Đang tải đánh giá...</p>
+</div>
+
+<!-- Summary + Chart -->
+<div id="reviewContent" class="d-none">
+    <div class="row g-4 mb-4">
+        <!-- Avg Score -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px;">
+                <div class="avg-score" id="avgScore">—</div>
+                <div id="avgStars" class="star-display my-2">☆☆☆☆☆</div>
+                <div class="avg-label" id="totalReviews">0 đánh giá</div>
+            </div>
+        </div>
+        <!-- Rating Breakdown -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius:14px;">
+                <h6 class="fw-bold mb-3 text-muted" style="font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;">Phân bố đánh giá</h6>
+                <div id="ratingBars">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter by stars -->
+    <div class="d-flex gap-2 mb-4 flex-wrap align-items-center">
+        <span class="text-muted small fw-semibold me-1">Lọc:</span>
+        <button class="btn btn-outline-secondary filter-btn active" data-stars="0" onclick="filterReviews(0, this)">Tất cả</button>
+        <button class="btn btn-outline-warning filter-btn" data-stars="5" onclick="filterReviews(5, this)">⭐⭐⭐⭐⭐ 5 sao</button>
+        <button class="btn btn-outline-success filter-btn" data-stars="4" onclick="filterReviews(4, this)">⭐⭐⭐⭐ 4 sao</button>
+        <button class="btn btn-outline-info filter-btn" data-stars="3" onclick="filterReviews(3, this)">⭐⭐⭐ 3 sao</button>
+        <button class="btn btn-outline-danger filter-btn" data-stars="2" onclick="filterReviews(2, this)">⭐⭐ ≤2 sao</button>
+    </div>
+
+    <!-- Reviews List -->
+    <div id="reviewList" class="row g-3"></div>
+
+    <div id="emptyFilter" class="text-center py-4 d-none">
+        <div style="font-size:3rem">🔍</div>
+        <p class="text-muted mt-2">Không có đánh giá nào với bộ lọc này</p>
+    </div>
+</div>
+
+<!-- Empty State (no reviews at all) -->
+<div id="emptyState" class="text-center py-5 d-none">
+    <div style="font-size:4rem">⭐</div>
+    <h5 class="fw-bold mt-2">Chưa có đánh giá nào</h5>
+    <p class="text-muted">Các đánh giá của khách hàng sẽ hiển thị ở đây sau khi họ hoàn thành đơn hàng</p>
+</div>
+
+<script>
+const token = localStorage.getItem('jwt_token');
+let allReviews = [];
+
+function stars(rating, big) {
+    const r = Math.round(rating || 0);
+    const sz = big ? '1.3rem' : '1rem';
+    return '⭐'.repeat(r) + '☆'.repeat(Math.max(0,5-r));
+}
+
+function fmtDate(s) {
+    if (!s) return '';
+    const d = Array.isArray(s) ? new Date(s[0],s[1]-1,s[2],s[3]||0,s[4]||0) : new Date(s);
+    return d.toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+async function loadReviews() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('reviewContent').classList.add('d-none');
+    document.getElementById('emptyState').classList.add('d-none');
+
+    try {
+        const res = await fetch('/api/restaurant/reviews', { headers: { 'Authorization':'Bearer '+token } });
+        if (res.status === 401 || res.status === 403) { window.location.href='/common/auth'; return; }
+        const data = await res.json();
+        allReviews = data.reviews || [];
+        document.getElementById('loading').classList.add('d-none');
+
+        if (!allReviews.length) { document.getElementById('emptyState').classList.remove('d-none'); return; }
+
+        // Avg score
+        const avg = data.avgRating || 0;
+        document.getElementById('avgScore').textContent   = avg.toFixed(1);
+        document.getElementById('avgStars').textContent   = stars(avg, true);
+        document.getElementById('totalReviews').textContent = `${allReviews.length} đánh giá`;
+
+        // Rating bars
+        const bars = document.getElementById('ratingBars');
+        bars.innerHTML = '';
+        for (let s = 5; s >= 1; s--) {
+            const cnt  = allReviews.filter(r => r.rating === s).length;
+            const pct  = allReviews.length ? Math.round(cnt / allReviews.length * 100) : 0;
+            bars.insertAdjacentHTML('beforeend', `
+            <div class="bar-row">
+                <span style="width:32px;text-align:right;font-size:.8rem;font-weight:600;color:#6b7280;">${s}★</span>
+                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+                <span style="width:30px;font-size:.8rem;color:#9ca3af;">${cnt}</span>
+            </div>`);
+        }
+
+        document.getElementById('reviewContent').classList.remove('d-none');
+        renderReviews(allReviews);
+    } catch (e) {
+        document.getElementById('loading').innerHTML = '<div class="text-danger text-center py-4">Lỗi kết nối</div>';
+    }
+}
+
+function filterReviews(stars, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = stars === 0 ? allReviews :
+                     stars === 2 ? allReviews.filter(r => r.rating <= 2) :
+                     allReviews.filter(r => r.rating === stars);
+    renderReviews(filtered);
+}
+
+function renderReviews(reviews) {
+    const list  = document.getElementById('reviewList');
+    const empty = document.getElementById('emptyFilter');
+    list.innerHTML = '';
+    if (!reviews.length) { empty.classList.remove('d-none'); return; }
+    empty.classList.add('d-none');
+
+    reviews.forEach(r => {
+        const initial = (r.customerName || 'K').charAt(0).toUpperCase();
+        const starColor = r.rating >= 4 ? '#f59e0b' : r.rating === 3 ? '#84cc16' : '#ef4444';
+        list.insertAdjacentHTML('beforeend', `
+        <div class="col-md-6 col-xl-4">
+        <div class="card review-card shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="d-flex gap-3 mb-3">
+                    <div class="customer-avatar">${initial}</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:.9rem;">${esc(r.customerName || 'Khách')}</div>
+                        <div class="review-date"><i class="bi bi-receipt me-1"></i>Đơn #${r.orderId} • ${fmtDate(r.createdAt)}</div>
+                    </div>
+                </div>
+                <div class="mb-2" style="color:${starColor};font-size:1.15rem;">
+                    ${'★'.repeat(r.rating || 0)}${'☆'.repeat(5 - (r.rating||0))}
+                    <span class="ms-1 text-muted small">(${r.rating}/5)</span>
+                </div>
+                ${r.comment
+                    ? `<p class="review-comment mb-0">"${esc(r.comment)}"</p>`
+                    : `<p class="review-comment text-muted mb-0 fst-italic">Khách hàng không để lại bình luận</p>`}
+            </div>
+        </div>
+        </div>`);
+    });
+}
+
+loadReviews();
+</script>
+
+</main>
+</body>
+</html>

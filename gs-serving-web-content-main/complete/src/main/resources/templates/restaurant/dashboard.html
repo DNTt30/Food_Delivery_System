@@ -195,15 +195,15 @@
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
-        <!-- Đơn mới -->
-        <div class="col-md-4">
+        <!-- Đơn mới hôm nay -->
+        <div class="col-md-6 col-xl-3">
             <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="icon-bg" style="background: rgba(220,53,69,0.12); color: #dc3545;">
                         <i class="bi bi-bell-fill"></i>
                     </div>
                     <span class="trend-badge" style="background: rgba(220,53,69,0.1); color: #dc3545;">
-                        <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Cần xử lý
+                        <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Hôm nay
                     </span>
                 </div>
                 <p class="stat-label text-muted mb-1">Đơn Mới (Đang Chờ)</p>
@@ -214,8 +214,8 @@
             </div>
         </div>
 
-        <!-- Đơn hoàn thành -->
-        <div class="col-md-4">
+        <!-- Đơn hoàn thành hôm nay -->
+        <div class="col-md-6 col-xl-3">
             <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="icon-bg" style="background: rgba(25,135,84,0.12); color: #198754;">
@@ -225,26 +225,45 @@
                         <i class="bi bi-check2"></i> Hôm nay
                     </span>
                 </div>
-                <p class="stat-label text-muted mb-1">Đơn Đã Hoàn Thành</p>
+                <p class="stat-label text-muted mb-1">Đơn Hoàn Thành Hôm Nay</p>
                 <p class="stat-value mb-0" id="totalCompletedOrders" style="color: #198754;">0</p>
-                <p class="small text-muted mt-2 mb-0">Tổng tất cả trạng thái</p>
+                <p class="small text-muted mt-2 mb-0">Chỉ tính đơn hôm nay</p>
             </div>
         </div>
 
-        <!-- Doanh thu -->
-        <div class="col-md-4">
+        <!-- Doanh thu hôm nay -->
+        <div class="col-md-6 col-xl-3">
             <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff8e1 0%, #fff 100%);">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="icon-bg" style="background: rgba(255,193,7,0.2); color: #d97706;">
                         <i class="bi bi-currency-dollar"></i>
                     </div>
                     <span class="trend-badge" style="background: rgba(255,193,7,0.15); color: #d97706;">
-                        <i class="bi bi-graph-up-arrow"></i> Tổng
+                        <i class="bi bi-graph-up-arrow"></i> Hôm nay
                     </span>
                 </div>
-                <p class="stat-label text-muted mb-1">Doanh Thu Tích Lũy</p>
+                <p class="stat-label text-muted mb-1">Doanh Thu Hôm Nay</p>
                 <p class="stat-value mb-0" id="todayRevenue" style="color: #d97706; font-size: 1.6rem;">0 đ</p>
-                <p class="small text-muted mt-2 mb-0">Từ các đơn hoàn thành</p>
+                <p class="small text-muted mt-2 mb-0">Từ đơn hoàn thành hôm nay</p>
+            </div>
+        </div>
+
+        <!-- Số món & Rating -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0f4ff 0%, #fff 100%);">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(99,102,241,0.12); color: #6366f1;">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <span class="trend-badge" style="background: rgba(99,102,241,0.1); color: #6366f1;">
+                        <i class="bi bi-card-list"></i> Thực đơn
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Món Đang Bán / Rating</p>
+                <p class="stat-value mb-0" style="color: #6366f1; font-size: 1.5rem;">
+                    <span id="menuCount">—</span> món
+                </p>
+                <p class="small text-muted mt-2 mb-0">⭐ <span id="avgRating">—</span>/5 trung bình</p>
             </div>
         </div>
     </div>
@@ -294,6 +313,12 @@
                     <a href="/restaurant/menu" class="btn btn-success quick-action-btn text-white px-4">
                         <i class="bi bi-card-list"></i> Quản lý Thực Đơn
                     </a>
+                    <a href="/restaurant/vouchers" class="btn btn-warning quick-action-btn text-dark px-4">
+                        <i class="bi bi-tag-fill"></i> Quản lý Voucher
+                    </a>
+                    <a href="/restaurant/reviews" class="btn btn-outline-warning quick-action-btn px-4">
+                        <i class="bi bi-star-fill"></i> Xem Đánh Giá
+                    </a>
                     <a href="/common/profile" class="btn btn-outline-secondary quick-action-btn px-4">
                         <i class="bi bi-person-circle"></i> Hồ Sơ Nhà Hàng
                     </a>
@@ -322,21 +347,14 @@
         document.getElementById('authErrorBanner').classList.remove('d-none');
     }
 
-    function renderRevenueChart(newOrders, completedOrders, revenue) {
-        // Generate synthetic 7-day data based on real totals for demonstration
-        const days = [];
-        const revenueData = [];
-        const ordersData = [];
-
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            days.push(d.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric' }));
-            // Spread revenue across 7 days with today having the real value
-            const factor = i === 0 ? 1 : Math.random() * 0.6 + 0.1;
-            revenueData.push(Math.round((revenue / 7) * factor * (i === 0 ? 3.5 : 1)));
-            ordersData.push(Math.round(((completedOrders + newOrders) / 7) * factor));
-        }
+    function renderRevenueChart(chartData, newOrders, completedOrders, revenue) {
+        // Use real 7-day data from API
+        const days = chartData.map(d => {
+            const dt = new Date(d.date);
+            return dt.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric' });
+        });
+        const revenueData = chartData.map(d => d.revenue || 0);
+        const ordersData  = chartData.map(d => d.orders || 0);
 
         const ctx = document.getElementById('revenueChart').getContext('2d');
         if (revenueChartInstance) revenueChartInstance.destroy();
@@ -502,9 +520,12 @@
                 }
             }
 
-            const newOrders = data.totalNewOrders || 0;
-            const completedOrders = data.totalCompletedOrders || 0;
-            const revenue = data.todayRevenue || 0;
+            const newOrders        = data.todayNewOrders || 0;
+            const completedOrders  = data.todayCompleted || 0;
+            const revenue          = data.todayRevenue || 0;
+            const menuCount        = data.menuCount || 0;
+            const avgRating        = data.avgRating || 0;
+            const chartData        = data.chartData || [];
 
             // Cập nhật nút mở/đóng cửa
             updateStatusBtn(data.isOpen);
@@ -514,9 +535,11 @@
             document.getElementById('totalCompletedOrders').textContent = completedOrders;
             document.getElementById('todayRevenue').textContent =
                 new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(revenue);
+            document.getElementById('menuCount').textContent = menuCount;
+            document.getElementById('avgRating').textContent  = avgRating > 0 ? avgRating.toFixed(1) : 'Chưa có';
 
-            // Render charts
-            renderRevenueChart(newOrders, completedOrders, revenue);
+            // Render charts with real 7-day data
+            renderRevenueChart(chartData, newOrders, completedOrders, revenue);
             renderOrderStatusChart(newOrders, completedOrders);
 
             document.getElementById('skeletonLoader').classList.add('d-none');
