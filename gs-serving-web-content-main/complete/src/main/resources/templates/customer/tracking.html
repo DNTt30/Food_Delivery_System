@@ -76,18 +76,44 @@
             <div id="orderItems"></div>
         </div>
 
-        <!-- Driver Info -->
+        <!-- Driver Info + Direct Chat -->
         <div class="card border-0 shadow-sm rounded-4 p-4 d-none" id="driverCard">
             <h6 class="fw-bold mb-3"><i class="bi bi-bicycle text-success me-2"></i>Thông tin tài xế</h6>
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                     style="width:50px;height:50px;">
-                    <i class="bi bi-person-fill text-success fs-4"></i>
+            <div class="d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:50px;height:50px;">
+                        <i class="bi bi-person-fill text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <p class="fw-bold mb-0" id="driverName"></p>
+                        <a id="driverPhone" class="text-muted small text-decoration-none"></a>
+                    </div>
                 </div>
-                <div>
-                    <p class="fw-bold mb-0" id="driverName"></p>
-                    <a id="driverPhone" class="text-muted small text-decoration-none"></a>
-                </div>
+                <!-- Nút nhắn tin trực tiếp với tài xế -->
+                <button id="chatDriverBtn"
+                        onclick="openDriverChat()"
+                        class="btn btn-success rounded-pill px-3 fw-semibold position-relative"
+                        style="white-space:nowrap;">
+                    <i class="bi bi-chat-dots-fill me-1"></i>Nhắn tin
+                    <span id="driverChatBadge"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="display:none;font-size:.65rem;">!</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Restaurant Chat shortcut (PENDING / PREPARING) -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 d-none" id="restaurantChatCard">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="small text-muted">
+                    <i class="bi bi-shop me-2"></i>
+                    Câu hỏi về đơn hàng? Nhắn tin nhà hàng ngay!
+                </span>
+                <button onclick="openRestaurantChat()"
+                        class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold">
+                    <i class="bi bi-chat-dots me-1"></i>Chat với Nhà hàng
+                </button>
             </div>
         </div>
 
@@ -213,17 +239,28 @@
         // Timeline
         renderTimeline(order.status);
 
-        // Driver
+        // Driver card + direct chat button
+        const driverCard = document.getElementById('driverCard');
+        const restaurantChatCard = document.getElementById('restaurantChatCard');
+
         if (order.driverName && order.status === 'DELIVERING') {
-            document.getElementById('driverCard').classList.remove('d-none');
+            driverCard.classList.remove('d-none');
+            restaurantChatCard.classList.add('d-none');
             document.getElementById('driverName').textContent = order.driverName;
             const phoneEl = document.getElementById('driverPhone');
             if (order.driverPhone) {
                 phoneEl.textContent = '📞 ' + order.driverPhone;
                 phoneEl.href = 'tel:' + order.driverPhone;
             }
+            switchChatType('DRIVER');
         } else {
-            document.getElementById('driverCard').classList.add('d-none');
+            driverCard.classList.add('d-none');
+            if (order.status === 'PENDING' || order.status === 'PREPARING') {
+                restaurantChatCard.classList.remove('d-none');
+                switchChatType('RESTAURANT');
+            } else {
+                restaurantChatCard.classList.add('d-none');
+            }
         }
 
         // Cancel button
@@ -280,19 +317,39 @@
                 alert('Đã hủy đơn hàng thành công!');
                 loadOrder();
             } else {
-                alert(data.error || 'Không thể hủy đơn hàng');
-            }
-        } catch { alert('Lỗi kết nối!'); }
-    }
+                alert(data.error || 'Không thể hủy đ�    // ── Chat helpers (delegates to ShopeeChat polling widget) ──
+    window.MY_ROLE = 'CUSTOMER';
 
-    // If no orderId, show history shortcut
-    if (!orderId) {
-        document.getElementById('loading').classList.add('d-none');
-        document.getElementById('notFound').classList.remove('d-none');
-    } else {
-        loadOrder();
-    }
+    window.openRestaurantChat = function () {
+        window.ShopeeChat && window.ShopeeChat.open(orderId, 'RESTAURANT', 'Nhà hàng');
+    };
+
+    window.openDriverChat = function () {
+        const badge = document.getElementById('driverChatBadge');
+        if (badge) badge.style.display = 'none';
+        window.ShopeeChat && window.ShopeeChat.open(orderId, 'DRIVER', 'Tài xế');
+    };
+
+    // No auto-open on render – avoids disruptive popup
+    window.switchChatType = function () {};
+</script>        }
+    };
+
+    // Auto-open correct chat when order renders
+    window.switchChatType = function (type) {
+        // No auto-open needed to prevent annoying popup
+    };
+
+    // Mirror new-message badge onto driver card button
+    document.addEventListener('chatNewMessage', function () {
+        const badge = document.getElementById('driverChatBadge');
+        if (badge) badge.style.display = '';
+    });
 </script>
+
+<!-- Real-time Chat Widget (Customer ↔ Restaurant ↔ Driver) -->
+<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
+
 </main>
 </body>
 </html>

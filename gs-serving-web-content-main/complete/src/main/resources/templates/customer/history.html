@@ -178,6 +178,17 @@
                                     ${isPending ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
                                     ${isCompleted ? `<button class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" onclick="openReview(${o.id}, '${o.restaurantName.replace(/'/g,"&#39;")}')"><i class="bi bi-star me-1"></i>Đánh giá</button>` : ''}
                                     ${!isActive ? `<button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="reorder(${o.id})"><i class="bi bi-arrow-repeat me-1"></i>Đặt lại</button>` : ''}
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 fw-semibold"
+                                            title="Chat với nhà hàng"
+                                            onclick="openChatHistory(${o.id},'RESTAURANT','Nhà hàng')">
+                                        <i class="bi bi-chat-dots"></i> NH
+                                    </button>
+                                    ${(o.status==='DELIVERING'||o.status==='COMPLETED') ? `
+                                    <button class="btn btn-sm btn-outline-success rounded-pill px-2 fw-semibold"
+                                            title="Chat với tài xế"
+                                            onclick="openChatHistory(${o.id},'DRIVER','Tài xế')">
+                                        <i class="bi bi-chat-dots"></i> TX
+                                    </button>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -247,7 +258,22 @@
         const order = allOrders.find(o => o.id === orderId);
         if (order) alert('Tính năng đặt lại sẽ sớm được ra mắt!');
     }
+
+    // ── Chat: Polling Chat System ──────────────────────────────
+    // Delegate to ShopeeChat widget (fragments/chat_widget.html)
+    window.MY_ROLE = 'CUSTOMER';
+
+    window.openChatHistory = function(orderId, targetRole, label) {
+        if (typeof window.ShopeeChat !== 'undefined') {
+            window.ShopeeChat.open(orderId, targetRole, label);
+        } else {
+            // Fallback: widget not yet loaded
+            console.warn('[Chat] ShopeeChat widget not ready');
+        }
+    };
 </script>
+
+<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
 </main>
 </body>
 </html>

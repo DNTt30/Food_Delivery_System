@@ -19,18 +19,20 @@ Hệ thống **Food Delivery Management** là một giải pháp toàn diện k�
 graph TD
     subgraph Client_Side
         B[Browser - Thymeleaf]
-        JS[Vanilla JS / Fetch API]
+        JS[Vanilla JS / Fetch API / Polling]
     end
 
     subgraph Server_Side
         direction TB
         Auth[Spring Security / JWT]
+        WS[WebSocket / STOMP]
         Controller[Controllers]
         Service[Business Services]
         Repo[Spring Data JPA]
         
         B <--> Auth
         JS <--> Controller
+        JS <--> WS
         Controller --> Service
         Service --> Repo
     end
@@ -56,19 +58,42 @@ Hệ thống đã hoàn thiện **20/20 Use Case (100%)** chia cho 4 nhóm ngư�
 -   **Tìm kiếm & Đặt hàng:** Search thông minh, filter nhà hàng, giỏ hàng Real-time (LocalStorage).
 -   **Theo dõi đơn hàng:** Tracking Timeline với chế độ tự động cập nhật mỗi 15 giây.
 -   **Đánh giá:** Gửi feedback và số sao sau khi nhận hàng.
+-   **Chat trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING) ngay trong trang theo dõi đơn hàng.
 
 ### 🏪 Nhà hàng (Restaurant)
 -   **Quản lý thực đơn:** CRUD món ăn chuyên nghiệp, upload hình ảnh banner/món ăn.
 -   **Quản lý đơn hàng:** Tiếp nhận, chế biến và bàn giao cho tài xế với flow mượt mà.
 -   **Dashboard:** Thống kê doanh thu trực quan bằng **Chart.js** (Bar & Doughnut charts).
+-   **Chat trực tiếp:** Nhắn tin với Khách hàng và Tài xế theo từng giai đoạn đơn hàng.
 
 ### 🛵 Tài xế (Driver)
 -   **Nhận đơn:** Xem danh sách các đơn hàng đang chờ và nhận đơn theo khu vực.
 -   **Giao hàng:** Cập nhật trạng thái "Đang giao" và "Hoàn thành". Thu nhập tự động tính 10% phí ship.
+-   **Chat trực tiếp:** Nhắn tin với Khách hàng và Nhà hàng khi đang xử lý đơn.
 
 ### 🛡️ Quản trị viên (Admin)
 -   **Quản trị:** Khóa/mở tài khoản, duyệt đối tác nhà hàng mới.
 -   **Khuyến mãi:** Hệ thống Voucher linh hoạt (giảm % hoặc số tiền cố định).
+
+---
+
+## 💬 Hệ thống Chat (Polling Architecture)
+
+Tính năng chat được triển khai theo kiến trúc **Polling** với Widget pop-up phong cách ShopeeFood:
+
+| Cặp chat | Trạng thái cho phép |
+| :--- | :--- |
+| Khách hàng ↔ Nhà hàng | PENDING, PREPARING, DELIVERING |
+| Khách hàng ↔ Tài xế | PREPARING, DELIVERING |
+| Tài xế ↔ Nhà hàng | PREPARING, DELIVERING |
+| Tất cả | COMPLETED / CANCELLED → **Chỉ đọc** (phone bị mask) |
+
+**Tính năng nổi bật:**
+- 🔔 Polling tự động mỗi 3 giây
+- 🔒 Tự động khóa chat khi đơn hoàn thành/hủy
+- 📞 Hiển thị số điện thoại (mask khi đơn đóng)
+- 🎨 Màu header thay đổi theo vai trò (Nhà hàng: cam, Tài xế: xanh lá, Khách hàng: xanh dương)
+- 🔐 Phân quyền chặt chẽ — chỉ người thuộc đơn mới đọc/gửi được
 
 ---
 
@@ -78,8 +103,9 @@ Hệ thống đã hoàn thiện **20/20 Use Case (100%)** chia cho 4 nhóm ngư�
 | :--- | :--- |
 | **Backend** | Java 17, Spring Boot 3.3.0, Spring Data JPA |
 | **Bảo mật** | Spring Security, JWT (Stateless), OTP Email Verification |
-| **Database** | MySQL 8 (Aiven Cloud / Local), Hibernate |
+| **Database** | MySQL 8 (Aiven Cloud), Hibernate (ddl-auto=update) |
 | **Frontend** | Thymeleaf, Bootstrap 5.3, Vanilla JS, Chart.js |
+| **Real-time** | HTTP Polling (Chat), WebSocket/STOMP (cơ sở hạ tầng) |
 | **Email** | Gmail SMTP Server |
 
 ---
@@ -116,11 +142,15 @@ Sử dụng Maven Wrapper:
 
 ```text
 src/main/java/com/duong/salesmanagement/
-├── controller/     # API Endpoints & Web Controllers
-├── model/          # Entities (User, Order, MenuItem...)
-├── service/        # Business Logic & Email Service
+├── controller/     # API Endpoints & Web Controllers (Chat, Profile, Order...)
+├── model/          # Entities (User, FoodOrder, ChatMessage, MenuItem...)
+├── service/        # Business Logic (ChatService, ContactService, OrderService...)
 ├── repository/     # Data Access Layer (JPA)
-└── security/       # JWT & Security Configuration
+├── security/       # JWT, WebSocket Auth Interceptor
+├── dto/            # Request/Response DTOs
+├── exception/      # Custom Exceptions (ChatLocked, ChatAccessDenied...)
+├── config/         # WebSocket, Security Config
+└── util/           # PhoneMaskUtil, helpers
 ```
 
 ---
@@ -135,7 +165,16 @@ src/main/java/com/duong/salesmanagement/
 
 ---
 
-## 📝 Nhật ký Cập nhật Gần đây
+## 📝 Nhật ký Cập nhật
+
+### 📅 10/05/2026 — Chat System
+- **Hoàn thiện hệ thống Chat Polling:** Triển khai widget chat pop-up phong cách ShopeeFood cho 3 cặp vai trò.
+- **Phân quyền chat theo trạng thái đơn:** Mở rộng visibility matrix — Customer có thể chat với Restaurant xuyên suốt quá trình giao hàng.
+- **Fix lỗi tin nhắn trùng lặp:** Lọc tin nhắn theo cặp role (`myRole ↔ targetRole`) tránh hiện nhầm chat giữa các box.
+- **Hiển thị SĐT trong header chat:** Số điện thoại Tài xế/Khách hiện dưới tên, tự động mask khi đơn đóng.
+- **Fix lỗi DB schema:** Bảng `chat_messages` tạo lại đúng cấu trúc với FK constraints và cột `created_at`.
+- **Tối ưu parse ngày giờ:** Hỗ trợ cả định dạng ISO string và mảng số từ Jackson/Spring.
+- **Bảo mật code:** Fix `@NonNull` annotations, loại bỏ multi-catch redundant trong ChatApiController.
 
 ### 📅 08/05/2026
 - **Hoàn thiện 100% Use Cases:** Tích hợp đầy đủ các chức năng từ Admin đến Shipper.

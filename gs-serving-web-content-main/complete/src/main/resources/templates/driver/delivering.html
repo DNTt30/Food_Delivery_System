@@ -133,7 +133,9 @@
         el.classList.remove('d-none');
         el.innerHTML = '';
 
+        const deliveryIds = [];
         orders.forEach(o => {
+            if (o.status === 'DELIVERING') deliveryIds.push(o.id);
             const items = (o.items || [])
                 .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i}</span>`)
                 .join('');
@@ -141,7 +143,7 @@
             const isCompleted = o.status === 'COMPLETED';
 
             el.insertAdjacentHTML('beforeend', `
-            <div class="card border-0 shadow-sm order-card mb-3">
+            <div class="card border-0 shadow-sm order-card mb-3" id="ocard-${o.id}">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
@@ -170,14 +172,31 @@
                             <span class="fw-bold text-danger">${formatVND(o.totalAmount)}</span>
                             ${isCompleted ? `<span class="text-success small ms-2 fw-semibold"><i class="bi bi-wallet me-1"></i>+${formatVND((o.totalAmount || 0) * 0.1)}</span>` : ''}
                         </div>
+                        <div class="d-flex gap-2 flex-wrap">
                         ${isDelivering ? `
                         <button class="btn btn-success rounded-pill px-4 fw-semibold" onclick="completeDelivery(${o.id}, this)">
                             <i class="bi bi-check-circle-fill me-1"></i>Đã giao xong
+                        </button>
+                        <button id="chatBtn-${o.id}"
+                                class="btn btn-outline-primary rounded-pill px-3 fw-semibold position-relative"
+                                onclick="openOrderChat(${o.id})">
+                            <i class="bi bi-chat-dots me-1"></i>Nhắn tin KH
                         </button>` : ''}
+                        ${isCompleted ? `
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold"
+                                onclick="openChatHistory(${o.id})">
+                            <i class="bi bi-chat-dots me-1"></i>Xem tin nhắn
+                        </button>` : ''}
+                        </div>
                     </div>
                 </div>
             </div>`);
         });
+
+        // Tell the background listener to subscribe to all DELIVERING rooms
+        if (typeof window._refreshDriverChatSubs === 'function') {
+            window._refreshDriverChatSubs(deliveryIds);
+        }
     }
 
     async function completeDelivery(orderId, btn) {
@@ -216,6 +235,34 @@
 
     loadAll();
 </script>
+
+<!-- Chat widget (polling popup) -->
+<script>
+    window.MY_ROLE = 'DRIVER';
+    window.openOrderChat = function(orderId) {
+        const chatBtn = document.getElementById('chatBtn-' + orderId);
+        if (chatBtn) {
+            chatBtn.classList.remove('btn-primary');
+            chatBtn.classList.add('btn-outline-primary');
+            chatBtn.innerHTML = '<i class="bi bi-chat-dots me-1"></i>Nhắn tin KH';
+        }
+        if (typeof window.openShopeeChat === 'function') {
+            window.openShopeeChat(orderId, 'CUSTOMER', 'Khách hàng');
+        } else {
+            alert("Chat Component chưa sẵn sàng");
+        }
+    };
+
+    window.openChatHistory = function(orderId) {
+        if (typeof window.openShopeeChat === 'function') {
+            window.openShopeeChat(orderId, 'CUSTOMER', 'Lịch sử chat Khách hàng');
+        } else {
+            alert("Chat Component chưa sẵn sàng");
+        }
+    };
+</script>
+
+<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
 </main>
 </body>
 </html>

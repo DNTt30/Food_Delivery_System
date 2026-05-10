@@ -361,5 +361,81 @@
     <mxCell id="E17" edge="1" parent="1" source="240" style="endArrow=open;endFill=0;endSize=8;dashed=1;strokeColor=#d6b656;fontSize=9;edgeStyle=orthogonalEdgeStyle;noEdgeStyle=1;" target="250" value="«uses»">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
+
+    <!-- ===== SERVICE LAYER (Bổ sung từ Sequence Diagram Tuần 4) ===== -->
+    <mxCell id="SVC_TITLE" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=13;fontColor=#1F4E79;" value="«Service Layer» — Bổ sung Tuần 4" vertex="1">
+      <mxGeometry height="30" width="900" x="1240" y="540" as="geometry" />
+    </mxCell>
+
+    <!-- AuthService -->
+    <mxCell id="SVC1" parent="1" style="swimlane;fontStyle=1;align=center;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" value="«service»&#xa;AuthService" vertex="1">
+      <mxGeometry height="310" width="270" x="1240" y="580" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC1_DEPS" parent="SVC1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontColor=#666666;" value="– userRepository : UserRepository&#xa;– passwordEncoder : PasswordEncoder&#xa;– emailService : EmailService" vertex="1">
+      <mxGeometry height="55" width="270" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC1_LINE1" parent="SVC1" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="270" y="85" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC1_METHODS" parent="SVC1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontStyle=2;" value="+ register(username, password, fullName, email, roleName) : User&#xa;+ verifyCode(email, code) : void&#xa;+ resendCode(email) : void&#xa;+ forgotPassword(email) : void&#xa;+ resetPassword(email, code, newPassword) : void&#xa;– generateOTP() : String" vertex="1">
+      <mxGeometry height="150" width="270" y="93" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC1_LINE2" parent="SVC1" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="270" y="243" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC1_ANNOT" parent="SVC1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontStyle=0;fontColor=#7B7B7B;" value="@Service @Transactional (on register)" vertex="1">
+      <mxGeometry height="30" width="270" y="251" as="geometry" />
+    </mxCell>
+
+    <!-- EmailService -->
+    <mxCell id="SVC2" parent="1" style="swimlane;fontStyle=1;align=center;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" value="«service»&#xa;EmailService" vertex="1">
+      <mxGeometry height="190" width="270" x="1240" y="920" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC2_DEPS" parent="SVC2" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontColor=#666666;" value="– javaMailSender : JavaMailSender&#xa;– fromEmail : String  (Gmail SMTP)" vertex="1">
+      <mxGeometry height="42" width="270" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC2_LINE1" parent="SVC2" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="270" y="72" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC2_METHODS" parent="SVC2" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontStyle=2;" value="+ sendVerificationCode(email, otp) : void&#xa;+ sendPasswordResetCode(email, otp) : void" vertex="1">
+      <mxGeometry height="60" width="270" y="80" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC2_LINE2" parent="SVC2" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="270" y="140" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC2_ANNOT" parent="SVC2" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontStyle=0;fontColor=#7B7B7B;" value="@Service  (async — Gmail SMTP)" vertex="1">
+      <mxGeometry height="30" width="270" y="148" as="geometry" />
+    </mxCell>
+
+    <!-- OrderService -->
+    <mxCell id="SVC3" parent="1" style="swimlane;fontStyle=1;align=center;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" value="«service»&#xa;OrderService" vertex="1">
+      <mxGeometry height="440" width="280" x="1550" y="580" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC3_DEPS" parent="SVC3" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontColor=#666666;" value="– foodOrderRepository : FoodOrderRepository&#xa;– orderItemRepository : OrderItemRepository&#xa;– menuItemRepository : MenuItemRepository&#xa;– reviewRepository : ReviewRepository&#xa;– driverProfileRepository : DriverProfileRepository" vertex="1">
+      <mxGeometry height="90" width="280" y="30" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC3_LINE1" parent="SVC3" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="280" y="120" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC3_METHODS" parent="SVC3" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=10;fontStyle=2;" value="+ createOrder(customer, restaurant, items, address) : FoodOrder&#xa;+ updateOrderStatus(orderId, status, restaurant) : void&#xa;+ cancelOrder(orderId, customer) : void&#xa;+ reviewOrder(orderId, customer, rating, comment) : Review&#xa;+ acceptOrderByDriver(orderId, driver) : FoodOrder&#xa;+ completeDelivery(orderId, driver) : void&#xa;+ getRestaurantOrders(restaurant) : List&lt;FoodOrder&gt;&#xa;+ getCustomerOrders(customer) : List&lt;FoodOrder&gt;&#xa;+ getOrderById(orderId) : Optional&lt;FoodOrder&gt;&#xa;+ getAvailableOrdersForDriver() : List&lt;FoodOrder&gt;&#xa;+ getDriverActiveDeliveries(driver) : List&lt;FoodOrder&gt;&#xa;+ getDriverHistory(driver) : List&lt;FoodOrder&gt;" vertex="1">
+      <mxGeometry height="285" width="280" y="128" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC3_LINE2" parent="SVC3" style="line;strokeColor=#82b366;fillColor=none;" value="" vertex="1">
+      <mxGeometry height="8" width="280" y="413" as="geometry" />
+    </mxCell>
+    <mxCell id="SVC3_ANNOT" parent="SVC3" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;fontSize=9;fontStyle=0;fontColor=#7B7B7B;" value="@Service @Transactional (trên tất cả write methods)" vertex="1">
+      <mxGeometry height="20" width="280" y="421" as="geometry" />
+    </mxCell>
+
+    <!-- Relationships: AuthService → EmailService -->
+    <mxCell id="ES1" edge="1" parent="1" source="SVC1" style="endArrow=open;endFill=0;endSize=8;strokeWidth=1.5;strokeColor=#82b366;edgeStyle=orthogonalEdgeStyle;" target="SVC2" value="uses">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Tuần 4 bổ sung badge -->
+    <mxCell id="BADGE1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=9;" value="✦ Bổ sung Tuần 4" vertex="1">
+      <mxGeometry height="24" width="130" x="1380" y="548" as="geometry" />
+    </mxCell>
+
   </root>
 </mxGraphModel>

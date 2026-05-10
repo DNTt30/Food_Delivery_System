@@ -1,0 +1,281 @@
+<mxGraphModel dx="1800" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ===== TITLE ===== -->
+    <mxCell id="T1" value="Sequence Diagram – SD-02: Đặt Đơn Hàng (UC-08)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;fontColor=#1F4E79;" vertex="1" parent="1">
+      <mxGeometry x="80" y="10" width="1700" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ===== PARTICIPANTS ===== -->
+    <mxCell id="P1" value="Customer" style="shape=mxgraph.flowchart.actor;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="40" y="60" width="60" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="P2" value="«boundary»&#xa;:MenuPage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="170" y="72" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="P3" value="«control»&#xa;:CustomerApiController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="350" y="72" width="150" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="P4" value="«control»&#xa;:OrderService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="560" y="72" width="120" height="50" as="geometry" />
+    </mxCell>
+    <mxCell id="P5" value="«entity»&#xa;:RestaurantProfile&#xa;Repository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="744" y="60" width="130" height="62" as="geometry" />
+    </mxCell>
+    <mxCell id="P6" value="«entity»&#xa;:MenuItem&#xa;Repository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="940" y="60" width="120" height="62" as="geometry" />
+    </mxCell>
+    <mxCell id="P7" value="«entity»&#xa;:FoodOrder&#xa;Repository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="60" width="120" height="62" as="geometry" />
+    </mxCell>
+    <mxCell id="P8" value="«entity»&#xa;:OrderItem&#xa;Repository" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1300" y="60" width="120" height="62" as="geometry" />
+    </mxCell>
+
+    <!-- ===== LIFELINES ===== -->
+    <mxCell id="L1" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="70" y="140" as="sourcePoint"/><mxPoint x="70" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L2" value="" style="endArrow=none;dashed=1;strokeColor=#d6b656;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="230" y="122" as="sourcePoint"/><mxPoint x="230" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L3" value="" style="endArrow=none;dashed=1;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="122" as="sourcePoint"/><mxPoint x="425" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L4" value="" style="endArrow=none;dashed=1;strokeColor=#82b366;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="122" as="sourcePoint"/><mxPoint x="620" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L5" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="809" y="122" as="sourcePoint"/><mxPoint x="809" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L6" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1000" y="122" as="sourcePoint"/><mxPoint x="1000" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L7" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1180" y="122" as="sourcePoint"/><mxPoint x="1180" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="L8" value="" style="endArrow=none;dashed=1;strokeColor=#6c8ebf;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1360" y="122" as="sourcePoint"/><mxPoint x="1360" y="1350" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- ===== MESSAGES ===== -->
+
+    <!-- M1: Customer → MenuPage -->
+    <mxCell id="M1" value="1: chọn món ăn, nhập địa chỉ giao hàng" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="70" y="170" as="sourcePoint"/><mxPoint x="230" y="170" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M2: MenuPage → CustomerApiController: POST /api/customer/orders -->
+    <mxCell id="M2" value="2: POST /api/customer/orders {restaurantId, items[], deliveryAddress, paymentMethod}" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="230" y="202" as="sourcePoint"/><mxPoint x="425" y="202" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M3: getAuthenticatedCustomer self-call -->
+    <mxCell id="M3" value="3: getAuthenticatedCustomer(authentication) : CustomerProfile" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="425" y="234" as="sourcePoint"/>
+        <Array as="points"><mxPoint x="490" y="234"/><mxPoint x="490" y="254"/></Array>
+        <mxPoint x="425" y="254" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- ALT FRAGMENT 1: Auth check -->
+    <mxCell id="ALT1_BOX" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0050EF;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="230" y="264" width="350" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="ALT1_TAG" value="opt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#0050EF;fontStyle=1;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="230" y="264" width="40" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="ALT1_C1" value="[customer == null: chưa đăng nhập hoặc không có vai trò CUSTOMER]" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1">
+      <mxGeometry x="275" y="266" width="300" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="M_ALT1" value="return 401 Unauthorized" style="endArrow=open;endFill=0;dashed=1;strokeColor=#FF0000;fontSize=9;fontColor=#FF0000;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="304" as="sourcePoint"/><mxPoint x="230" y="304" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M4: CustomerApiController → RestaurantProfileRepository: findById -->
+    <mxCell id="M4" value="4: findById(restaurantId)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="352" as="sourcePoint"/><mxPoint x="809" y="352" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R4" value="Optional&lt;RestaurantProfile&gt;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="809" y="376" as="sourcePoint"/><mxPoint x="425" y="376" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- ALT FRAGMENT 2: Restaurant validation -->
+    <mxCell id="ALT2_BOX" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0050EF;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="230" y="390" width="630" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="ALT2_TAG" value="alt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#0050EF;fontStyle=1;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="230" y="390" width="40" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="ALT2_C1" value="[restaurant == null: không tìm thấy nhà hàng]" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1">
+      <mxGeometry x="275" y="392" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="M_ALT2A" value="return 404 Not Found" style="endArrow=open;endFill=0;dashed=1;strokeColor=#FF0000;fontSize=9;fontColor=#FF0000;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="424" as="sourcePoint"/><mxPoint x="230" y="424" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="ALT2_DIV" value="" style="endArrow=none;dashed=1;strokeColor=#0050EF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="230" y="444" as="sourcePoint"/><mxPoint x="860" y="444" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="ALT2_C2" value="[!restaurant.isOpen(): nhà hàng đang đóng cửa]" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1">
+      <mxGeometry x="275" y="446" width="380" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="M_ALT2B" value="return 400 Bad Request {error: &quot;Nhà hàng hiện đang đóng cửa&quot;}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#FF0000;fontSize=9;fontColor=#FF0000;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="478" as="sourcePoint"/><mxPoint x="230" y="478" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M5: CustomerApiController → OrderService: createOrder -->
+    <mxCell id="M5" value="5: createOrder(customer, restaurant, itemRequests, deliveryAddress)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="520" as="sourcePoint"/><mxPoint x="620" y="520" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M6: OrderService self: new FoodOrder() -->
+    <mxCell id="M6" value="6: new FoodOrder(); set(customer, restaurant, orderTime=now(), status=PENDING, deliveryAddress)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="620" y="552" as="sourcePoint"/>
+        <Array as="points"><mxPoint x="685" y="552"/><mxPoint x="685" y="572"/></Array>
+        <mxPoint x="620" y="572" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- M7: OrderService → FoodOrderRepository: save (initial) -->
+    <mxCell id="M7" value="7: save(pendingOrder) — lưu đơn ban đầu (totalAmount=0)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="598" as="sourcePoint"/><mxPoint x="1180" y="598" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R7" value="savedOrder (id được tạo)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1180" y="624" as="sourcePoint"/><mxPoint x="620" y="624" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- LOOP FRAGMENT -->
+    <mxCell id="LOOP_BOX" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#FF6800;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="540" y="638" width="880" height="295" as="geometry" />
+    </mxCell>
+    <mxCell id="LOOP_TAG" value="loop" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#FF6800;fontStyle=1;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="540" y="638" width="48" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="LOOP_C" value="[for each req in itemRequests — duyệt từng món trong giỏ hàng]" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1">
+      <mxGeometry x="595" y="640" width="480" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- M8: OrderService → MenuItemRepository: findById -->
+    <mxCell id="M8" value="8: findById(req.getMenuItemId())" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="675" as="sourcePoint"/><mxPoint x="1000" y="675" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R8" value="Optional&lt;MenuItem&gt;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1000" y="700" as="sourcePoint"/><mxPoint x="620" y="700" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- OPT FRAGMENT: item not available -->
+    <mxCell id="OPT1_BOX" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#0050EF;strokeWidth=2;" vertex="1" parent="1">
+      <mxGeometry x="554" y="713" width="420" height="65" as="geometry" />
+    </mxCell>
+    <mxCell id="OPT1_TAG" value="opt" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#0050EF;fontStyle=1;fontSize=10;align=left;spacingLeft=5;" vertex="1" parent="1">
+      <mxGeometry x="554" y="713" width="40" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="OPT1_C" value="[!menuItem.isAvailable(): món ăn không còn phục vụ]" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1">
+      <mxGeometry x="600" y="715" width="370" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="M_OPT1" value="throw RuntimeException(&quot;Item is not available: &quot; + menuItem.getName())" style="endArrow=open;endFill=0;dashed=1;strokeColor=#FF0000;fontSize=9;fontColor=#FF0000;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="753" as="sourcePoint"/><mxPoint x="425" y="753" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- M9: OrderService self: new OrderItem() -->
+    <mxCell id="M9" value="9: new OrderItem(); set(savedOrder, menuItem, qty, price=menuItem.getPrice())" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="620" y="795" as="sourcePoint"/>
+        <Array as="points"><mxPoint x="685" y="795"/><mxPoint x="685" y="815"/></Array>
+        <mxPoint x="620" y="815" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- M10: OrderService → OrderItemRepository: save -->
+    <mxCell id="M10" value="10: save(orderItem)" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="840" as="sourcePoint"/><mxPoint x="1360" y="840" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R10" value="OrderItem (saved)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1360" y="866" as="sourcePoint"/><mxPoint x="620" y="866" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="LOOP_ACC" value="totalAmount += menuItem.getPrice() * req.getQuantity()" style="text;html=1;fontSize=9;fontStyle=2;fillColor=#ffe6cc;strokeColor=#FF6800;" vertex="1" parent="1">
+      <mxGeometry x="555" y="893" width="400" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- M11: OrderService → FoodOrderRepository: save (final with totalAmount) -->
+    <mxCell id="M11" value="11: save(savedOrder) — cập nhật totalAmount" style="endArrow=block;endFill=1;strokeColor=#000000;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="960" as="sourcePoint"/><mxPoint x="1180" y="960" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R11" value="FoodOrder (finalOrder — trạng thái PENDING, totalAmount đã tính)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="1180" y="986" as="sourcePoint"/><mxPoint x="620" y="986" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- Return chain -->
+    <mxCell id="R5" value="FoodOrder (finalOrder)" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="620" y="1012" as="sourcePoint"/><mxPoint x="425" y="1012" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R2" value="201 Created {message: &quot;Đặt hàng thành công!&quot;, orderId, totalAmount}" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="425" y="1038" as="sourcePoint"/><mxPoint x="230" y="1038" as="targetPoint"/></mxGeometry>
+    </mxCell>
+    <mxCell id="R1" value="Hiển thị xác nhận: &quot;Đặt hàng thành công! Mã đơn: #orderId&quot;" style="endArrow=open;endFill=0;dashed=1;strokeColor=#666666;fontSize=9;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry"><mxPoint x="230" y="1064" as="sourcePoint"/><mxPoint x="70" y="1064" as="targetPoint"/></mxGeometry>
+    </mxCell>
+
+    <!-- NOTE: Order status flow -->
+    <mxCell id="NOTE1" value="📋 Sau khi đặt hàng thành công:&#xa;• Đơn hàng có trạng thái PENDING (chờ nhà hàng xác nhận)&#xa;• Nhà hàng có thể xác nhận → PREPARING (UC-13)&#xa;• Tài xế nhận đơn → DELIVERING (UC-16)&#xa;• Tài xế hoàn thành → COMPLETED (UC-16)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=20;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=9;align=left;" vertex="1" parent="1">
+      <mxGeometry x="1480" y="700" width="280" height="120" as="geometry" />
+    </mxCell>
+
+    <!-- ACTIVATION BARS -->
+    <mxCell id="AB_P3_1" value="" style="fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="417" y="202" width="16" height="850" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P4_1" value="" style="fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="612" y="520" width="16" height="505" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P5_1" value="" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="801" y="352" width="16" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P6_1" value="" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="992" y="675" width="16" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P7_1" value="" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="1172" y="598" width="16" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P7_2" value="" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="1172" y="960" width="16" height="30" as="geometry" />
+    </mxCell>
+    <mxCell id="AB_P8_1" value="" style="fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="1352" y="840" width="16" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- LEGEND -->
+    <mxCell id="LEG_BOX" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="1480" y="200" width="280" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_TITLE" value="Chú giải ký hiệu" style="text;html=1;fontStyle=1;fontSize=11;align=center;" vertex="1" parent="1">
+      <mxGeometry x="1480" y="205" width="280" height="20" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_1" value="→ (đặc): Lời gọi đồng bộ (synchronous)" style="text;html=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="232" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_2" value="--→ (nét đứt): Giá trị trả về (return)" style="text;html=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="254" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_3" value="--→ (đỏ): Exception / lỗi nghiệp vụ" style="text;html=1;fontSize=9;fontColor=#FF0000;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="276" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_4" value="[alt]: Nhánh điều kiện (alternative)" style="text;html=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="298" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_5" value="[opt]: Điều kiện tùy chọn (optional)" style="text;html=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="320" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_6" value="[loop]: Vòng lặp" style="text;html=1;fontSize=9;fontColor=#FF6800;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="342" width="265" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="LEG_7" value="↺: Self-message (self-call)" style="text;html=1;fontSize=9;" vertex="1" parent="1">
+      <mxGeometry x="1490" y="364" width="265" height="18" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

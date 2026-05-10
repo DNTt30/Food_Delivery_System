@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ls -Path \"d:\\\\review SPRING_BOOT\\\\springBoot_template-main\\\\Food_Delivery_System\" | Format-Table Name, @{Name='Type';Expression={if\\($_.PSIsContainer\\){'Dir'}else{'File'}}})",
+      "Bash(powershell -Command \"\\(Get-Content 'd:\\\\review SPRING_BOOT\\\\springBoot_template-main\\\\Food_Delivery_System\\\\gs-serving-web-content-main\\\\complete\\\\src\\\\main\\\\resources\\\\templates\\\\driver\\\\delivering.html'\\).Length\")",
+      "Bash(powershell -Command \"\\(Get-Content 'd:\\\\review SPRING_BOOT\\\\springBoot_template-main\\\\Food_Delivery_System\\\\gs-serving-web-content-main\\\\complete\\\\src\\\\main\\\\resources\\\\templates\\\\restaurant\\\\orders.html'\\).Length\")"
+    ]
+  }
+}

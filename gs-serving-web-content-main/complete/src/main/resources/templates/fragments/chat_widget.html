@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  Chat Widget — Order-Based Polling Chat (ShopeeFood Style)       ║
+  ║  ─────────────────────────────────────────────────────────────   ║
+  ║  Usage: <div th:replace="~{fragments/chat_widget :: chatWidget}">║
+  ║                                                                  ║
+  ║  Trigger from any page:                                          ║
+  ║    window.openShopeeChat(orderId, targetRole, displayLabel)      ║
+  ║                                                                  ║
+  ║  Example:                                                        ║
+  ║    openShopeeChat(1001, 'RESTAURANT', 'Nhà hàng')                ║
+  ║    openShopeeChat(1001, 'DRIVER', 'Tài xế')                      ║
+  ║    openShopeeChat(1001, 'CUSTOMER', 'Khách hàng')                ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<div th:fragment="chatWidget">
+
+    <!-- ╔═══════════════ STYLES ═══════════════╗ -->
+    <style>
+        /* ── Variables ─────────────────────── */
+        :root {
+            --chat-primary:      #EE4D2D;
+            --chat-primary-dark: #d43c1e;
+            --chat-driver:       #16a34a;
+            --chat-driver-dark:  #15803d;
+            --chat-rest:         #d97706;
+            --chat-cust:         #2563eb;
+            --chat-bg:           #f8f9fa;
+            --chat-panel-w:      360px;
+            --chat-panel-h:      500px;
+            --chat-radius:       16px;
+            --chat-shadow:       0 12px 40px rgba(0,0,0,.20);
+            --chat-z:            1060;
+        }
+
+        /* ── Popup panel ────────────────────── */
+        #shopeeChatPanel {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: var(--chat-panel-w);
+            height: var(--chat-panel-h);
+            background: #fff;
+            border-radius: var(--chat-radius);
+            box-shadow: var(--chat-shadow);
+            flex-direction: column;
+            z-index: var(--chat-z);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            animation: chatSlideUp .22s ease-out;
+        }
+        @keyframes chatSlideUp {
+            from { opacity:0; transform: translateY(20px) scale(.97); }
+            to   { opacity:1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Header ─────────────────────────── */
+        #shopeeChatHeader {
+            background: linear-gradient(135deg, #EE4D2D, #FF7043);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        #shopeeChatAvatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        #shopeeChatTitle {
+            font-weight: 700;
+            font-size: .95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        #shopeeChatSubtitle {
+            font-size: .70rem;
+            opacity: .85;
+        }
+        .chat-close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: background .15s;
+            flex-shrink: 0;
+        }
+        .chat-close-btn:hover { background: rgba(255,255,255,.2); }
+
+        /* ── Status bar (locked / open) ─────── */
+        #shopeeChatStatusBar {
+            display: none;
+            padding: 7px 14px;
+            font-size: .75rem;
+            font-weight: 600;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        #shopeeChatStatusBar.locked {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+            border-bottom: 1px solid #fecaca;
+        }
+
+        /* ── Messages area ──────────────────── */
+        #shopeeChatBody {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            background: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            scroll-behavior: smooth;
+        }
+        #shopeeChatBody::-webkit-scrollbar { width: 4px; }
+        #shopeeChatBody::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* ── Bubble ─────────────────────────── */
+        .chat-bubble-wrap {
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-bubble-wrap.mine  { align-items: flex-end; }
+        .chat-bubble-wrap.theirs { align-items: flex-start; }
+
+        .chat-sender-label {
+            font-size: .65rem;
+            color: #6b7280;
+            margin-bottom: 3px;
+            padding: 0 4px;
+        }
+        .chat-bubble {
+            max-width: 82%;
+            padding: 9px 13px;
+            border-radius: 14px;
+            font-size: .875rem;
+            line-height: 1.45;
+            word-break: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+        .chat-bubble.mine {
+            background: var(--chat-primary);
+            color: #fff;
+            border-bottom-right-radius: 3px;
+        }
+        .chat-bubble.mine.driver  { background: var(--chat-driver); }
+        .chat-bubble.mine.restaurant { background: var(--chat-rest); }
+        .chat-bubble.mine.customer { background: var(--chat-cust); }
+
+        .chat-bubble.theirs {
+            background: #fff;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 3px;
+        }
+        .chat-time {
+            font-size: .63rem;
+            color: #9ca3af;
+            margin-top: 3px;
+            padding: 0 4px;
+        }
+
+        /* ── System message ─────────────────── */
+        .chat-system {
+            text-align: center;
+            font-size: .72rem;
+            color: #6b7280;
+            background: #e5e7eb;
+            border-radius: 20px;
+            padding: 4px 14px;
+            margin: 2px auto;
+            max-width: 85%;
+        }
+
+        /* ── Empty / loading state ───────────── */
+        .chat-state-msg {
+            text-align: center;
+            padding: 30px 16px;
+            color: #9ca3af;
+            font-size: .82rem;
+        }
+        .chat-state-msg .chat-state-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+        /* ── Input area ─────────────────────── */
+        #shopeeChatInputArea {
+            border-top: 1px solid #e5e7eb;
+            padding: 10px 14px;
+            background: #fff;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        #shopeeChatInput {
+            flex: 1;
+            border: 1.5px solid #d1d5db;
+            border-radius: 22px;
+            padding: 9px 16px;
+            font-size: .875rem;
+            outline: none;
+            resize: none;
+            transition: border-color .15s;
+            font-family: inherit;
+        }
+        #shopeeChatInput:focus { border-color: var(--chat-primary); }
+        #shopeeChatInput:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+        .chat-send-btn {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--chat-primary);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(238,77,45,.35);
+            transition: background .15s, transform .1s;
+        }
+        .chat-send-btn:hover  { background: var(--chat-primary-dark); transform: scale(1.05); }
+        .chat-send-btn:active { transform: scale(.95); }
+        .chat-send-btn:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; }
+
+        /* ── Responsive ─────────────────────── */
+        @media (max-width: 400px) {
+            #shopeeChatPanel { right:0; bottom:0; width:100vw;
+                               height: 100dvh; border-radius:0; }
+        }
+    </style>
+
+    <!-- ╔═══════════════ HTML ════════════════╗ -->
+    <div id="shopeeChatPanel">
+
+        <!-- Header -->
+        <div id="shopeeChatHeader">
+            <div id="shopeeChatAvatar">🏪</div>
+            <div style="min-width:0;flex:1;">
+                <div id="shopeeChatTitle">Chat</div>
+                <div id="shopeeChatSubtitle"></div>
+            </div>
+            <button class="chat-close-btn" onclick="ShopeeChat.close()" title="Đóng">✕</button>
+        </div>
+
+        <!-- Status bar (shown when locked) -->
+        <div id="shopeeChatStatusBar"></div>
+
+        <!-- Messages -->
+        <div id="shopeeChatBody">
+            <div class="chat-state-msg" id="shopeeChatLoading">
+                <span class="chat-state-icon">💬</span>Đang tải tin nhắn...
+            </div>
+        </div>
+
+        <!-- Input area -->
+        <div id="shopeeChatInputArea">
+            <input id="shopeeChatInput" type="text"
+                   placeholder="Nhập tin nhắn..." maxlength="1000"
+                   onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();ShopeeChat.send();}">
+            <button class="chat-send-btn" id="shopeeSendBtn"
+                    onclick="ShopeeChat.send()" title="Gửi">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- ╔═══════════════ JAVASCRIPT ══════════╗ -->
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Constants ─────────────────────────────────────────────
+        const POLL_MS       = 3000;   // Poll every 3 seconds
+        const TOKEN         = () => localStorage.getItem('jwt_token') || '';
+        const MY_USERNAME   = () => localStorage.getItem('username') || '';
+        const MY_PAGE_ROLE  = () => {
+            const path = window.location.pathname;
+            if (path.includes('/customer/'))   return 'CUSTOMER';
+            if (path.includes('/restaurant/')) return 'RESTAURANT';
+            if (path.includes('/driver/'))     return 'DRIVER';
+            return '';
+        };
+
+        // ── Role helpers ──────────────────────────────────────────
+        const ROLE_ICON  = { CUSTOMER:'👤', RESTAURANT:'🏪', DRIVER:'🛵', ADMIN:'⚙️' };
+        const ROLE_COLOR = { CUSTOMER:'var(--chat-cust)', RESTAURANT:'var(--chat-rest)',
+                             DRIVER:'var(--chat-driver)' };
+        const ROLE_LABEL = { CUSTOMER:'Khách hàng', RESTAURANT:'Nhà hàng',
+                             DRIVER:'Tài xế', ADMIN:'Hệ thống' };
+
+        // ── State ─────────────────────────────────────────────────
+        let _orderId      = null;
+        let _receiverId   = null;
+        let _targetRole   = null;
+        let _isLocked     = false;
+        let _pollTimer    = null;
+        let _lastMsgCount = -1;  // track count to avoid unnecessary re-renders
+
+        // ── DOM refs ──────────────────────────────────────────────
+        const panel     = () => document.getElementById('shopeeChatPanel');
+        const body      = () => document.getElementById('shopeeChatBody');
+        const input     = () => document.getElementById('shopeeChatInput');
+        const sendBtn   = () => document.getElementById('shopeeSendBtn');
+        const titleEl   = () => document.getElementById('shopeeChatTitle');
+        const subtitleEl= () => document.getElementById('shopeeChatSubtitle');
+        const avatarEl  = () => document.getElementById('shopeeChatAvatar');
+        const headerEl  = () => document.getElementById('shopeeChatHeader');
+        const statusBar = () => document.getElementById('shopeeChatStatusBar');
+        const inputArea = () => document.getElementById('shopeeChatInputArea');
+
+        // ════════════════════════════════════════════════════════════
+        // PUBLIC API — window.ShopeeChat
+        // ════════════════════════════════════════════════════════════
+        window.ShopeeChat = {
+
+            /**
+             * Open chat popup for a specific order + target contact.
+             * @param {number} orderId      - Food order ID
+             * @param {string} targetRole   - 'CUSTOMER' | 'RESTAURANT' | 'DRIVER'
+             * @param {string} label        - Display name in header
+             */
+            open(orderId, targetRole, label) {
+                _orderId     = orderId;
+                _targetRole  = targetRole;
+                _receiverId  = null;
+                _isLocked    = false;
+                _lastMsgCount = -1;
+
+                _applyHeader(label, targetRole);
+                _showPanel();
+                _loadContactThenPoll();
+            },
+
+            close() {
+                _hidePanel();
+                _stopPoll();
+            },
+
+            send() {
+                _sendMessage();
+            }
+        };
+
+        // Backward-compatible alias used by existing templates
+        window.openShopeeChat = (orderId, targetRole, label) =>
+            window.ShopeeChat.open(orderId, targetRole, label);
+
+        // ════════════════════════════════════════════════════════════
+        // CONTACT LOADING
+        // ════════════════════════════════════════════════════════════
+
+        async function _loadContactThenPoll() {
+            _setBodyLoading();
+            try {
+                const res  = await fetch(`/api/orders/${_orderId}/contact-info`, {
+                    headers: { Authorization: 'Bearer ' + TOKEN() }
+                });
+
+                if (!res.ok) {
+                    _setBodyError('Không thể tải thông tin liên lạc (lỗi ' + res.status + ')');
+                    return;
+                }
+
+                const data = await res.json();
+                _isLocked  = data.isCompletedOrCancelled || data.completedOrCancelled || false;
+
+                // Find the matching contact
+                const contacts = data.contacts || [];
+                const contact  = contacts.find(c => c.role === _targetRole);
+
+                if (contact) {
+                    _receiverId = contact.userId;
+                    // Update header with real name
+                    _applyHeader(contact.displayName, contact.role);
+                    // Luôn hiện subtitle: số điện thoại hoặc thông báo không có
+                    if (contact.phone) {
+                        subtitleEl().textContent = '📞 ' + contact.phone;
+                    } else if (contact.role === 'DRIVER' || contact.role === 'CUSTOMER') {
+                        subtitleEl().textContent = '📞 Không có SĐT';
+                    } else {
+                        subtitleEl().textContent = '';
+                    }
+                } else {
+                    // Contact not visible (wrong status for this pair)
+                    _setBodyError('Chưa thể liên lạc với ' + (ROLE_LABEL[_targetRole] || _targetRole)
+                        + ' ở trạng thái đơn hàng hiện tại.');
+                    _lockInput('Trạng thái không cho phép');
+                    return;
+                }
+
+                // Apply lock state
+                if (_isLocked) {
+                    _lockInput('Đơn đã hoàn thành / hủy — Chat đã đóng');
+                    _showStatusBar('🔒 Chat đã đóng. Bạn vẫn có thể xem lại lịch sử tin nhắn.', true);
+                } else {
+                    _unlockInput();
+                    _hideStatusBar();
+                }
+
+                // Start polling
+                _startPoll();
+
+            } catch (err) {
+                console.error('[ShopeeChat] Contact load error:', err);
+                _setBodyError('Lỗi kết nối. Vui lòng thử lại.');
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // POLLING — GET messages every 3 seconds
+        // ════════════════════════════════════════════════════════════
+
+        function _startPoll() {
+            _stopPoll();
+            _fetchMessages();  // immediate first fetch
+            _pollTimer = setInterval(_fetchMessages, POLL_MS);
+        }
+
+        function _stopPoll() {
+            if (_pollTimer) {
+                clearInterval(_pollTimer);
+                _pollTimer = null;
+            }
+        }
+
+        async function _fetchMessages() {
+            if (!_orderId) return;
+            try {
+                const res = await fetch(`/api/chat/${_orderId}`, {
+                    headers: { Authorization: 'Bearer ' + TOKEN() }
+                });
+                
+                if (!res.ok) {
+                    // Nếu lỗi ở lần đầu tiên (đang hiện "Đang tải"), hiện lỗi lên body
+                    if (_lastMsgCount === -1) {
+                        _setBodyError('Không thể tải tin nhắn (lỗi ' + res.status + ')');
+                    }
+                    return;
+                }
+
+                const allMessages = await res.json();
+
+                // ── Lọc chỉ lấy tin nhắn giữa myRole ↔ _targetRole ──
+                // Tránh hiện tin nhắn Nhà hàng trong box chat Tài xế và ngược lại
+                const myRole = MY_PAGE_ROLE();
+                const filtered = allMessages.filter(m => {
+                    const sr = (m.senderRole   || '').toUpperCase();
+                    const rr = (m.receiverRole || '').toUpperCase();
+                    return (sr === myRole && rr === _targetRole) ||
+                           (rr === myRole && sr === _targetRole);
+                });
+
+                // Only re-render if filtered count changed (perf optimization)
+                if (filtered.length !== _lastMsgCount) {
+                    _lastMsgCount = filtered.length;
+                    _renderMessages(filtered);
+                }
+            } catch (err) {
+                console.error('[ShopeeChat] Poll error:', err);
+                if (_lastMsgCount === -1) {
+                    _setBodyError('Lỗi kết nối máy chủ.');
+                }
+            }
+        }
+
+
+        // ════════════════════════════════════════════════════════════
+        // SEND MESSAGE — POST
+        // ════════════════════════════════════════════════════════════
+
+        async function _sendMessage() {
+            const text = input().value.trim();
+            if (!text || !_orderId || !_receiverId || _isLocked) return;
+
+            const btn = sendBtn();
+            input().value = '';
+            btn.disabled  = true;
+
+            try {
+                const res = await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + TOKEN()
+                    },
+                    body: JSON.stringify({
+                        orderId:    _orderId,
+                        receiverId: _receiverId,
+                        content:    text
+                    })
+                });
+
+                if (res.ok) {
+                    // Force a fresh poll immediately
+                    _lastMsgCount = -1;
+                    await _fetchMessages();
+                } else {
+                    const err = await res.json();
+                    _showToast(err.error || 'Không thể gửi tin nhắn', 'danger');
+                }
+            } catch (e) {
+                console.error('[ShopeeChat] Send error:', e);
+                _showToast('Lỗi kết nối!', 'danger');
+            } finally {
+                btn.disabled = false;
+                input().focus();
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // RENDER
+        // ════════════════════════════════════════════════════════════
+
+        function _renderMessages(messages) {
+            const el       = body();
+            const myRole   = MY_PAGE_ROLE();
+            const wasBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+
+            if (!Array.isArray(messages) || messages.length === 0) {
+                el.innerHTML = `<div class="chat-state-msg">
+                    <span class="chat-state-icon">💬</span>
+                    Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!
+                </div>`;
+                return;
+            }
+
+            let html = '';
+            let lastDate = '';
+
+            messages.forEach(m => {
+                // Parse date safely (handles ISO string or numeric array)
+                const rawDate = m.createdAt;
+                let dateObj;
+                if (Array.isArray(rawDate)) {
+                    // Jackson array format: [year, month, day, hour, min, sec, nano]
+                    dateObj = new Date(rawDate[0], rawDate[1]-1, rawDate[2], 
+                                       rawDate[3], rawDate[4], rawDate[5] || 0);
+                } else {
+                    dateObj = new Date(rawDate);
+                }
+
+                const msgDate = dateObj.toLocaleDateString('vi-VN', {
+                    day:'2-digit', month:'2-digit', year:'numeric'
+                });
+
+                if (msgDate !== lastDate) {
+                    html += `<div class="chat-system">${msgDate === 'Invalid Date' ? '---' : msgDate}</div>`;
+                    lastDate = msgDate;
+                }
+
+                const isMe    = (m.senderRole || '').toUpperCase() === myRole;
+                const side    = isMe ? 'mine' : 'theirs';
+                const roleKey = (m.senderRole || '').toUpperCase();
+                const time    = _fmtTime(rawDate);
+                const content = _esc(m.content);
+
+                html += `
+                <div class="chat-bubble-wrap ${side}">
+                    <div class="chat-sender-label">${_esc(m.senderName || 'Ẩn danh')}</div>
+                    <div class="chat-bubble ${side} ${roleKey.toLowerCase()}">${content}</div>
+                    <div class="chat-time">${time}</div>
+                </div>`;
+            });
+
+            el.innerHTML = html;
+
+            // Auto-scroll to bottom if user was near bottom
+            if (wasBottom) {
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // UI HELPERS
+        // ════════════════════════════════════════════════════════════
+
+        function _showPanel() {
+            const p = panel();
+            p.style.display = 'flex';
+            setTimeout(() => input() && !_isLocked && input().focus(), 150);
+        }
+
+        function _hidePanel() {
+            panel().style.display = 'none';
+        }
+
+        function _applyHeader(label, role) {
+            titleEl().textContent    = label || 'Chat';
+            subtitleEl().textContent = '';   // reset, sẽ set lại sau khi load contact
+
+            const gradients = {
+                RESTAURANT: 'linear-gradient(135deg,#d97706,#f59e0b)',
+                DRIVER:     'linear-gradient(135deg,#16a34a,#22c55e)',
+                CUSTOMER:   'linear-gradient(135deg,#2563eb,#3b82f6)',
+            };
+            headerEl().style.background = gradients[role] || 'linear-gradient(135deg,#EE4D2D,#FF7043)';
+            avatarEl().textContent = ROLE_ICON[role] || '💬';
+        }
+
+        function _lockInput(reason) {
+            const inp = input();
+            const btn = sendBtn();
+            if (inp) { inp.disabled = true; inp.placeholder = reason; }
+            if (btn) btn.disabled = true;
+            if (inputArea()) inputArea().style.opacity = '.6';
+        }
+
+        function _unlockInput() {
+            const inp = input();
+            const btn = sendBtn();
+            if (inp) { inp.disabled = false; inp.placeholder = 'Nhập tin nhắn...'; }
+            if (btn) btn.disabled = false;
+            if (inputArea()) inputArea().style.opacity = '1';
+        }
+
+        function _showStatusBar(msg, isLocked) {
+            const el = statusBar();
+            el.textContent = msg;
+            el.className = isLocked ? 'locked' : '';
+            el.style.display = 'block';
+        }
+
+        function _hideStatusBar() {
+            statusBar().style.display = 'none';
+        }
+
+        function _setBodyLoading() {
+            body().innerHTML = `<div class="chat-state-msg">
+                <span class="chat-state-icon">⏳</span>Đang tải...
+            </div>`;
+        }
+
+        function _setBodyError(msg) {
+            body().innerHTML = `<div class="chat-state-msg">
+                <span class="chat-state-icon">⚠️</span>${_esc(msg)}
+            </div>`;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // UTILS
+        // ════════════════════════════════════════════════════════════
+
+        function _fmtTime(raw) {
+            if (!raw) return '';
+            let d;
+            if (Array.isArray(raw)) {
+                d = new Date(raw[0], raw[1]-1, raw[2], raw[3], raw[4], raw[5] || 0);
+            } else {
+                d = new Date(raw);
+            }
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+        }
+
+        function _esc(s) {
+            return (s || '')
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function _showToast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+            t.style.zIndex = 9999;
+            t.innerHTML = `<div class="d-flex"><div class="toast-body">${_esc(msg)}</div></div>`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        // Stop polling when tab/window is hidden (save resources)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                _stopPoll();
+            } else if (_orderId && _receiverId) {
+                _startPoll();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && panel().style.display === 'flex') {
+                window.ShopeeChat.close();
+            }
+        });
+
+    })();
+    </script>
+</div>
+</html>

@@ -145,6 +145,9 @@
     }
 
     function getActions(order) {
+        const chatBtn = `<button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold" onclick="openOrderChat(${order.id})">
+                            <i class="bi bi-chat-dots me-1"></i>Chat
+                         </button>`;
         if (order.status === 'PENDING') {
             return `
                 <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'PREPARING')">
@@ -152,9 +155,11 @@
                 </button>
                 <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold" onclick="updateStatus(${order.id}, 'CANCELLED')">
                     <i class="bi bi-x-lg me-1"></i>Từ chối
-                </button>`;
+                </button>
+                ${chatBtn}`;
         } else if (order.status === 'PREPARING') {
-            return `<span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>`;
+            return `<span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>
+                    ${chatBtn}`;
         }
         return '';
     }
@@ -189,9 +194,22 @@
     }
 
     loadOrders();
-    // Auto-refresh every 30 seconds
     setInterval(loadOrders, 30000);
 </script>
+
+<!-- Chat widget — nhà hàng dùng kênh RESTAURANT -->
+<script>
+    window.MY_ROLE = 'RESTAURANT';
+    window.openOrderChat = function(orderId) {
+        if (typeof window.openShopeeChat === 'function') {
+            window.openShopeeChat(orderId, 'CUSTOMER', 'Khách hàng');
+        } else {
+            alert("Chat Component chưa sẵn sàng");
+        }
+    };
+</script>
+
+<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
 </main>
 </body>
 </html>
