@@ -34,17 +34,25 @@
         <small class="text-muted">Xác nhận và theo dõi tất cả đơn hàng của nhà hàng</small>
     </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
-        <select id="filterStatus" onchange="loadOrders()">
-            <option value="ACTIVE">Đang xử lý</option>
-            <option value="ALL">Tất cả</option>
-            <option value="PENDING">Chờ xác nhận</option>
-            <option value="PREPARING">Đang nấu</option>
-            <option value="DELIVERING">Đang giao</option>
-            <option value="COMPLETED">Hoàn thành</option>
-            <option value="CANCELLED">Đã hủy</option>
+        <div class="btn-group shadow-sm" role="group" id="filterStatusGroup">
+            <input type="radio" class="btn-check" name="btnradio" id="btnActive" autocomplete="off" value="ACTIVE" checked onchange="loadOrders()">
+            <label class="btn btn-outline-dark fw-semibold" for="btnActive">Cần xử lý ngay</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="btnAll" autocomplete="off" value="ALL" onchange="loadOrders()">
+            <label class="btn btn-outline-dark fw-semibold" for="btnAll">Tất cả lịch sử</label>
+        </div>
+        
+        <select id="filterStatus" onchange="syncFilter()" class="form-select w-auto shadow-sm ms-2" style="border-radius:8px;">
+            <option value="">-- Lọc chi tiết --</option>
+            <option value="PENDING">Chỉ Chờ xác nhận</option>
+            <option value="PREPARING">Chỉ Đang nấu</option>
+            <option value="DELIVERING">Chỉ Đang giao</option>
+            <option value="COMPLETED">Chỉ Hoàn thành</option>
+            <option value="CANCELLED">Chỉ Đã hủy</option>
         </select>
-        <button class="btn btn-outline-secondary rounded-pill px-3 btn-sm" onclick="loadOrders()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+
+        <button class="btn btn-outline-secondary ms-1 shadow-sm" onclick="loadOrders()" style="border-radius:8px;">
+            <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
 </div>
@@ -119,7 +127,21 @@ function fmtTime(dt) {
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 async function loadOrders() {
-    const status = document.getElementById('filterStatus').value;
+    let status = 'ACTIVE';
+    // Check which radio is active
+    const activeRadio = document.querySelector('input[name="btnradio"]:checked');
+    if (activeRadio) {
+        status = activeRadio.value;
+    }
+
+    // Override with select if a specific filter is chosen
+    const specificStatus = document.getElementById('filterStatus').value;
+    if (specificStatus !== "") {
+        status = specificStatus;
+        // Uncheck radios to avoid confusion
+        document.querySelectorAll('input[name="btnradio"]').forEach(r => r.checked = false);
+    }
+
     document.getElementById('loading').classList.remove('d-none');
     document.getElementById('orderList').classList.add('d-none');
     document.getElementById('emptyOrders').classList.add('d-none');
@@ -136,6 +158,15 @@ async function loadOrders() {
     } catch (e) {
         document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối</div>';
     }
+}
+
+function syncFilter() {
+    const val = document.getElementById('filterStatus').value;
+    if (val === "") {
+        // Reset to ACTIVE if user clears the select dropdown
+        document.getElementById('btnActive').checked = true;
+    }
+    loadOrders();
 }
 
 function updateSummaryChips() {

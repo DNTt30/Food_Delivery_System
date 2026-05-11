@@ -223,19 +223,46 @@
         } catch {}
     }
 
-    function applyVoucher() {
-        const code = document.getElementById('voucherCode').value.trim().toUpperCase();
+    let currentVoucherCode = null;
+
+    async function applyVoucher() {
+        const codeInput = document.getElementById('voucherCode').value.trim().toUpperCase();
         const msgEl = document.getElementById('voucherMsg');
-        const sub = getCart().reduce((s, i) => s + i.price * i.qty, 0);
-        if (code === 'SAVE10') {
-            discountAmount = sub * 0.1;
-            msgEl.innerHTML = `<span class="text-success">✅ Giảm 10%: -${formatVND(discountAmount)}</span>`;
-        } else if (code === 'GIAM50K') {
-            discountAmount = 50000;
-            msgEl.innerHTML = `<span class="text-success">✅ Giảm 50,000đ</span>`;
-        } else {
+        
+        if (!codeInput) {
             discountAmount = 0;
-            msgEl.innerHTML = '<span class="text-danger">❌ Mã không hợp lệ hoặc đã hết hạn</span>';
+            currentVoucherCode = null;
+            msgEl.innerHTML = '';
+            renderCart();
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/customer/vouchers/check?code=${codeInput}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                currentVoucherCode = data.code;
+                const sub = getCart().reduce((s, i) => s + i.price * i.qty, 0);
+                
+                if (data.discountType === 'PERCENTAGE') {
+                    discountAmount = sub * (data.discountValue / 100.0);
+                    msgEl.innerHTML = `<span class="text-success">✅ Giảm ${data.discountValue}%: -${formatVND(discountAmount)}</span>`;
+                } else {
+                    discountAmount = data.discountValue;
+                    msgEl.innerHTML = `<span class="text-success">✅ Giảm ${formatVND(data.discountValue)}</span>`;
+                }
+            } else {
+                discountAmount = 0;
+                currentVoucherCode = null;
+                msgEl.innerHTML = `<span class="text-danger">❌ ${data.error || 'Mã không hợp lệ'}</span>`;
+            }
+        } catch (e) {
+            discountAmount = 0;
+            currentVoucherCode = null;
+            msgEl.innerHTML = `<span class="text-danger">❌ Lỗi kết nối khi kiểm tra mã</span>`;
         }
         renderCart();
     }
@@ -263,7 +290,8 @@
                     restaurantId: parseInt(restaurantId),
                     items: cart.map(i => ({ menuItemId: i.id, quantity: i.qty })),
                     deliveryAddress: address,
-                    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value
+                    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+                    voucherCode: currentVoucherCode
                 })
             });
             const data = await res.json();

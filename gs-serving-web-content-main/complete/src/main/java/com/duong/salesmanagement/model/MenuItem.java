@@ -40,4 +40,6 @@ public class MenuItem {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
 }

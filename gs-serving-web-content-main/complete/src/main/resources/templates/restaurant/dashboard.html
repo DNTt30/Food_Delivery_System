@@ -555,7 +555,7 @@
             } else {
                 document.getElementById('dashboardContent').classList.remove('d-none');
                 // Render empty charts as fallback
-                renderRevenueChart(0, 0, 0);
+                renderRevenueChart([], 0, 0, 0);
                 renderOrderStatusChart(0, 0);
             }
         }

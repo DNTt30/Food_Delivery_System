@@ -18,22 +18,25 @@ public class OrderService {
     private final MenuItemRepository menuItemRepository;
     private final ReviewRepository reviewRepository;
     private final DriverProfileRepository driverProfileRepository;
+    private final VoucherRepository voucherRepository;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
                         MenuItemRepository menuItemRepository,
                         ReviewRepository reviewRepository,
-                        DriverProfileRepository driverProfileRepository) {
+                        DriverProfileRepository driverProfileRepository,
+                        VoucherRepository voucherRepository) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
         this.reviewRepository = reviewRepository;
         this.driverProfileRepository = driverProfileRepository;
+        this.voucherRepository = voucherRepository;
     }
 
     @Transactional
     public FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
-                                 List<OrderItemRequest> itemRequests, String deliveryAddress) {
+                                 List<OrderItemRequest> itemRequests, String deliveryAddress, String voucherCode) {
         FoodOrder order = new FoodOrder();
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
@@ -60,6 +63,23 @@ public class OrderService {
             orderItem.setPriceAtTimeOfOrder(menuItem.getPrice());
             orderItemRepository.save(orderItem);
             totalAmount += menuItem.getPrice() * req.getQuantity();
+        }
+
+        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
+            Optional<Voucher> vOpt = voucherRepository.findByCode(voucherCode.trim());
+            if (vOpt.isPresent()) {
+                Voucher v = vOpt.get();
+                if (v.isActive() && (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
+                    double discount = 0;
+                    if (v.getDiscountType() == DiscountType.PERCENTAGE) {
+                        discount = totalAmount * (v.getDiscountValue() / 100.0);
+                    } else if (v.getDiscountType() == DiscountType.FIXED_AMOUNT) {
+                        discount = v.getDiscountValue();
+                    }
+                    totalAmount -= discount;
+                    if (totalAmount < 0) totalAmount = 0;
+                }
+            }
         }
 
         savedOrder.setTotalAmount(totalAmount);

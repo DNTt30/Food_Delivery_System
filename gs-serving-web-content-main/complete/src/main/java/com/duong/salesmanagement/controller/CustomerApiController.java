@@ -22,17 +22,20 @@ public class CustomerApiController {
     private final OrderService orderService;
     private final UserRepository userRepository;
     private final CustomerProfileRepository customerProfileRepository;
+    private final VoucherRepository voucherRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
                                  OrderService orderService,
                                  UserRepository userRepository,
-                                 CustomerProfileRepository customerProfileRepository) {
+                                 CustomerProfileRepository customerProfileRepository,
+                                 VoucherRepository voucherRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
         this.userRepository = userRepository;
         this.customerProfileRepository = customerProfileRepository;
+        this.voucherRepository = voucherRepository;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -103,7 +106,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Nhà hàng hiện đang đóng cửa"));
 
         try {
-            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress);
+            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.voucherCode);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Đặt hàng thành công!",
                     "orderId", order.getId(),
@@ -112,6 +115,21 @@ public class CustomerApiController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // Kiểm tra Voucher
+    @GetMapping("/vouchers/check")
+    public ResponseEntity<?> checkVoucher(@RequestParam String code) {
+        Voucher voucher = voucherRepository.findByCode(code).orElse(null);
+        if (voucher == null || !voucher.isActive() || 
+           (voucher.getExpirationDate() != null && voucher.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá không hợp lệ hoặc đã hết hạn"));
+        }
+        return ResponseEntity.ok(Map.of(
+            "code", voucher.getCode(),
+            "discountType", voucher.getDiscountType().name(),
+            "discountValue", voucher.getDiscountValue()
+        ));
     }
 
     // UC-10: Lịch sử & theo dõi đơn hàng
@@ -294,6 +312,7 @@ public class CustomerApiController {
         public List<OrderService.OrderItemRequest> items;
         public String deliveryAddress;
         public String paymentMethod;
+        public String voucherCode;
     }
 
     public static class ReviewRequest {

@@ -317,7 +317,15 @@
                 alert('Đã hủy đơn hàng thành công!');
                 loadOrder();
             } else {
-                alert(data.error || 'Không thể hủy đ�    // ── Chat helpers (delegates to ShopeeChat polling widget) ──
+                alert(data.error || 'Không thể hủy đơn hàng!');
+            }
+        } catch (e) {
+            console.error('Cancel order error:', e);
+            alert('Lỗi kết nối khi hủy đơn!');
+        }
+    }
+
+    // Chat helpers (delegates to ShopeeChat polling widget)
     window.MY_ROLE = 'CUSTOMER';
 
     window.openRestaurantChat = function () {
@@ -330,11 +338,6 @@
         window.ShopeeChat && window.ShopeeChat.open(orderId, 'DRIVER', 'Tài xế');
     };
 
-    // No auto-open on render – avoids disruptive popup
-    window.switchChatType = function () {};
-</script>        }
-    };
-
     // Auto-open correct chat when order renders
     window.switchChatType = function (type) {
         // No auto-open needed to prevent annoying popup
@@ -345,9 +348,12 @@
         const badge = document.getElementById('driverChatBadge');
         if (badge) badge.style.display = '';
     });
+
+    // Start loading order on page load
+    loadOrder();
 </script>
 
-<!-- Real-time Chat Widget (Customer ↔ Restaurant ↔ Driver) -->
+<!-- Real-time Chat Widget -->
 <div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
 
 </main>

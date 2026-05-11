@@ -302,8 +302,8 @@ public class RestaurantApiController {
                 .orElse(Collections.emptyList()).stream()
                 .map(oi -> new OrderItemDTO(
                         oi.getMenuItem().getName(),
-                        oi.getQuantity(),
-                        oi.getMenuItem().getPrice(),
+                        oi.getQuantity() != null ? oi.getQuantity() : 0,
+                        oi.getPriceAtTimeOfOrder(),
                         oi.getMenuItem().getImageUrl()))
                 .collect(Collectors.toList());
 

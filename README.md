@@ -167,6 +167,11 @@ src/main/java/com/duong/salesmanagement/
 
 ## 📝 Nhật ký Cập nhật
 
+### 📅 11/05/2026 — Landing Page UI/UX
+- **Redesign toàn diện Landing Page (`index.html`):** Nâng cấp giao diện người dùng theo phong cách ứng dụng Food Delivery thương mại hiện đại.
+- **Tối ưu trải nghiệm UI:** Bổ sung hiệu ứng fade-up, floating animation, navbar glassmorphism và phối màu đồng bộ (Đỏ cam - Vàng).
+- **Hoàn thiện Javascript Authentication Routing:** Xử lý logic nút "Đặt món ngay" kết hợp `localStorage` để điều hướng tự động dựa trên role (Customer, Restaurant, Driver, Admin) hoặc trả về trang `/common/auth` nếu chưa đăng nhập.
+
 ### 📅 10/05/2026 — Chat System
 - **Hoàn thiện hệ thống Chat Polling:** Triển khai widget chat pop-up phong cách ShopeeFood cho 3 cặp vai trò.
 - **Phân quyền chat theo trạng thái đơn:** Mở rộng visibility matrix — Customer có thể chat với Restaurant xuyên suốt quá trình giao hàng.
