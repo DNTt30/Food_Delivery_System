@@ -188,6 +188,16 @@
         const role = localStorage.getItem('role');
         if (token && role) redirectByRole(role);
 
+        // Đọc tham số từ URL để mở đúng tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        if (action && action.startsWith('register')) {
+            showSection('registerSection');
+            if (action === 'register_restaurant') document.getElementById('role').value = 'RESTAURANT';
+            else if (action === 'register_driver') document.getElementById('role').value = 'DRIVER';
+            else document.getElementById('role').value = 'CUSTOMER';
+        }
+
         // Auto focus to OTP input
         document.getElementById('otpCode').addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '');

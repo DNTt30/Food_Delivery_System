@@ -77,9 +77,9 @@ Hệ thống đã hoàn thiện **20/20 Use Case (100%)** chia cho 4 nhóm ngư�
 
 ---
 
-## 💬 Hệ thống Chat (Polling Architecture)
+## 💬 Hệ thống Chat (WebSocket STOMP Architecture)
 
-Tính năng chat được triển khai theo kiến trúc **Polling** với Widget pop-up phong cách ShopeeFood:
+Tính năng chat được triển khai theo kiến trúc **WebSocket / STOMP** cho phép truyền tải tin nhắn tức thời (Real-time) với Widget pop-up phong cách ShopeeFood:
 
 | Cặp chat | Trạng thái cho phép |
 | :--- | :--- |
@@ -89,7 +89,7 @@ Tính năng chat được triển khai theo kiến trúc **Polling** với Widge
 | Tất cả | COMPLETED / CANCELLED → **Chỉ đọc** (phone bị mask) |
 
 **Tính năng nổi bật:**
-- 🔔 Polling tự động mỗi 3 giây
+- ⚡ Giao tiếp Real-time (WebSocket/STOMP) tức thời
 - 🔒 Tự động khóa chat khi đơn hoàn thành/hủy
 - 📞 Hiển thị số điện thoại (mask khi đơn đóng)
 - 🎨 Màu header thay đổi theo vai trò (Nhà hàng: cam, Tài xế: xanh lá, Khách hàng: xanh dương)
@@ -105,7 +105,7 @@ Tính năng chat được triển khai theo kiến trúc **Polling** với Widge
 | **Bảo mật** | Spring Security, JWT (Stateless), OTP Email Verification |
 | **Database** | MySQL 8 (Aiven Cloud), Hibernate (ddl-auto=update) |
 | **Frontend** | Thymeleaf, Bootstrap 5.3, Vanilla JS, Chart.js |
-| **Real-time** | HTTP Polling (Chat), WebSocket/STOMP (cơ sở hạ tầng) |
+| **Real-time** | WebSocket / STOMP (Chat), HTTP Polling (Tracking) |
 | **Email** | Gmail SMTP Server |
 
 ---
@@ -166,6 +166,13 @@ src/main/java/com/duong/salesmanagement/
 ---
 
 ## 📝 Nhật ký Cập nhật
+
+### 📅 12/05/2026 — Real-time Chat Migration
+- **Chuyển đổi sang WebSocket STOMP:** Thay thế hoàn toàn cơ chế Polling cũ bằng WebSocket, giúp tin nhắn được gửi và nhận tức thời không có độ trễ.
+- **Backend Implementation:** Triển khai `WebSocketChatController` xử lý message mapping và broadcasting theo order-specific topics (`/topic/messages/{orderId}`).
+- **Frontend STOMP Integration:** Refactor `chat_widget.html` tích hợp `Stomp.js`, xử lý kết nối/ngắt kết nối tự động và cập nhật UI ngay khi có tin nhắn mới.
+- **Tối ưu hóa UI/UX:** Fix lỗi giao diện trang chủ Khách hàng (`home.html`) và chi tiết món ăn (`detail.html`), cải thiện luồng xác thực tại `/common/auth`.
+- **Refactor Core Logic:** Cập nhật `OrderService` và `RestaurantProfile` để hỗ trợ tốt hơn cho việc truy vấn dữ liệu liên quan đến chat và quản lý đơn hàng.
 
 ### 📅 11/05/2026 — Landing Page UI/UX
 - **Redesign toàn diện Landing Page (`index.html`):** Nâng cấp giao diện người dùng theo phong cách ứng dụng Food Delivery thương mại hiện đại.

@@ -127,7 +127,18 @@ public class OrderService {
         review.setRating(rating);
         review.setComment(comment);
         review.setCreatedAt(LocalDateTime.now());
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        // Cập nhật điểm đánh giá cho nhà hàng
+        RestaurantProfile restaurant = order.getRestaurant();
+        int currentCount = (restaurant.getReviewCount() != null) ? restaurant.getReviewCount() : 0;
+        double currentAvg = (restaurant.getAverageRating() != null) ? restaurant.getAverageRating() : 0.0;
+        
+        double newAvg = ((currentAvg * currentCount) + rating) / (currentCount + 1);
+        restaurant.setReviewCount(currentCount + 1);
+        restaurant.setAverageRating(Math.round(newAvg * 10.0) / 10.0);
+
+        return savedReview;
     }
 
     @Transactional

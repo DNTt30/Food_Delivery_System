@@ -19,6 +19,7 @@ public class RestaurantProfile {
     private String bannerUrl;
     private boolean isOpen;
     private Double averageRating;
+    private Integer reviewCount = 0;
 
     public RestaurantProfile() {}
 
@@ -36,4 +37,6 @@ public class RestaurantProfile {
     public void setOpen(boolean open) { isOpen = open; }
     public Double getAverageRating() { return averageRating; }
     public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+    public Integer getReviewCount() { return reviewCount; }
+    public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
 }

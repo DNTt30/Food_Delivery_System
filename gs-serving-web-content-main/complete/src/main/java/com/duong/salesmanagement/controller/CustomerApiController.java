@@ -23,19 +23,22 @@ public class CustomerApiController {
     private final UserRepository userRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final VoucherRepository voucherRepository;
+    private final ReviewRepository reviewRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
                                  OrderService orderService,
                                  UserRepository userRepository,
                                  CustomerProfileRepository customerProfileRepository,
-                                 VoucherRepository voucherRepository) {
+                                 VoucherRepository voucherRepository,
+                                 ReviewRepository reviewRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
         this.userRepository = userRepository;
         this.customerProfileRepository = customerProfileRepository;
         this.voucherRepository = voucherRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -65,7 +68,8 @@ public class CustomerApiController {
                 r.getAddress(),
                 r.getAverageRating(),
                 r.isOpen(),
-                r.getBannerUrl()
+                r.getBannerUrl(),
+                r.getReviewCount()
         )).collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -77,9 +81,9 @@ public class CustomerApiController {
         RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
         if (restaurant == null) return ResponseEntity.notFound().build();
 
-        List<MenuItem> menuItems = menuItemRepository.findByRestaurantAndIsAvailableTrue(restaurant);
+        List<MenuItem> menuItems = menuItemRepository.findByRestaurant(restaurant);
         List<MenuItemDTO> menuItemDTOs = menuItems.stream().map(m -> new MenuItemDTO(
-                m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl()
+                m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.isAvailable()
         )).collect(Collectors.toList());
 
         RestaurantDetailDTO detailDTO = new RestaurantDetailDTO(
@@ -89,9 +93,33 @@ public class CustomerApiController {
                 restaurant.getAverageRating(),
                 restaurant.isOpen(),
                 restaurant.getBannerUrl(),
+                restaurant.getReviewCount(),
                 menuItemDTOs
         );
         return ResponseEntity.ok(detailDTO);
+    }
+
+    // UC-06.1: Xem đánh giá của nhà hàng
+    @GetMapping("/restaurants/{id}/reviews")
+    public ResponseEntity<?> getRestaurantReviews(@PathVariable Long id) {
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
+        if (restaurant == null) return ResponseEntity.notFound().build();
+
+        List<Review> reviews = reviewRepository.findByRestaurant(restaurant);
+        List<ReviewDTO> reviewDTOs = reviews.stream().map(r -> {
+            List<String> items = r.getOrder().getOrderItems() != null ? r.getOrder().getOrderItems().stream()
+                    .map(oi -> oi.getMenuItem().getName() + " (x" + oi.getQuantity() + ")")
+                    .collect(Collectors.toList()) : List.of();
+            return new ReviewDTO(
+                    r.getOrder().getCustomer().getUser().getFullName(),
+                    r.getRating(),
+                    r.getComment(),
+                    r.getCreatedAt() != null ? r.getCreatedAt().toString() : "",
+                    items
+            );
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(reviewDTOs);
     }
 
     // UC-08: Đặt đơn hàng
@@ -230,10 +258,12 @@ public class CustomerApiController {
         public Double rating;
         public boolean isOpen;
         public String imageUrl;
+        public Integer reviewCount;
 
-        public RestaurantDTO(Long id, String name, String address, Double rating, boolean isOpen, String imageUrl) {
+        public RestaurantDTO(Long id, String name, String address, Double rating, boolean isOpen, String imageUrl, Integer reviewCount) {
             this.id = id; this.name = name; this.address = address;
             this.rating = rating; this.isOpen = isOpen; this.imageUrl = imageUrl;
+            this.reviewCount = reviewCount != null ? reviewCount : 0;
         }
     }
 
@@ -243,10 +273,11 @@ public class CustomerApiController {
         public String description;
         public Double price;
         public String imageUrl;
+        public boolean isAvailable;
 
-        public MenuItemDTO(Long id, String name, String description, Double price, String imageUrl) {
+        public MenuItemDTO(Long id, String name, String description, Double price, String imageUrl, boolean isAvailable) {
             this.id = id; this.name = name; this.description = description;
-            this.price = price; this.imageUrl = imageUrl;
+            this.price = price; this.imageUrl = imageUrl; this.isAvailable = isAvailable;
         }
     }
 
@@ -257,12 +288,13 @@ public class CustomerApiController {
         public Double rating;
         public boolean isOpen;
         public String bannerUrl;
+        public Integer reviewCount;
         public List<MenuItemDTO> menuItems;
 
         public RestaurantDetailDTO(Long id, String name, String address, Double rating,
-                                   boolean isOpen, String bannerUrl, List<MenuItemDTO> menuItems) {
+                                   boolean isOpen, String bannerUrl, Integer reviewCount, List<MenuItemDTO> menuItems) {
             this.id = id; this.name = name; this.address = address; this.rating = rating;
-            this.isOpen = isOpen; this.bannerUrl = bannerUrl; this.menuItems = menuItems;
+            this.isOpen = isOpen; this.bannerUrl = bannerUrl; this.reviewCount = reviewCount != null ? reviewCount : 0; this.menuItems = menuItems;
         }
     }
 
@@ -318,5 +350,21 @@ public class CustomerApiController {
     public static class ReviewRequest {
         public int rating;
         public String comment;
+    }
+
+    public static class ReviewDTO {
+        public String customerName;
+        public int rating;
+        public String comment;
+        public String createdAt;
+        public List<String> orderItems;
+
+        public ReviewDTO(String customerName, int rating, String comment, String createdAt, List<String> orderItems) {
+            this.customerName = customerName;
+            this.rating = rating;
+            this.comment = comment;
+            this.createdAt = createdAt;
+            this.orderItems = orderItems;
+        }
     }
 }

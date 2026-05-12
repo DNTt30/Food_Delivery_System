@@ -288,12 +288,13 @@
     </div>
 
     <!-- ╔═══════════════ JAVASCRIPT ══════════╗ -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script>
     (function () {
         'use strict';
 
         // ── Constants ─────────────────────────────────────────────
-        const POLL_MS       = 3000;   // Poll every 3 seconds
         const TOKEN         = () => localStorage.getItem('jwt_token') || '';
         const MY_USERNAME   = () => localStorage.getItem('username') || '';
         const MY_PAGE_ROLE  = () => {
@@ -316,8 +317,14 @@
         let _receiverId   = null;
         let _targetRole   = null;
         let _isLocked     = false;
-        let _pollTimer    = null;
-        let _lastMsgCount = -1;  // track count to avoid unnecessary re-renders
+
+        // ── WebSocket / STOMP state ───────────────────────────────
+        let _stompClient      = null;
+        let _subscription     = null;
+        let _reconnectTimer   = null;
+        let _reconnectAttempt = 0;
+        const MAX_RECONNECT   = 5;
+        const RECONNECT_DELAY = [2000, 3000, 5000, 8000, 13000]; // backoff
 
         // ── DOM refs ──────────────────────────────────────────────
         const panel     = () => document.getElementById('shopeeChatPanel');
@@ -347,16 +354,16 @@
                 _targetRole  = targetRole;
                 _receiverId  = null;
                 _isLocked    = false;
-                _lastMsgCount = -1;
+                _reconnectAttempt = 0;
 
                 _applyHeader(label, targetRole);
                 _showPanel();
-                _loadContactThenPoll();
+                _loadContactThenConnect();
             },
 
             close() {
                 _hidePanel();
-                _stopPoll();
+                _disconnectStomp();
             },
 
             send() {
@@ -372,7 +379,7 @@
         // CONTACT LOADING
         // ════════════════════════════════════════════════════════════
 
-        async function _loadContactThenPoll() {
+        async function _loadContactThenConnect() {
             _setBodyLoading();
             try {
                 const res  = await fetch(`/api/orders/${_orderId}/contact-info`, {
@@ -387,15 +394,12 @@
                 const data = await res.json();
                 _isLocked  = data.isCompletedOrCancelled || data.completedOrCancelled || false;
 
-                // Find the matching contact
                 const contacts = data.contacts || [];
                 const contact  = contacts.find(c => c.role === _targetRole);
 
                 if (contact) {
                     _receiverId = contact.userId;
-                    // Update header with real name
                     _applyHeader(contact.displayName, contact.role);
-                    // Luôn hiện subtitle: số điện thoại hoặc thông báo không có
                     if (contact.phone) {
                         subtitleEl().textContent = '📞 ' + contact.phone;
                     } else if (contact.role === 'DRIVER' || contact.role === 'CUSTOMER') {
@@ -404,14 +408,12 @@
                         subtitleEl().textContent = '';
                     }
                 } else {
-                    // Contact not visible (wrong status for this pair)
                     _setBodyError('Chưa thể liên lạc với ' + (ROLE_LABEL[_targetRole] || _targetRole)
                         + ' ở trạng thái đơn hàng hiện tại.');
                     _lockInput('Trạng thái không cho phép');
                     return;
                 }
 
-                // Apply lock state
                 if (_isLocked) {
                     _lockInput('Đơn đã hoàn thành / hủy — Chat đã đóng');
                     _showStatusBar('🔒 Chat đã đóng. Bạn vẫn có thể xem lại lịch sử tin nhắn.', true);
@@ -420,8 +422,9 @@
                     _hideStatusBar();
                 }
 
-                // Start polling
-                _startPoll();
+                // Load history once via REST then connect WebSocket
+                await _fetchHistoryOnce();
+                if (!_isLocked) _connectStomp();
 
             } catch (err) {
                 console.error('[ShopeeChat] Contact load error:', err);
@@ -430,41 +433,102 @@
         }
 
         // ════════════════════════════════════════════════════════════
-        // POLLING — GET messages every 3 seconds
+        // WEBSOCKET / STOMP — Real-time connection
         // ════════════════════════════════════════════════════════════
 
-        function _startPoll() {
-            _stopPoll();
-            _fetchMessages();  // immediate first fetch
-            _pollTimer = setInterval(_fetchMessages, POLL_MS);
-        }
+        function _connectStomp() {
+            _disconnectStomp();
+            clearTimeout(_reconnectTimer);
 
-        function _stopPoll() {
-            if (_pollTimer) {
-                clearInterval(_pollTimer);
-                _pollTimer = null;
+            try {
+                const socket = new SockJS('/ws');
+                _stompClient = Stomp.over(socket);
+                _stompClient.debug = null; // suppress STOMP debug logs
+
+                const headers = { Authorization: 'Bearer ' + TOKEN() };
+
+                _stompClient.connect(headers, _onConnected, _onError);
+            } catch (e) {
+                console.error('[ShopeeChat] STOMP connect error:', e);
+                _scheduleReconnect();
             }
         }
 
-        async function _fetchMessages() {
+        function _onConnected() {
+            console.log('[ShopeeChat] ✅ WebSocket connected');
+            _reconnectAttempt = 0;
+            _hideStatusBar();
+
+            // Subscribe to order-specific topic
+            _subscription = _stompClient.subscribe(
+                `/topic/order.${_orderId}`,
+                (frame) => {
+                    try {
+                        const msg = JSON.parse(frame.body);
+                        const myRole     = MY_PAGE_ROLE();
+                        const senderRole = (msg.senderRole || '').toUpperCase();
+                        const recvRole   = (msg.receiverRole || '').toUpperCase();
+
+                        // Only render messages relevant to current chat pair
+                        if ((senderRole === myRole && recvRole === _targetRole) ||
+                            (recvRole === myRole && senderRole === _targetRole)) {
+                            _appendMessage(msg);
+                            // Notify host page about new message
+                            document.dispatchEvent(new CustomEvent('chatNewMessage', { detail: msg }));
+                        }
+                    } catch (e) {
+                        console.error('[ShopeeChat] Message parse error:', e);
+                    }
+                }
+            );
+
+            // Also subscribe to private error queue
+            _stompClient.subscribe('/user/queue/errors', (frame) => {
+                try {
+                    const err = JSON.parse(frame.body);
+                    _showToast(err.error || 'Lỗi gửi tin nhắn', 'danger');
+                } catch (e) {}
+            });
+        }
+
+        function _onError(err) {
+            console.warn('[ShopeeChat] STOMP error:', err);
+            _scheduleReconnect();
+        }
+
+        function _scheduleReconnect() {
+            if (_reconnectAttempt >= MAX_RECONNECT) {
+                _showStatusBar('⚠️ Mất kết nối. Vui lòng tải lại trang.', true);
+                return;
+            }
+            const delay = RECONNECT_DELAY[_reconnectAttempt] || 13000;
+            _reconnectAttempt++;
+            _showStatusBar(`🔄 Đang kết nối lại... (${_reconnectAttempt}/${MAX_RECONNECT})`, false);
+            _reconnectTimer = setTimeout(_connectStomp, delay);
+        }
+
+        function _disconnectStomp() {
+            clearTimeout(_reconnectTimer);
+            if (_subscription) { try { _subscription.unsubscribe(); } catch(e){} _subscription = null; }
+            if (_stompClient && _stompClient.connected) {
+                try { _stompClient.disconnect(); } catch(e){}
+            }
+            _stompClient = null;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // HISTORY — load once via REST when chat opens
+        // ════════════════════════════════════════════════════════════
+
+        async function _fetchHistoryOnce() {
             if (!_orderId) return;
             try {
                 const res = await fetch(`/api/chat/${_orderId}`, {
                     headers: { Authorization: 'Bearer ' + TOKEN() }
                 });
-                
-                if (!res.ok) {
-                    // Nếu lỗi ở lần đầu tiên (đang hiện "Đang tải"), hiện lỗi lên body
-                    if (_lastMsgCount === -1) {
-                        _setBodyError('Không thể tải tin nhắn (lỗi ' + res.status + ')');
-                    }
-                    return;
-                }
+                if (!res.ok) { _setBodyError('Không thể tải lịch sử tin nhắn'); return; }
 
                 const allMessages = await res.json();
-
-                // ── Lọc chỉ lấy tin nhắn giữa myRole ↔ _targetRole ──
-                // Tránh hiện tin nhắn Nhà hàng trong box chat Tài xế và ngược lại
                 const myRole = MY_PAGE_ROLE();
                 const filtered = allMessages.filter(m => {
                     const sr = (m.senderRole   || '').toUpperCase();
@@ -472,17 +536,9 @@
                     return (sr === myRole && rr === _targetRole) ||
                            (rr === myRole && sr === _targetRole);
                 });
-
-                // Only re-render if filtered count changed (perf optimization)
-                if (filtered.length !== _lastMsgCount) {
-                    _lastMsgCount = filtered.length;
-                    _renderMessages(filtered);
-                }
+                _renderMessages(filtered);
             } catch (err) {
-                console.error('[ShopeeChat] Poll error:', err);
-                if (_lastMsgCount === -1) {
-                    _setBodyError('Lỗi kết nối máy chủ.');
-                }
+                console.error('[ShopeeChat] History load error:', err);
             }
         }
 
@@ -500,6 +556,7 @@
             btn.disabled  = true;
 
             try {
+                // Send via REST for guaranteed delivery + DB persistence
                 const res = await fetch('/api/chat/send', {
                     method: 'POST',
                     headers: {
@@ -513,17 +570,16 @@
                     })
                 });
 
-                if (res.ok) {
-                    // Force a fresh poll immediately
-                    _lastMsgCount = -1;
-                    await _fetchMessages();
-                } else {
+                if (!res.ok) {
                     const err = await res.json();
                     _showToast(err.error || 'Không thể gửi tin nhắn', 'danger');
+                    input().value = text; // restore text on failure
                 }
+                // WebSocket broadcast is handled by server — no need to re-fetch
             } catch (e) {
                 console.error('[ShopeeChat] Send error:', e);
                 _showToast('Lỗi kết nối!', 'danger');
+                input().value = text;
             } finally {
                 btn.disabled = false;
                 input().focus();
@@ -587,10 +643,35 @@
 
             el.innerHTML = html;
 
-            // Auto-scroll to bottom if user was near bottom
-            if (wasBottom) {
-                el.scrollTop = el.scrollHeight;
-            }
+            if (wasBottom) el.scrollTop = el.scrollHeight;
+        }
+
+        // Append a single incoming message (from WebSocket) without full re-render
+        function _appendMessage(m) {
+            const el     = body();
+            const myRole = MY_PAGE_ROLE();
+
+            // Remove empty state if present
+            const emptyState = el.querySelector('.chat-state-msg');
+            if (emptyState) emptyState.remove();
+
+            const wasBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+
+            const isMe    = (m.senderRole || '').toUpperCase() === myRole;
+            const side    = isMe ? 'mine' : 'theirs';
+            const roleKey = (m.senderRole || '').toUpperCase();
+            const time    = _fmtTime(m.createdAt);
+            const content = _esc(m.content);
+
+            const wrap = document.createElement('div');
+            wrap.className = `chat-bubble-wrap ${side}`;
+            wrap.innerHTML = `
+                <div class="chat-sender-label">${_esc(m.senderName || 'Ẩn danh')}</div>
+                <div class="chat-bubble ${side} ${roleKey.toLowerCase()}">${content}</div>
+                <div class="chat-time">${time}</div>`;
+            el.appendChild(wrap);
+
+            if (wasBottom) el.scrollTop = el.scrollHeight;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -690,12 +771,12 @@
             setTimeout(() => t.remove(), 4000);
         }
 
-        // Stop polling when tab/window is hidden (save resources)
+        // Stop WebSocket when tab hidden, reconnect when visible
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                _stopPoll();
-            } else if (_orderId && _receiverId) {
-                _startPoll();
+                _disconnectStomp();
+            } else if (_orderId && _receiverId && !_isLocked) {
+                _connectStomp();
             }
         });
 
