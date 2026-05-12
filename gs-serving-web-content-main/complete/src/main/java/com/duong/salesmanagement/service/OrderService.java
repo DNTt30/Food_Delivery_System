@@ -1,7 +1,9 @@
 package com.duong.salesmanagement.service;
 
+import com.duong.salesmanagement.dto.OrderStatusNotification;
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,19 +21,47 @@ public class OrderService {
     private final ReviewRepository reviewRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final VoucherRepository voucherRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
                         MenuItemRepository menuItemRepository,
                         ReviewRepository reviewRepository,
                         DriverProfileRepository driverProfileRepository,
-                        VoucherRepository voucherRepository) {
+                        VoucherRepository voucherRepository,
+                        SimpMessagingTemplate messagingTemplate,
+                        NotificationService notificationService) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
         this.reviewRepository = reviewRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.voucherRepository = voucherRepository;
+        this.messagingTemplate = messagingTemplate;
+        this.notificationService = notificationService;
+    }
+
+    /**
+     * Broadcast trạng thái đơn hàng mới tới frontend qua WebSocket.
+     * Topic: /topic/order-status.{orderId}
+     */
+    private void broadcastOrderStatus(FoodOrder order) {
+        String driverName  = null;
+        String driverPhone = null;
+        if (order.getDriver() != null) {
+            driverName  = order.getDriver().getUser().getFullName();
+            driverPhone = order.getDriver().getPhoneNumber();
+        }
+        OrderStatusNotification notification = new OrderStatusNotification(
+                order.getId(),
+                order.getStatus().name(),
+                driverName,
+                driverPhone,
+                LocalDateTime.now()
+        );
+        messagingTemplate.convertAndSend(
+                "/topic/order-status." + order.getId(), notification);
     }
 
     @Transactional
@@ -83,7 +113,18 @@ public class OrderService {
         }
 
         savedOrder.setTotalAmount(totalAmount);
-        return foodOrderRepository.save(savedOrder);
+        FoodOrder finalOrder = foodOrderRepository.save(savedOrder);
+
+        // 🔔 Notify: Customer đã đặt đơn
+        notificationService.notifyOrderCreated(
+                customer.getUser(), finalOrder.getId(),
+                restaurant.getRestaurantName());
+        // 🔔 Notify: Restaurant có đơn mới
+        notificationService.notifyNewOrderForRestaurant(
+                restaurant.getUser(), finalOrder.getId(),
+                customer.getUser().getFullName());
+
+        return finalOrder;
     }
 
     @Transactional
@@ -97,6 +138,17 @@ public class OrderService {
             throw new RuntimeException("Unauthorized: Order does not belong to this restaurant");
         order.setStatus(newStatus);
         foodOrderRepository.save(order);
+        broadcastOrderStatus(order); // 🔔 Real-time WebSocket
+
+        // 🔔 Persist notification
+        if (newStatus == OrderStatus.PREPARING) {
+            notificationService.notifyOrderAccepted(
+                    order.getCustomer().getUser(),
+                    restaurant.getUser(), order.getId());
+        } else if (newStatus == OrderStatus.CANCELLED) {
+            notificationService.notifyOrderCancelledByRestaurant(
+                    order.getCustomer().getUser(), order.getId());
+        }
     }
 
     @Transactional
@@ -109,6 +161,11 @@ public class OrderService {
             throw new RuntimeException("Chỉ có thể hủy đơn hàng đang chờ xác nhận");
         order.setStatus(OrderStatus.CANCELLED);
         foodOrderRepository.save(order);
+        broadcastOrderStatus(order); // 🔔 Real-time WebSocket
+
+        // 🔔 Notify restaurant đơn bị hủy
+        notificationService.notifyOrderCancelledByCustomer(
+                order.getRestaurant().getUser(), order.getId());
     }
 
     @Transactional
@@ -133,10 +190,14 @@ public class OrderService {
         RestaurantProfile restaurant = order.getRestaurant();
         int currentCount = (restaurant.getReviewCount() != null) ? restaurant.getReviewCount() : 0;
         double currentAvg = (restaurant.getAverageRating() != null) ? restaurant.getAverageRating() : 0.0;
-        
+
         double newAvg = ((currentAvg * currentCount) + rating) / (currentCount + 1);
         restaurant.setReviewCount(currentCount + 1);
         restaurant.setAverageRating(Math.round(newAvg * 10.0) / 10.0);
+
+        // 🔔 Notify restaurant có đánh giá mới
+        notificationService.notifyNewReview(
+                restaurant.getUser(), orderId, rating);
 
         return savedReview;
     }
@@ -153,7 +214,17 @@ public class OrderService {
         order.setStatus(OrderStatus.DELIVERING);
         driver.setAvailable(false);
         driverProfileRepository.save(driver);
-        return foodOrderRepository.save(order);
+        FoodOrder saved = foodOrderRepository.save(order);
+        broadcastOrderStatus(saved); // 🔔 Real-time WebSocket
+
+        // 🔔 Notify: Customer & Restaurant tài xế đã nhận đơn
+        String driverName = driver.getUser().getFullName();
+        notificationService.notifyDriverAssigned(
+                saved.getCustomer().getUser(),
+                saved.getRestaurant().getUser(),
+                saved.getId(), driverName);
+
+        return saved;
     }
 
     @Transactional
@@ -168,6 +239,15 @@ public class OrderService {
         foodOrderRepository.save(order);
         driver.setAvailable(true);
         driverProfileRepository.save(driver);
+        broadcastOrderStatus(order); // 🔔 Real-time WebSocket
+
+        // 🔔 Notify Customer: đơn hoàn thành
+        notificationService.notifyOrderCompleted(
+                order.getCustomer().getUser(), order.getId());
+        // 🔔 Notify Driver: thu nhập
+        double earnings = (order.getTotalAmount() != null ? order.getTotalAmount() : 0) * 0.1;
+        notificationService.notifyDeliveryCompletedForDriver(
+                driver.getUser(), order.getId(), earnings);
     }
 
     public List<FoodOrder> getRestaurantOrders(RestaurantProfile restaurant) {

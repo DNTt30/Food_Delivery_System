@@ -270,10 +270,8 @@
             document.getElementById('cancelSection').classList.add('d-none');
         }
 
-        // Auto-refresh for active orders
-        if (order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING') {
-            setTimeout(loadOrder, 15000);
-        }
+        // Auto-refresh: đã được thay thế bằng WebSocket subscription (xem bên dưới)
+        // setTimeout được giữ lại như fallback nếu WebSocket không kết nối được
     }
 
     function renderTimeline(status) {
@@ -353,8 +351,189 @@
     loadOrder();
 </script>
 
-<!-- Real-time Chat Widget -->
+<!-- Real-time Chat Widget (loads SockJS + StompJS CDN) -->
 <div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  TASK-03 · Real-time Order Status Notification (WebSocket STOMP)         -->
+<!--  Subscribe: /topic/order-status.{orderId}                                   -->
+<!--  NOTE: phải đặt SAU chat_widget để SockJS và StompJS đã được load         -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    // ── Constants ────────────────────────────────────────────────────────
+    const TOKEN = () => localStorage.getItem('jwt_token') || '';
+    const MAX_RECONNECT   = 5;
+    const RECONNECT_DELAY = [2000, 3000, 5000, 8000, 13000];
+
+    // ── STOMP state ──────────────────────────────────────────────────────
+    let _stomp          = null;
+    let _subscription   = null;
+    let _reconnectTimer = null;
+    let _attempts       = 0;
+    let _activeOrderId  = null;   // ID đơn được subscribe hiện tại
+
+    // ── STATUS mapping cho toast messages ───────────────────────────────
+    const STATUS_TOAST = {
+        PREPARING:  { msg: '✅ Nhà hàng đã xác nhận đơn! Đang chuẩn bị món...', cls: 'success' },
+        DELIVERING: { msg: '🚵 Tài xế đã nhận đơn! Đang trên đưṑng đến...', cls: 'info'    },
+        COMPLETED:  { msg: '🎉 Giao hàng thành công! Chúc bạ ngon miệng!',  cls: 'success' },
+        CANCELLED:  { msg: '❌ Đơn hàng đã bị hủy.',                       cls: 'danger'  }
+    };
+
+    // ── Connect ──────────────────────────────────────────────────────────
+    function connect(targetOrderId) {
+        disconnect();
+        clearTimeout(_reconnectTimer);
+        _activeOrderId = targetOrderId;
+
+        try {
+            const socket = new SockJS('/ws');
+            _stomp = Stomp.over(socket);
+            _stomp.debug = null;
+
+            _stomp.connect(
+                { Authorization: 'Bearer ' + TOKEN() },
+                function onConnected() {
+                    console.log('[OrderStatus] ✅ WebSocket connected');
+                    _attempts = 0;
+
+                    _subscription = _stomp.subscribe(
+                        '/topic/order-status.' + _activeOrderId,
+                        function onFrame(frame) {
+                            try {
+                                const notification = JSON.parse(frame.body);
+                                onStatusUpdate(notification);
+                            } catch (e) {
+                                console.error('[OrderStatus] Parse error:', e);
+                            }
+                        }
+                    );
+                },
+                function onError(err) {
+                    console.warn('[OrderStatus] STOMP error:', err);
+                    scheduleReconnect();
+                }
+            );
+        } catch (e) {
+            console.error('[OrderStatus] Connect error:', e);
+            scheduleReconnect();
+        }
+    }
+
+    function disconnect() {
+        clearTimeout(_reconnectTimer);
+        if (_subscription) { try { _subscription.unsubscribe(); } catch(e){} _subscription = null; }
+        if (_stomp && _stomp.connected) { try { _stomp.disconnect(); } catch(e){} }
+        _stomp = null;
+    }
+
+    function scheduleReconnect() {
+        if (_attempts >= MAX_RECONNECT) {
+            showToast('⚠️ Mất kết nối. Vui lòng tải lại trang.', 'warning');
+            return;
+        }
+        const delay = RECONNECT_DELAY[_attempts] || 13000;
+        _attempts++;
+        console.log('[OrderStatus] Reconnect attempt', _attempts, 'in', delay, 'ms');
+        _reconnectTimer = setTimeout(() => {
+            if (_activeOrderId) connect(_activeOrderId);
+        }, delay);
+    }
+
+    // ── Handle incoming status notification ──────────────────────────────
+    function onStatusUpdate(notification) {
+        const newStatus = notification.status;
+        const prevStatus = currentOrder ? currentOrder.status : null;
+
+        // Update currentOrder in-place
+        if (currentOrder) {
+            currentOrder.status      = newStatus;
+            currentOrder.driverName  = notification.driverName  || currentOrder.driverName;
+            currentOrder.driverPhone = notification.driverPhone || currentOrder.driverPhone;
+            renderOrder(currentOrder);
+        } else {
+            // Fallback: reload from server if currentOrder not yet set
+            loadOrder();
+        }
+
+        // Show toast if status actually changed
+        if (newStatus !== prevStatus && STATUS_TOAST[newStatus]) {
+            showToast(STATUS_TOAST[newStatus].msg, STATUS_TOAST[newStatus].cls);
+        }
+
+        // Stop subscription when order is terminal
+        if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
+            disconnect();
+        }
+    }
+
+    // ── Toast helper ─────────────────────────────────────────────────────
+    function showToast(msg, type) {
+        const t = document.createElement('div');
+        t.style.cssText = [
+            'position:fixed;top:20px;left:50%;transform:translateX(-50%);',
+            'z-index:9999;max-width:380px;width:90%;',
+            'padding:12px 20px;border-radius:12px;',
+            'font-size:.875rem;font-weight:600;',
+            'box-shadow:0 8px 24px rgba(0,0,0,.18);',
+            'animation:toastIn .25s ease-out;'
+        ].join('');
+        const colors = {
+            success: { bg:'#d1fae5', color:'#065f46', border:'#6ee7b7' },
+            info:    { bg:'#dbeafe', color:'#1e40af', border:'#93c5fd' },
+            warning: { bg:'#fef3c7', color:'#92400e', border:'#fcd34d' },
+            danger:  { bg:'#fee2e2', color:'#991b1b', border:'#fca5a5' },
+        };
+        const c = colors[type] || colors.info;
+        t.style.background = c.bg;
+        t.style.color      = c.color;
+        t.style.border     = '1px solid ' + c.border;
+        t.textContent      = msg;
+
+        // Inject animation keyframe once
+        if (!document.getElementById('toast-anim-style')) {
+            const s = document.createElement('style');
+            s.id = 'toast-anim-style';
+            s.textContent = '@keyframes toastIn{from{opacity:0;top:0}to{opacity:1;top:20px}}';
+            document.head.appendChild(s);
+        }
+
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 4500);
+    }
+
+    // ── Start WebSocket after initial REST load ───────────────────────────
+    //    Hook vào sau khi loadOrder() render xong thì bắt đầu subscribe
+    const _origRenderOrder = window.renderOrder;
+    window.renderOrder = function(order) {
+        _origRenderOrder && _origRenderOrder(order);
+
+        // Connect WebSocket cho active orders
+        if ((order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING')
+                && order.id && String(order.id) !== String(_activeOrderId)) {
+            connect(order.id);
+        }
+    };
+
+    // ── Visibility API: disconnect khi tab ẩn, reconnect khi hiện ──────
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            disconnect();
+        } else if (_activeOrderId && currentOrder &&
+                   currentOrder.status !== 'COMPLETED' &&
+                   currentOrder.status !== 'CANCELLED') {
+            connect(_activeOrderId);
+        }
+    });
+
+    // ── Cleanup khi rời trang ───────────────────────────────────────────
+    window.addEventListener('beforeunload', disconnect);
+
+})();
+</script>
 
 </main>
 </body>

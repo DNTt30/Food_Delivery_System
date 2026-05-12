@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="sidebar(role)" class="bg-dark text-white p-3 vh-100 position-fixed" style="width: 250px; left: 0; top: 0; z-index: 1000; overflow-y: auto;">
-    <div class="text-center mb-4 mt-2">
+    <div class="text-center mb-3 mt-2">
         <h4 class="text-warning fw-bold"><i class="bi bi-bicycle"></i> Food Portal</h4>
         <p class="text-muted small mb-0 text-uppercase" th:text="${role}">Role</p>
     </div>
 
-    <hr class="border-secondary">
+    <!-- Notification Bell (Restaurant / Driver / Admin) -->
+    <div class="d-flex align-items-center justify-content-between px-1 mb-2"
+         style="background:rgba(255,255,255,.07);border-radius:10px;padding:6px 10px!important;">
+        <span class="small text-muted">Thông báo</span>
+        <!-- Bell widget sẽ render inline, dropdown mở sang phải -->
+        <div th:replace="~{fragments/notification_bell :: bell}"
+             style="--notif-dropdown-right:auto;--notif-dropdown-left:0;"></div>
+    </div>
+
+    <hr class="border-secondary mt-1">
 
     <!-- Restaurant Navigation -->
     <ul class="nav nav-pills flex-column mb-auto" th:if="${role == 'restaurant'}">

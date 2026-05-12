@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║  Notification Bell Widget                                            ║
+  ║  ─────────────────────────────────────────────────────────────────  ║
+  ║  Usage: <div th:replace="~{fragments/notification_bell :: bell}">   ║
+  ║                                                                      ║
+  ║  Features:                                                           ║
+  ║  • Polling every 5s for new notifications                            ║
+  ║  • Badge showing unread count                                        ║
+  ║  • Premium dropdown with icons, colors, time-ago                     ║
+  ║  • Mark single / all as read                                         ║
+  ║  • Click to navigate to related page                                 ║
+  ║  • Tab filter: All / Orders / Reviews / System                       ║
+  ║  • Skeleton loading + slide animation                                ║
+  ║  • Toast popup for new notification                                  ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
+<div th:fragment="bell" id="notifBellWrapper" style="position:relative;display:inline-block;">
+
+    <!-- ╔══════ STYLES ══════╗ -->
+    <style>
+        /* ── Bell button ───────────────────────────────── */
+        #notifBellBtn {
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 10px;
+            transition: background .15s;
+            color: #374151;
+            line-height: 1;
+        }
+        #notifBellBtn:hover { background: #fef2f2; color: #ef4444; }
+        #notifBellBtn i { font-size: 1.25rem; }
+
+        #notifBadge {
+            position: absolute;
+            top: 2px; right: 2px;
+            min-width: 18px; height: 18px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 700;
+            border-radius: 9px;
+            padding: 0 4px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid #fff;
+            animation: badgePop .2s ease-out;
+        }
+        @keyframes badgePop {
+            from { transform: scale(0); } to { transform: scale(1); }
+        }
+
+        /* ── Dropdown panel ─────────────────────────────── */
+        #notifDropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 380px;
+            max-width: 95vw;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.16), 0 4px 12px rgba(0,0,0,.06);
+            border: 1px solid #f3f4f6;
+            z-index: 2000;
+            overflow: hidden;
+            animation: notifSlide .2s ease-out;
+        }
+        @keyframes notifSlide {
+            from { opacity: 0; transform: translateY(-10px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Header ────────────────────────────────────── */
+        .notif-header {
+            padding: 16px 18px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            background: linear-gradient(135deg, #fff5f5, #fff);
+        }
+        .notif-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .notif-title { font-size: .95rem; font-weight: 700; color: #111827; }
+        .notif-mark-all {
+            font-size: .75rem;
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            padding: 0;
+            transition: opacity .15s;
+        }
+        .notif-mark-all:hover { opacity: .7; }
+
+        /* ── Tab filters ────────────────────────────────── */
+        .notif-tabs {
+            display: flex;
+            gap: 4px;
+        }
+        .notif-tab {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            background: #f3f4f6;
+            color: #6b7280;
+            transition: all .15s;
+        }
+        .notif-tab.active {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* ── List area ──────────────────────────────────── */
+        #notifList {
+            max-height: 380px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        #notifList::-webkit-scrollbar { width: 4px; }
+        #notifList::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+
+        /* ── Single item ─────────────────────────────────── */
+        .notif-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 18px;
+            border-bottom: 1px solid #f9fafb;
+            cursor: pointer;
+            transition: background .12s;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+        .notif-item:hover { background: #fef2f2; }
+        .notif-item.unread { background: #fff5f5; }
+        .notif-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 6px; top: 50%;
+            transform: translateY(-50%);
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .notif-icon-wrap {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-item-title {
+            font-size: .82rem;
+            font-weight: 700;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .notif-item-msg {
+            font-size: .75rem;
+            color: #6b7280;
+            margin-top: 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .notif-item-time {
+            font-size: .65rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        /* ── Skeleton ────────────────────────────────────── */
+        .notif-skeleton {
+            padding: 12px 18px;
+            border-bottom: 1px solid #f9fafb;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .skel {
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background-size: 200% 100%;
+            animation: skelShimmer 1.2s infinite;
+            border-radius: 6px;
+        }
+        @keyframes skelShimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ── Empty state ─────────────────────────────────── */
+        .notif-empty {
+            text-align: center;
+            padding: 36px 16px;
+            color: #9ca3af;
+        }
+        .notif-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+        /* ── Footer ──────────────────────────────────────── */
+        .notif-footer {
+            padding: 10px 18px;
+            text-align: center;
+            border-top: 1px solid #f3f4f6;
+            font-size: .75rem;
+            color: #6b7280;
+        }
+
+        /* ── Toast popup for new notification ────────────── */
+        .notif-toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            width: 320px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 12px 40px rgba(0,0,0,.18);
+            border-left: 4px solid #ef4444;
+            padding: 14px 16px;
+            z-index: 9999;
+            display: flex; gap: 10px; align-items: flex-start;
+            animation: toastSlideIn .3s ease-out;
+            cursor: pointer;
+        }
+        @keyframes toastSlideIn {
+            from { opacity:0; transform: translateX(40px); }
+            to   { opacity:1; transform: translateX(0); }
+        }
+        .notif-toast-title { font-size: .82rem; font-weight: 700; color: #111827; }
+        .notif-toast-msg   { font-size: .75rem; color: #6b7280; margin-top: 3px; }
+
+        /* ── Icon background colors ──────────────────────── */
+        .notif-bg-primary  { background: #eff6ff; }
+        .notif-bg-success  { background: #f0fdf4; }
+        .notif-bg-danger   { background: #fef2f2; }
+        .notif-bg-warning  { background: #fffbeb; }
+        .notif-bg-info     { background: #f0f9ff; }
+        .notif-bg-default  { background: #f9fafb; }
+    </style>
+
+    <!-- ╔══════ HTML ══════╗ -->
+
+    <!-- Bell Button -->
+    <button id="notifBellBtn" onclick="NotifWidget.toggle()" title="Thông báo"
+            aria-label="Thông báo">
+        <i class="bi bi-bell-fill" id="notifBellIcon"></i>
+        <span id="notifBadge" style="display:none;">0</span>
+    </button>
+
+    <!-- Dropdown Panel -->
+    <div id="notifDropdown">
+        <!-- Header -->
+        <div class="notif-header">
+            <div class="notif-header-top">
+                <span class="notif-title">🔔 Thông báo</span>
+                <button class="notif-mark-all" onclick="NotifWidget.markAllRead()">
+                    Đánh dấu tất cả đã đọc
+                </button>
+            </div>
+            <!-- Tabs -->
+            <div class="notif-tabs" id="notifTabs">
+                <button class="notif-tab active" data-filter="ALL"
+                        onclick="NotifWidget.setFilter('ALL', this)">Tất cả</button>
+                <button class="notif-tab" data-filter="ORDER"
+                        onclick="NotifWidget.setFilter('ORDER', this)">Đơn hàng</button>
+                <button class="notif-tab" data-filter="REVIEW"
+                        onclick="NotifWidget.setFilter('REVIEW', this)">Đánh giá</button>
+                <button class="notif-tab" data-filter="SYSTEM"
+                        onclick="NotifWidget.setFilter('SYSTEM', this)">Hệ thống</button>
+            </div>
+        </div>
+
+        <!-- List -->
+        <div id="notifList">
+            <!-- skeleton shown initially -->
+            <div id="notifSkeleton">
+                <div class="notif-skeleton" th:each="i : ${#numbers.sequence(1,3)}">
+                    <div class="skel" style="width:42px;height:42px;border-radius:12px;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                        <div class="skel" style="width:60%;height:12px;margin-bottom:6px;"></div>
+                        <div class="skel" style="width:90%;height:10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="notifItems"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="notif-footer" id="notifFooter">
+            <span id="notifCountLabel">Đang tải...</span>
+        </div>
+    </div>
+
+    <!-- ╔══════ JAVASCRIPT ══════╗ -->
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Config ────────────────────────────────────────────────
+        const TOKEN   = () => localStorage.getItem('jwt_token') || '';
+        const POLL_MS = 5000;
+
+        // ── State ─────────────────────────────────────────────────
+        let _all          = [];          // all fetched notifications
+        let _filter       = 'ALL';
+        let _isOpen       = false;
+        let _pollTimer    = null;
+        let _prevUnread   = 0;
+        let _toastQueue   = [];
+        let _toastBusy    = false;
+
+        // ── DOM refs ──────────────────────────────────────────────
+        const badge    = () => document.getElementById('notifBadge');
+        const bellIcon = () => document.getElementById('notifBellIcon');
+        const dropdown = () => document.getElementById('notifDropdown');
+        const listEl   = () => document.getElementById('notifItems');
+        const skelEl   = () => document.getElementById('notifSkeleton');
+        const footer   = () => document.getElementById('notifCountLabel');
+
+        // ── Type → filter group ───────────────────────────────────
+        const TYPE_GROUP = {
+            ORDER_CREATED: 'ORDER', ORDER_ACCEPTED: 'ORDER', ORDER_PREPARING: 'ORDER',
+            DRIVER_ASSIGNED: 'ORDER', ORDER_DELIVERING: 'ORDER',
+            ORDER_COMPLETED: 'ORDER', ORDER_CANCELLED: 'ORDER',
+            PAYMENT_SUCCESS: 'ORDER', PAYMENT_FAILED: 'ORDER',
+            NEW_REVIEW:    'REVIEW',
+            NEW_PROMOTION: 'SYSTEM',
+            SYSTEM_ALERT:  'SYSTEM'
+        };
+
+        // ── Type → background color class ────────────────────────
+        const TYPE_BG = {
+            ORDER_CREATED: 'notif-bg-primary',  ORDER_ACCEPTED: 'notif-bg-success',
+            ORDER_PREPARING: 'notif-bg-primary', DRIVER_ASSIGNED: 'notif-bg-success',
+            ORDER_DELIVERING: 'notif-bg-success',ORDER_COMPLETED: 'notif-bg-success',
+            ORDER_CANCELLED: 'notif-bg-danger',  PAYMENT_SUCCESS: 'notif-bg-success',
+            PAYMENT_FAILED: 'notif-bg-danger',   NEW_REVIEW: 'notif-bg-warning',
+            NEW_PROMOTION: 'notif-bg-info',      SYSTEM_ALERT: 'notif-bg-warning'
+        };
+
+        // ════════════════════════════════════════════════════════════
+        // PUBLIC API
+        // ════════════════════════════════════════════════════════════
+        window.NotifWidget = {
+
+            toggle() {
+                _isOpen = !_isOpen;
+                dropdown().style.display = _isOpen ? 'block' : 'none';
+                if (_isOpen) {
+                    _renderList();
+                    // Mark all as read when user opens
+                    if (_prevUnread > 0) {
+                        _markAllReadSilent();
+                    }
+                }
+            },
+
+            close() {
+                _isOpen = false;
+                dropdown().style.display = 'none';
+            },
+
+            setFilter(filter, btn) {
+                _filter = filter;
+                document.querySelectorAll('.notif-tab').forEach(b => b.classList.remove('active'));
+                if (btn) btn.classList.add('active');
+                _renderList();
+            },
+
+            markAllRead() {
+                _markAllReadSilent();
+                _all.forEach(n => n.read = true);
+                _renderList();
+                _updateBadge(0);
+            }
+        };
+
+        // ════════════════════════════════════════════════════════════
+        // FETCH & POLL
+        // ════════════════════════════════════════════════════════════
+
+        async function _fetchNotifications() {
+            if (!TOKEN()) return;
+            try {
+                const res = await fetch('/api/notifications', {
+                    headers: { Authorization: 'Bearer ' + TOKEN() }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Detect new unread notifications for toast
+                const newItems = data.filter(n =>
+                    !n.read && !_all.find(old => old.id === n.id));
+                newItems.forEach(n => _queueToast(n));
+
+                _all = data;
+                const unread = data.filter(n => !n.read).length;
+
+                // Hide skeleton
+                if (skelEl()) skelEl().style.display = 'none';
+
+                if (_isOpen) _renderList();
+                _updateBadge(unread);
+                _updateFooter(data.length, unread);
+                _prevUnread = unread;
+            } catch (e) {
+                // silent fail — don't break UI
+            }
+        }
+
+        function _startPolling() {
+            _fetchNotifications();
+            _pollTimer = setInterval(_fetchNotifications, POLL_MS);
+        }
+
+        function _stopPolling() {
+            clearInterval(_pollTimer);
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // RENDER
+        // ════════════════════════════════════════════════════════════
+
+        function _renderList() {
+            const el = listEl();
+            if (!el) return;
+
+            const filtered = _filter === 'ALL'
+                ? _all
+                : _all.filter(n => TYPE_GROUP[n.type] === _filter);
+
+            if (filtered.length === 0) {
+                el.innerHTML = `<div class="notif-empty">
+                    <span class="notif-empty-icon">🔕</span>
+                    Chưa có thông báo nào
+                </div>`;
+                return;
+            }
+
+            el.innerHTML = filtered.map(n => _renderItem(n)).join('');
+        }
+
+        function _renderItem(n) {
+            const bgCls  = TYPE_BG[n.type] || 'notif-bg-default';
+            const unread  = n.read ? '' : 'unread';
+            const url     = n.actionUrl || '#';
+
+            return `<div class="notif-item ${unread}"
+                         onclick="NotifWidget_click(${n.id}, '${_esc(url)}')"
+                         role="button" tabindex="0">
+                <div class="notif-icon-wrap ${bgCls}">
+                    <i class="bi ${_esc(n.icon || 'bi-bell')} ${_esc(n.color || 'text-secondary')}"></i>
+                </div>
+                <div class="notif-body">
+                    <div class="notif-item-title">${_esc(n.title || '')}</div>
+                    <div class="notif-item-msg">${_esc(n.message || '')}</div>
+                    <div class="notif-item-time">${_esc(n.timeAgo || '')}</div>
+                </div>
+            </div>`;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // MARK READ (API call)
+        // ════════════════════════════════════════════════════════════
+
+        window.NotifWidget_click = function (id, url) {
+            // Mark as read in local state immediately
+            const n = _all.find(x => x.id === id);
+            if (n && !n.read) {
+                n.read = true;
+                fetch('/api/notifications/' + id + '/read', {
+                    method: 'PUT',
+                    headers: { Authorization: 'Bearer ' + TOKEN() }
+                }).catch(() => {});
+                const unread = _all.filter(x => !x.read).length;
+                _updateBadge(unread);
+                _renderList();
+            }
+            if (url && url !== '#' && url !== 'null') {
+                window.location.href = url;
+            }
+        };
+
+        function _markAllReadSilent() {
+            fetch('/api/notifications/read-all', {
+                method: 'PUT',
+                headers: { Authorization: 'Bearer ' + TOKEN() }
+            }).catch(() => {});
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // BADGE
+        // ════════════════════════════════════════════════════════════
+
+        function _updateBadge(count) {
+            const b = badge();
+            const icon = bellIcon();
+            if (!b) return;
+            if (count > 0) {
+                b.textContent = count > 99 ? '99+' : count;
+                b.style.display = 'flex';
+                if (icon) { icon.className = 'bi bi-bell-fill'; }
+                // animate shake
+                b.style.animation = 'none';
+                void b.offsetWidth;
+                b.style.animation = 'badgePop .2s ease-out';
+            } else {
+                b.style.display = 'none';
+                if (icon) { icon.className = 'bi bi-bell'; }
+            }
+        }
+
+        function _updateFooter(total, unread) {
+            const el = footer();
+            if (!el) return;
+            if (unread > 0) {
+                el.innerHTML = `<span class="text-danger fw-semibold">${unread} chưa đọc</span> / ${total} thông báo`;
+            } else {
+                el.textContent = `${total} thông báo · Tất cả đã đọc ✓`;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // TOAST
+        // ════════════════════════════════════════════════════════════
+
+        function _queueToast(n) {
+            _toastQueue.push(n);
+            if (!_toastBusy) _showNextToast();
+        }
+
+        function _showNextToast() {
+            if (_toastQueue.length === 0) { _toastBusy = false; return; }
+            _toastBusy = true;
+            const n = _toastQueue.shift();
+
+            const t = document.createElement('div');
+            t.className = 'notif-toast';
+            t.onclick = () => {
+                t.remove();
+                if (n.actionUrl && n.actionUrl !== '#') window.location.href = n.actionUrl;
+            };
+            t.innerHTML = `
+                <div style="font-size:1.4rem;">${_typeEmoji(n.type)}</div>
+                <div>
+                    <div class="notif-toast-title">${_esc(n.title || '')}</div>
+                    <div class="notif-toast-msg">${_esc(n.message || '')}</div>
+                </div>`;
+            document.body.appendChild(t);
+
+            setTimeout(() => {
+                t.style.transition = 'opacity .3s, transform .3s';
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(40px)';
+                setTimeout(() => { t.remove(); _showNextToast(); }, 320);
+            }, 4000);
+        }
+
+        function _typeEmoji(type) {
+            const map = {
+                ORDER_CREATED: '🍔', ORDER_ACCEPTED: '✅', ORDER_PREPARING: '👨‍🍳',
+                DRIVER_ASSIGNED: '🛵', ORDER_DELIVERING: '🛵',
+                ORDER_COMPLETED: '🎉', ORDER_CANCELLED: '❌',
+                PAYMENT_SUCCESS: '💳', PAYMENT_FAILED: '⚠️',
+                NEW_REVIEW: '⭐', NEW_PROMOTION: '🎁', SYSTEM_ALERT: '🔔'
+            };
+            return map[type] || '🔔';
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // UTILS
+        // ════════════════════════════════════════════════════════════
+
+        function _esc(s) {
+            return (s || '').toString()
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // CLOSE ON OUTSIDE CLICK
+        // ════════════════════════════════════════════════════════════
+
+        document.addEventListener('click', function (e) {
+            const wrapper = document.getElementById('notifBellWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                NotifWidget.close();
+            }
+        });
+
+        // ════════════════════════════════════════════════════════════
+        // INIT
+        // ════════════════════════════════════════════════════════════
+
+        // Only start if user is logged in
+        if (TOKEN()) {
+            _startPolling();
+        }
+
+        // Re-start when token appears (e.g., login without reload)
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'jwt_token' && e.newValue) _startPolling();
+            if (e.key === 'jwt_token' && !e.newValue) _stopPolling();
+        });
+
+    })();
+    </script>
+</div>
+</html>
