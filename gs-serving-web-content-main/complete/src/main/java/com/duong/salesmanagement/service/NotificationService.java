@@ -53,6 +53,15 @@ public class NotificationService {
     }
 
     /**
+     * Lưu trực tiếp một Notification entity (bypass dedup).
+     * Dùng cho tin nhắn chat — mỗi tin là một notification riêng biệt.
+     */
+    @Transactional
+    public Notification save(Notification notification) {
+        return notificationRepository.save(notification);
+    }
+
+    /**
      * Tạo notification hệ thống (không gắn với đơn hàng cụ thể).
      */
     @Transactional

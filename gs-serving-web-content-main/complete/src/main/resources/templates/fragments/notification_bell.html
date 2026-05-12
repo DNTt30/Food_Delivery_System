@@ -338,6 +338,7 @@
             ORDER_COMPLETED: 'ORDER', ORDER_CANCELLED: 'ORDER',
             PAYMENT_SUCCESS: 'ORDER', PAYMENT_FAILED: 'ORDER',
             NEW_REVIEW:    'REVIEW',
+            NEW_MESSAGE:   'CHAT',
             NEW_PROMOTION: 'SYSTEM',
             SYSTEM_ALERT:  'SYSTEM'
         };
@@ -573,10 +574,11 @@
         function _typeEmoji(type) {
             const map = {
                 ORDER_CREATED: '🍔', ORDER_ACCEPTED: '✅', ORDER_PREPARING: '👨‍🍳',
-                DRIVER_ASSIGNED: '🛵', ORDER_DELIVERING: '🛵',
+                DRIVER_ASSIGNED: '🚵', ORDER_DELIVERING: '🚵',
                 ORDER_COMPLETED: '🎉', ORDER_CANCELLED: '❌',
                 PAYMENT_SUCCESS: '💳', PAYMENT_FAILED: '⚠️',
-                NEW_REVIEW: '⭐', NEW_PROMOTION: '🎁', SYSTEM_ALERT: '🔔'
+                NEW_REVIEW: '⭐', NEW_MESSAGE: '💬',
+                NEW_PROMOTION: '🎁', SYSTEM_ALERT: '🔔'
             };
             return map[type] || '🔔';
         }

@@ -10,6 +10,7 @@ import com.duong.salesmanagement.service.ContactService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +28,7 @@ import java.util.Map;
  * <pre>
  * GET  /api/orders/{id}/contact-info   – list participants + phone (masked if closed)
  * GET  /api/chat/{orderId}             – message history (polling endpoint)
- * POST /api/chat/send                  – send a message
+ * POST /api/chat/send                  – send a message + broadcast via WebSocket
  * </pre>
  *
  * All endpoints require a valid JWT Bearer token.
@@ -38,10 +39,14 @@ public class ChatApiController {
 
     private final ChatService chatService;
     private final ContactService contactService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public ChatApiController(ChatService chatService, ContactService contactService) {
+    public ChatApiController(ChatService chatService,
+                             ContactService contactService,
+                             SimpMessagingTemplate messagingTemplate) {
         this.chatService = chatService;
         this.contactService = contactService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     // ----------------------------------------------------------------
@@ -50,19 +55,10 @@ public class ChatApiController {
 
     /**
      * Returns the contacts visible to the authenticated user for the given order.
-     *
-     * <p>The frontend uses this to:
-     * <ul>
-     *   <li>Decide which chat buttons (NH / TX) to show</li>
-     *   <li>Obtain the {@code receiverId} needed for {@code POST /api/chat/send}</li>
-     *   <li>Detect a closed order ({@code isCompletedOrCancelled = true}) and lock the UI</li>
-     * </ul>
      */
     @GetMapping("/orders/{id}/contact-info")
     public ResponseEntity<?> getContactInfo(@PathVariable Long id, Authentication auth) {
-        if (auth == null) {
-            return unauthorized();
-        }
+        if (auth == null) return unauthorized();
         try {
             ContactInfoResponse response = contactService.getContactInfo(id, auth.getName());
             return ResponseEntity.ok(response);
@@ -79,14 +75,10 @@ public class ChatApiController {
 
     /**
      * Returns all messages for an order, sorted by time (ascending).
-     *
-     * <p>Intended for the polling loop: call every 3–5 s while the chat panel is open.
      */
     @GetMapping("/chat/{orderId}")
     public ResponseEntity<?> getChatHistory(@PathVariable Long orderId, Authentication auth) {
-        if (auth == null) {
-            return unauthorized();
-        }
+        if (auth == null) return unauthorized();
         try {
             List<ChatMessageResponse> messages = chatService.getOrderMessages(orderId, auth.getName());
             return ResponseEntity.ok(messages);
@@ -102,25 +94,23 @@ public class ChatApiController {
     // ----------------------------------------------------------------
 
     /**
-     * Sends a message in an order's chat room.
+     * Sends a message, saves to DB, then broadcasts via WebSocket to both
+     * sender and receiver in real-time (no page reload needed).
      *
-     * <p>Request body:
-     * <pre>{@code
-     * {
-     *   "orderId":    1001,
-     *   "receiverId": 7,
-     *   "content":    "Xác nhận đơn chưa ạ?"
-     * }
-     * }</pre>
+     * <p>Topic: {@code /topic/order.{orderId}}
      */
     @PostMapping("/chat/send")
     public ResponseEntity<?> sendMessage(@Valid @RequestBody ChatMessageRequest request,
                                          Authentication auth) {
-        if (auth == null) {
-            return unauthorized();
-        }
+        if (auth == null) return unauthorized();
         try {
             ChatMessageResponse saved = chatService.sendMessage(request, auth.getName());
+
+            // 🔔 Broadcast to all subscribers of this order's topic
+            // → Sender sees own message immediately, receiver sees it in real-time
+            messagingTemplate.convertAndSend(
+                    "/topic/order." + saved.getOrderId(), saved);
+
             return ResponseEntity.ok(saved);
         } catch (ChatLockedException | ChatAccessDeniedException e) {
             return forbidden(e.getMessage());
@@ -153,3 +143,4 @@ public class ChatApiController {
         return Map.of("error", message);
     }
 }
+

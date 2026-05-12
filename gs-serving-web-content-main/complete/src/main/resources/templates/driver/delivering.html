@@ -1,268 +1,154 @@
 <!DOCTYPE html>
-<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'driver', ~{::main})}">
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Driver - Đơn đang giao</title>
+    <title>Đơn hàng hiện tại - Driver</title>
 </head>
 <body>
 <main>
-<div th:replace="~{fragments/header :: dashboard_header('driver')}"></div>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill me-2 text-success"></i>Đơn đang giao</h4>
-        <small class="text-muted">Quản lý các chuyến giao hàng của bạn</small>
-    </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadAll()">
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">🛵 Chuyến giao hiện tại</h5>
+        <button class="btn btn-sm btn-light border rounded-pill" onclick="loadActiveDeliveries()">
             <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
-</div>
 
-<!-- Tabs -->
-<div class="d-flex gap-2 mb-4">
-    <button class="btn btn-success btn-sm rounded-pill px-3 tab-btn active" data-tab="active" onclick="switchTab('active', this)">
-        <i class="bi bi-bicycle me-1"></i>Đang giao
-    </button>
-    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn" data-tab="history" onclick="switchTab('history', this)">
-        <i class="bi bi-clock-history me-1"></i>Lịch sử
-    </button>
-</div>
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-success spinner-border-sm" role="status"></div>
+    </div>
 
-<!-- Loading -->
-<div id="loading" class="text-center py-5">
-    <div class="spinner-border text-success"></div>
-    <p class="text-muted mt-2">Đang tải...</p>
-</div>
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div style="font-size: 3.5rem">📦</div>
+        <h6 class="fw-bold mt-2">Bạn không có đơn nào đang giao</h6>
+        <p class="text-muted small">Hãy quay lại tab "Nhận đơn" để tìm chuyến mới.</p>
+        <a href="/driver/new_orders" class="btn btn-primary rounded-pill px-4 mt-2">Nhận đơn mới</a>
+    </div>
 
-<!-- Order List -->
-<div id="orderList" class="d-none"></div>
+    <!-- Active Orders List -->
+    <div id="activeOrders"></div>
 
-<!-- Empty State -->
-<div id="emptyState" class="text-center py-5 d-none">
-    <div style="font-size:4rem">📦</div>
-    <h5 class="fw-bold mt-2" id="emptyMsg">Không có đơn nào đang giao</h5>
-    <p class="text-muted" id="emptySubMsg">Hãy vào "Nhận đơn mới" để bắt đầu!</p>
-    <a href="/driver/new_orders" class="btn btn-primary rounded-pill px-4" id="emptyAction">Nhận đơn mới</a>
-</div>
+    <script th:inline="javascript">
+        const token = localStorage.getItem('jwt_token');
 
+        async function loadActiveDeliveries() {
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('emptyState').classList.add('d-none');
+            document.getElementById('activeOrders').innerHTML = '';
 
-<style>
-.tab-btn.active { background: #198754 !important; color: white !important; border-color: #198754 !important; }
-.order-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
-.order-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; }
-</style>
+            try {
+                const res = await fetch('/api/driver/my-deliveries', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                if (!res.ok) throw new Error();
+                const orders = await res.json();
+                document.getElementById('loading').classList.add('d-none');
 
-<script>
-    const token = localStorage.getItem('jwt_token');
-    let activeDeliveries = [];
-    let historyOrders = [];
-    let currentTab = 'active';
+                if (!orders || orders.length === 0) {
+                    document.getElementById('emptyState').classList.remove('d-none');
+                    return;
+                }
 
-    const STATUS_MAP = {
-        DELIVERING: '<span class="badge bg-success-subtle text-success border border-success">🛵 Đang giao</span>',
-        COMPLETED: '<span class="badge bg-secondary-subtle text-secondary border border-secondary">✅ Hoàn thành</span>',
-        CANCELLED: '<span class="badge bg-danger-subtle text-danger border border-danger">❌ Đã hủy</span>',
-        PENDING: '<span class="badge bg-warning-subtle text-warning border border-warning">⏳ Chờ xác nhận</span>',
-        PREPARING: '<span class="badge bg-primary-subtle text-primary border border-primary">🍳 Đang nấu</span>'
-    };
-
-    function formatVND(n) {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
-    }
-    function formatDate(dt) {
-        if (!dt) return '';
-        return new Date(dt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-    }
-
-    async function loadAll() {
-        document.getElementById('loading').classList.remove('d-none');
-        document.getElementById('orderList').classList.add('d-none');
-        document.getElementById('emptyState').classList.add('d-none');
-        try {
-            const [activeRes, historyRes] = await Promise.all([
-                fetch('/api/driver/my-deliveries', { headers: { 'Authorization': 'Bearer ' + token } }),
-                fetch('/api/driver/history', { headers: { 'Authorization': 'Bearer ' + token } })
-            ]);
-            if (activeRes.status === 401 || activeRes.status === 403) { window.location.href = '/common/auth'; return; }
-
-            activeDeliveries = activeRes.ok ? await activeRes.json() : [];
-            historyOrders = historyRes.ok ? await historyRes.json() : [];
-
-            document.getElementById('loading').classList.add('d-none');
-            renderCurrent();
-        } catch {
-            document.getElementById('loading').innerHTML =
-                '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
-        }
-    }
-
-    function switchTab(tab, btn) {
-        currentTab = tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (tab === 'history') {
-            btn.className = 'btn btn-secondary btn-sm rounded-pill px-3 tab-btn active';
-        } else {
-            btn.className = 'btn btn-success btn-sm rounded-pill px-3 tab-btn active';
-        }
-        renderCurrent();
-    }
-
-    function renderCurrent() {
-        const orders = currentTab === 'active' ? activeDeliveries : historyOrders;
-        const el = document.getElementById('orderList');
-        const empty = document.getElementById('emptyState');
-
-        if (!orders.length) {
-            el.classList.add('d-none');
-            empty.classList.remove('d-none');
-            if (currentTab === 'active') {
-                document.getElementById('emptyMsg').textContent = 'Không có đơn nào đang giao';
-                document.getElementById('emptySubMsg').textContent = 'Hãy vào "Nhận đơn mới" để bắt đầu!';
-                document.getElementById('emptyAction').style.display = '';
-            } else {
-                document.getElementById('emptyMsg').textContent = 'Chưa có lịch sử giao hàng';
-                document.getElementById('emptySubMsg').textContent = 'Các đơn đã hoàn thành sẽ hiển thị ở đây.';
-                document.getElementById('emptyAction').style.display = 'none';
+                renderActiveOrders(orders);
+            } catch {
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('activeOrders').innerHTML = '<div class="alert alert-danger">Lỗi kết nối</div>';
             }
-            return;
         }
 
-        empty.classList.add('d-none');
-        el.classList.remove('d-none');
-        el.innerHTML = '';
+        function renderActiveOrders(orders) {
+            const list = document.getElementById('activeOrders');
+            list.innerHTML = orders.map(o => {
+                return `
+                <div class="active-delivery-container mb-4">
+                    <!-- Step 1: Pickup -->
+                    <div class="mobile-card shadow-sm border-start border-4 border-warning mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">1. LẤY HÀNG</span>
+                            <span class="small text-muted">Đơn #${o.id}</span>
+                        </div>
+                        <h6 class="fw-bold mb-1">${o.restaurantName}</h6>
+                        <p class="small text-muted mb-3"><i class="bi bi-geo-alt me-1"></i>${o.restaurantAddress}</p>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="tel:${o.restaurantPhone || ''}" class="btn btn-sm btn-outline-warning flex-fill rounded-pill">
+                                <i class="bi bi-telephone me-1"></i>Gọi quán
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary flex-fill rounded-pill" onclick="openOrderChat(${o.id}, 'RESTAURANT', 'Nhà hàng')">
+                                <i class="bi bi-chat-dots me-1"></i>Chat quán
+                            </button>
+                        </div>
+                    </div>
 
-        const deliveryIds = [];
-        orders.forEach(o => {
-            if (o.status === 'DELIVERING') deliveryIds.push(o.id);
-            const items = (o.items || [])
-                .map(i => `<span class="badge bg-light text-dark border me-1 mb-1">${i}</span>`)
-                .join('');
-            const isDelivering = o.status === 'DELIVERING';
-            const isCompleted = o.status === 'COMPLETED';
+                    <!-- Step 2: Dropoff -->
+                    <div class="mobile-card shadow-sm border-start border-4 border-primary mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1">2. GIAO HÀNG</span>
+                        </div>
+                        <h6 class="fw-bold mb-1">${o.customerName}</h6>
+                        <p class="small text-muted mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${o.deliveryAddress}</p>
+                        <div class="bg-light rounded-3 p-2 mb-3 small">
+                            <i class="bi bi-box-seam me-1 text-muted"></i>${o.items ? o.items.join(', ') : '—'}
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="tel:${o.customerPhone || ''}" class="btn btn-sm btn-outline-primary flex-fill rounded-pill">
+                                <i class="bi bi-telephone me-1"></i>Gọi khách
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary flex-fill rounded-pill" onclick="openOrderChat(${o.id}, 'CUSTOMER', 'Khách hàng')">
+                                <i class="bi bi-chat-dots me-1"></i>Chat khách
+                            </button>
+                        </div>
+                    </div>
 
-            el.insertAdjacentHTML('beforeend', `
-            <div class="card border-0 shadow-sm order-card mb-3" id="ocard-${o.id}">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="fw-bold mb-0">Đơn #${o.id}</h6>
-                            <small class="text-muted">${o.restaurantName || ''} · ${formatDate(o.orderTime)}</small>
-                        </div>
-                        ${STATUS_MAP[o.status] || o.status}
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-sm-6">
-                            <div class="bg-light rounded-3 p-2">
-                                <small class="text-muted d-block"><i class="bi bi-person me-1"></i>Khách hàng</small>
-                                <span class="small fw-semibold">${o.customerName || 'N/A'}</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="bg-light rounded-3 p-2">
-                                <small class="text-muted d-block"><i class="bi bi-house me-1"></i>Địa chỉ giao</small>
-                                <span class="small fw-semibold">${o.deliveryAddress || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">${items}</div>
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div>
-                            <span class="fw-bold text-danger">${formatVND(o.totalAmount)}</span>
-                            ${isCompleted ? `<span class="text-success small ms-2 fw-semibold"><i class="bi bi-wallet me-1"></i>+${formatVND((o.totalAmount || 0) * 0.1)}</span>` : ''}
-                        </div>
-                        <div class="d-flex gap-2 flex-wrap">
-                        ${isDelivering ? `
-                        <button class="btn btn-success rounded-pill px-4 fw-semibold" onclick="completeDelivery(${o.id}, this)">
-                            <i class="bi bi-check-circle-fill me-1"></i>Đã giao xong
-                        </button>
-                        <button id="chatBtn-${o.id}"
-                                class="btn btn-outline-primary rounded-pill px-3 fw-semibold position-relative"
-                                onclick="openOrderChat(${o.id})">
-                            <i class="bi bi-chat-dots me-1"></i>Nhắn tin KH
-                        </button>` : ''}
-                        ${isCompleted ? `
-                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold"
-                                onclick="openChatHistory(${o.id})">
-                            <i class="bi bi-chat-dots me-1"></i>Xem tin nhắn
-                        </button>` : ''}
-                        </div>
-                    </div>
+                    <!-- Action Button -->
+                    <button class="btn btn-success w-100 rounded-pill py-3 fw-bold shadow-lg mb-2" onclick="completeDelivery(${o.id})">
+                        <i class="bi bi-check-circle-fill me-1"></i> XÁC NHẬN GIAO THÀNH CÔNG
+                    </button>
+                    <div class="text-center small text-muted">Xác nhận sau khi đã giao tận tay khách hàng</div>
                 </div>
-            </div>`);
-        });
+                <hr class="my-4 opacity-10">
+                `;
+            }).join('');
 
-        // Tell the background listener to subscribe to all DELIVERING rooms
-        if (typeof window._refreshDriverChatSubs === 'function') {
-            window._refreshDriverChatSubs(deliveryIds);
-        }
-    }
-
-    async function completeDelivery(orderId, btn) {
-        if (!confirm('Xác nhận đã giao hàng thành công cho khách?')) return;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang cập nhật...';
-        try {
-            const res = await fetch(`/api/driver/orders/${orderId}/complete`, {
-                method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const d = await res.json();
-            if (res.ok) {
-                showToast('Hoàn thành giao hàng! Cảm ơn bạn đã nỗ lực. 🎉', 'success');
-                loadAll();
-            } else {
-                showToast(d.error || 'Không thể cập nhật!', 'danger');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Đã giao xong';
+            // Subscription for chat notifications
+            const ids = orders.map(o => o.id);
+            if (typeof window._refreshDriverChatSubs === 'function') {
+                window._refreshDriverChatSubs(ids);
             }
-        } catch {
-            showToast('Lỗi kết nối!', 'danger');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Đã giao xong';
         }
-    }
 
-    function showToast(msg, type) {
-        const t = document.createElement('div');
-        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
-        t.style.zIndex = 9999;
-        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    }
-
-    loadAll();
-</script>
-
-<!-- Chat widget (polling popup) -->
-<script>
-    window.MY_ROLE = 'DRIVER';
-    window.openOrderChat = function(orderId) {
-        const chatBtn = document.getElementById('chatBtn-' + orderId);
-        if (chatBtn) {
-            chatBtn.classList.remove('btn-primary');
-            chatBtn.classList.add('btn-outline-primary');
-            chatBtn.innerHTML = '<i class="bi bi-chat-dots me-1"></i>Nhắn tin KH';
+        async function completeDelivery(id) {
+            if (!confirm(`Xác nhận đã giao xong đơn hàng #${id}?`)) return;
+            try {
+                const res = await fetch(`/api/driver/orders/${id}/complete`, { 
+                    method: 'PUT', 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                if (res.ok) {
+                    alert('Giao hàng thành công! Đã cộng thu nhập vào ví.');
+                    loadActiveDeliveries();
+                } else {
+                    const d = await res.json();
+                    alert(d.error || 'Lỗi cập nhật');
+                }
+            } catch { alert('Lỗi kết nối'); }
         }
-        if (typeof window.openShopeeChat === 'function') {
-            window.openShopeeChat(orderId, 'CUSTOMER', 'Khách hàng');
-        } else {
-            alert("Chat Component chưa sẵn sàng");
-        }
-    };
 
-    window.openChatHistory = function(orderId) {
-        if (typeof window.openShopeeChat === 'function') {
-            window.openShopeeChat(orderId, 'CUSTOMER', 'Lịch sử chat Khách hàng');
-        } else {
-            alert("Chat Component chưa sẵn sàng");
-        }
-    };
-</script>
+        window.openOrderChat = function(orderId, targetRole, label) {
+            if (typeof window.openShopeeChat === 'function') {
+                window.openShopeeChat(orderId, targetRole, label);
+            } else {
+                alert("Chat Component chưa sẵn sàng");
+            }
+        };
 
-<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
+        loadActiveDeliveries();
+        setInterval(loadActiveDeliveries, 30000);
+    </script>
+    
+    <div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
+    <script>window.MY_ROLE = 'DRIVER';</script>
 </main>
 </body>
 </html>

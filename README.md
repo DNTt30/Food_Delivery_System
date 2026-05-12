@@ -167,6 +167,23 @@ src/main/java/com/duong/salesmanagement/
 
 ## 📝 Nhật ký Cập nhật
 
+### 📅 13/05/2026 — UI Modernization & Management Excellence
+- **Restaurant Management 2.0:**
+    - **Giao diện Kanban thông minh:** Chuyển đổi quản lý đơn hàng sang dạng 3 cột dọc (Mới nhận, Đang nấu, Xong) giúp theo dõi luồng vận hành trực quan.
+    - **Quick Filter & Search:** Tích hợp bộ lọc nhanh theo ID/Tên khách hàng và Sticky Headers giúp thao tác mượt mà ngay cả khi có hàng trăm đơn.
+    - **Compact Mode:** Chế độ hiển thị thu gọn giúp tăng mật độ thông tin trên màn hình lên gấp 3 lần.
+    - **Server-side History:** Triển khai bảng lịch sử đơn hàng có phân trang (Pagination) tại phía Server, tối ưu hiệu năng tuyệt đối.
+    - **Inline Menu Toggle:** Quản lý thực đơn dạng bảng với nút gạt trạng thái (Availability) cập nhật tức thì qua AJAX.
+- **Driver "Mobile-First" App:**
+    - **Thiết kế Mobile-First:** Hoàn thiện Layout di động với thanh điều hướng dưới (Bottom Nav) và thanh trạng thái trên (Top Bar).
+    - **Status Toggle:** Nút gạt Online/Offline chuyên nghiệp với hiệu ứng pulse.
+    - **Order Feed:** Danh sách đơn hàng mới (New Orders) được thiết kế dạng thẻ dọc, hiển thị ước tính khoảng cách và thu nhập (10% commission).
+    - **Delivery Journey:** Quy trình giao hàng từng bước (Pickup → Dropoff) với các nút Call/Chat ngữ cảnh.
+- **Infrastructure & UX Optimization:**
+    - **Dashboard Header 2.0:** Nâng cấp Header đồng bộ cho toàn bộ actor, tích hợp chuông thông báo (Notification Bell) với số lượng unread badge.
+    - **Background Chat Listener:** Driver có thể nhận thông báo tin nhắn mới từ tất cả các đơn hàng đang xử lý ngay cả khi không mở hộp chat.
+    - **Fixes:** Sửa lỗi lọc ngày theo múi giờ địa phương, tối ưu hóa quản lý Bootstrap Modals và cải thiện tốc độ load trang.
+
 ### 📅 12/05/2026 — Real-time Chat Migration
 - **Chuyển đổi sang WebSocket STOMP:** Thay thế hoàn toàn cơ chế Polling cũ bằng WebSocket, giúp tin nhắn được gửi và nhận tức thời không có độ trễ.
 - **Backend Implementation:** Triển khai `WebSocketChatController` xử lý message mapping và broadcasting theo order-specific topics (`/topic/messages/{orderId}`).

@@ -3,6 +3,10 @@ package com.duong.salesmanagement.controller;
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
 import com.duong.salesmanagement.service.OrderService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -87,6 +91,7 @@ public class RestaurantApiController {
                 .findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(restaurant, todayStart, todayEnd);
 
         long newOrders       = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
+        long preparingOrders = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.PREPARING).count();
         long completedToday  = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
         double revenueToday  = todayOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
@@ -120,6 +125,7 @@ public class RestaurantApiController {
 
         return ResponseEntity.ok(Map.of(
                 "todayNewOrders",      newOrders,
+                "todayPreparingOrders",preparingOrders,
                 "todayCompleted",      completedToday,
                 "todayRevenue",        revenueToday,
                 "menuCount",           menuCount,
@@ -277,6 +283,29 @@ public class RestaurantApiController {
             return ResponseEntity.notFound().build();
 
         return ResponseEntity.ok(toOrderDTO(order));
+    }
+
+    /**
+     * GET /api/restaurant/orders/history?page=0&size=10
+     * Trả về lịch sử đơn hàng có phân trang.
+     */
+    @GetMapping("/orders/history")
+    public ResponseEntity<?> getOrderHistory(Authentication auth,
+                                            @RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "10") int size) {
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderTime").descending());
+        Page<FoodOrder> orderPage = foodOrderRepository.findByRestaurant(restaurant, pageable);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("orders", orderPage.getContent().stream().map(this::toOrderDTO).collect(Collectors.toList()));
+        response.put("currentPage", orderPage.getNumber());
+        response.put("totalItems", orderPage.getTotalElements());
+        response.put("totalPages", orderPage.getTotalPages());
+
+        return ResponseEntity.ok(response);
     }
 
     /** PUT /api/restaurant/orders/{id}/status — Cập nhật trạng thái đơn */

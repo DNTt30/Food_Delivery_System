@@ -195,18 +195,18 @@
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
-        <!-- Đơn mới hôm nay -->
-        <div class="col-md-6 col-xl-3">
-            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
+        <!-- Đơn chờ xác nhận -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%); border-left: 5px solid #dc3545;">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="icon-bg" style="background: rgba(220,53,69,0.12); color: #dc3545;">
                         <i class="bi bi-bell-fill"></i>
                     </div>
                     <span class="trend-badge" style="background: rgba(220,53,69,0.1); color: #dc3545;">
-                        <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Hôm nay
+                        <i class="bi bi-exclamation-circle-fill"></i> Cần xử lý
                     </span>
                 </div>
-                <p class="stat-label text-muted mb-1">Đơn Mới (Đang Chờ)</p>
+                <p class="stat-label text-muted mb-1">Chờ Xác Nhận</p>
                 <p class="stat-value mb-0" id="totalNewOrders" style="color: #dc3545;">0</p>
                 <a href="/restaurant/orders" class="text-danger small fw-bold text-decoration-none mt-2 d-inline-flex align-items-center gap-1">
                     Xử lý ngay <i class="bi bi-arrow-right"></i>
@@ -214,56 +214,37 @@
             </div>
         </div>
 
-        <!-- Đơn hoàn thành hôm nay -->
-        <div class="col-md-6 col-xl-3">
-            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);">
+        <!-- Đơn đang nấu -->
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%); border-left: 5px solid #0d6efd;">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div class="icon-bg" style="background: rgba(25,135,84,0.12); color: #198754;">
-                        <i class="bi bi-check-circle-fill"></i>
+                    <div class="icon-bg" style="background: rgba(13,110,253,0.12); color: #0d6efd;">
+                        <i class="bi bi-fire"></i>
                     </div>
-                    <span class="trend-badge" style="background: rgba(25,135,84,0.1); color: #198754;">
-                        <i class="bi bi-check2"></i> Hôm nay
+                    <span class="trend-badge" style="background: rgba(13,110,253,0.1); color: #0d6efd;">
+                        <i class="bi bi-hourglass-split"></i> Đang nấu
                     </span>
                 </div>
-                <p class="stat-label text-muted mb-1">Đơn Hoàn Thành Hôm Nay</p>
-                <p class="stat-value mb-0" id="totalCompletedOrders" style="color: #198754;">0</p>
-                <p class="small text-muted mt-2 mb-0">Chỉ tính đơn hôm nay</p>
+                <p class="stat-label text-muted mb-1">Đang Chuẩn Bị</p>
+                <p class="stat-value mb-0" id="totalPreparingOrders" style="color: #0d6efd;">0</p>
+                <p class="small text-muted mt-2 mb-0">Theo dõi tiến độ</p>
             </div>
         </div>
 
         <!-- Doanh thu hôm nay -->
-        <div class="col-md-6 col-xl-3">
-            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fff8e1 0%, #fff 100%);">
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #fffcf0 0%, #fff 100%); border-left: 5px solid #ffc107;">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="icon-bg" style="background: rgba(255,193,7,0.2); color: #d97706;">
-                        <i class="bi bi-currency-dollar"></i>
+                        <i class="bi bi-cash-stack"></i>
                     </div>
                     <span class="trend-badge" style="background: rgba(255,193,7,0.15); color: #d97706;">
-                        <i class="bi bi-graph-up-arrow"></i> Hôm nay
+                        <i class="bi bi-graph-up-arrow"></i> Doanh thu
                     </span>
                 </div>
                 <p class="stat-label text-muted mb-1">Doanh Thu Hôm Nay</p>
-                <p class="stat-value mb-0" id="todayRevenue" style="color: #d97706; font-size: 1.6rem;">0 đ</p>
-                <p class="small text-muted mt-2 mb-0">Từ đơn hoàn thành hôm nay</p>
-            </div>
-        </div>
-
-        <!-- Số món & Rating -->
-        <div class="col-md-6 col-xl-3">
-            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f0f4ff 0%, #fff 100%);">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div class="icon-bg" style="background: rgba(99,102,241,0.12); color: #6366f1;">
-                        <i class="bi bi-star-fill"></i>
-                    </div>
-                    <span class="trend-badge" style="background: rgba(99,102,241,0.1); color: #6366f1;">
-                        <i class="bi bi-card-list"></i> Thực đơn
-                    </span>
-                </div>
-                <p class="stat-label text-muted mb-1">Món Đang Bán / Rating</p>
-                <p class="stat-value mb-0" style="color: #6366f1; font-size: 1.5rem;">
-                    <span id="menuCount">—</span> món
-                </p>
-                <p class="small text-muted mt-2 mb-0">⭐ <span id="avgRating">—</span>/5 trung bình</p>
+                <p class="stat-value mb-0" id="todayRevenue" style="color: #d97706;">0 đ</p>
+                <p class="small text-muted mt-2 mb-0">Từ đơn hoàn thành</p>
             </div>
         </div>
     </div>
@@ -521,6 +502,7 @@
             }
 
             const newOrders        = data.todayNewOrders || 0;
+            const preparingOrders  = data.todayPreparingOrders || 0;
             const completedOrders  = data.todayCompleted || 0;
             const revenue          = data.todayRevenue || 0;
             const menuCount        = data.menuCount || 0;
@@ -532,12 +514,10 @@
 
             // Fill stat cards
             document.getElementById('totalNewOrders').textContent = newOrders;
-            document.getElementById('totalCompletedOrders').textContent = completedOrders;
+            document.getElementById('totalPreparingOrders').textContent = preparingOrders;
             document.getElementById('todayRevenue').textContent =
                 new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(revenue);
-            document.getElementById('menuCount').textContent = menuCount;
-            document.getElementById('avgRating').textContent  = avgRating > 0 ? avgRating.toFixed(1) : 'Chưa có';
-
+            
             // Render charts with real 7-day data
             renderRevenueChart(chartData, newOrders, completedOrders, revenue);
             renderOrderStatusChart(newOrders, completedOrders);

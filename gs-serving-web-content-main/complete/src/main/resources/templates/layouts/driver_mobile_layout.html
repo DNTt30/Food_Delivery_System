@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <th:block th:replace="${title}"></th:block>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            padding-bottom: 75px; /* Space for bottom nav */
+            padding-top: 65px;    /* Space for top nav */
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .driver-top-nav { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            height: 60px; 
+            background: #fff; 
+            z-index: 1030; 
+            display: flex; 
+            align-items: center; 
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05); 
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 70px; 
+            background: #fff; 
+            z-index: 1030; 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.08); 
+            border-top: 1px solid #f1f5f9;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .bottom-nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-decoration: none; 
+            color: #94a3b8; 
+            font-size: 0.65rem; 
+            font-weight: 600; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 25%;
+            position: relative;
+        }
+        
+        .bottom-nav-item i { 
+            font-size: 1.5rem; 
+            margin-bottom: 4px; 
+            transition: transform 0.2s;
+        }
+        
+        .bottom-nav-item.active { 
+            color: #0d6efd; 
+        }
+        
+        .bottom-nav-item.active i { 
+            transform: translateY(-2px);
+            color: #0d6efd;
+        }
+        
+        .bottom-nav-item.active::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            width: 4px;
+            height: 4px;
+            background: #0d6efd;
+            border-radius: 50%;
+        }
+
+        /* Standardized Mobile Card */
+        .mobile-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        /* Pulse for online status */
+        .pulse-online {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+            animation: pulse-online 2s infinite;
+        }
+        @keyframes pulse-online {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Nav -->
+    <nav class="driver-top-nav px-3">
+        <div class="d-flex align-items-center justify-content-between w-100">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-1">
+                    <i class="bi bi-bicycle text-primary fs-5"></i>
+                </div>
+                <span class="fw-bold text-dark" style="letter-spacing: -0.5px;">Driver<span class="text-primary">Connect</span></span>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2">
+                <div class="form-check form-switch p-0 m-0 d-flex align-items-center gap-2 bg-light rounded-pill px-3 py-1 border">
+                    <span class="small fw-bold text-muted" id="onlineLabel" style="font-size: 0.7rem; min-width: 45px; text-align: center;">Offline</span>
+                    <input class="form-check-input ms-0 mt-0" type="checkbox" role="switch" id="globalOnlineToggle" onchange="toggleGlobalStatus(this.checked)" style="cursor: pointer;">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <th:block th:replace="${content}"></th:block>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <a href="/driver/dashboard" class="bottom-nav-item" id="nav-home">
+            <i class="bi bi-grid-1x2"></i>
+            <span>Tổng quan</span>
+        </a>
+        <a href="/driver/new_orders" class="bottom-nav-item" id="nav-orders">
+            <i class="bi bi-lightning-charge"></i>
+            <span>Nhận đơn</span>
+        </a>
+        <a href="/driver/delivering" class="bottom-nav-item" id="nav-active">
+            <i class="bi bi-geo-alt"></i>
+            <span>Đang giao</span>
+        </a>
+        <a href="/driver/history" class="bottom-nav-item" id="nav-history">
+            <i class="bi bi-clock-history"></i>
+            <span>Lịch sử</span>
+        </a>
+    </nav>
+
+    <script th:inline="javascript">
+        const globalToken = localStorage.getItem('jwt_token');
+        
+        async function checkDriverStatus() {
+            if (!globalToken) return;
+            try {
+                const res = await fetch('/api/driver/dashboard', { 
+                    headers: { 'Authorization': 'Bearer ' + globalToken } 
+                });
+                if (!res.ok) return;
+                const d = await res.json();
+                updateUIStatus(d.isAvailable);
+            } catch {}
+        }
+
+        async function toggleGlobalStatus(isOnline) {
+            try {
+                const res = await fetch('/api/driver/availability', { 
+                    method: 'PUT', 
+                    headers: { 'Authorization': 'Bearer ' + globalToken } 
+                });
+                if (!res.ok) {
+                    // Revert UI if failed
+                    document.getElementById('globalOnlineToggle').checked = !isOnline;
+                    return;
+                }
+                const d = await res.json();
+                updateUIStatus(d.isAvailable);
+                if (window.onDriverStatusChange) window.onDriverStatusChange(d.isAvailable);
+            } catch {
+                document.getElementById('globalOnlineToggle').checked = !isOnline;
+            }
+        }
+
+        function updateUIStatus(isOnline) {
+            const toggle = document.getElementById('globalOnlineToggle');
+            const label = document.getElementById('onlineLabel');
+            if (toggle) toggle.checked = isOnline;
+            if (label) {
+                label.textContent = isOnline ? 'Online' : 'Offline';
+                label.className = isOnline ? 'small fw-bold text-success' : 'small fw-bold text-muted';
+                if (isOnline) {
+                    label.innerHTML = '<span class="pulse-online me-1"></span>Online';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkDriverStatus();
+            const path = window.location.pathname;
+            if (path.includes('dashboard')) document.getElementById('nav-home').classList.add('active');
+            else if (path.includes('new_orders')) document.getElementById('nav-orders').classList.add('active');
+            else if (path.includes('delivering')) document.getElementById('nav-active').classList.add('active');
+            else if (path.includes('history')) document.getElementById('nav-history').classList.add('active');
+        });
+    </script>
+    <div th:replace="~{fragments/scripts :: scripts}"></div>
+</body>
+</html>

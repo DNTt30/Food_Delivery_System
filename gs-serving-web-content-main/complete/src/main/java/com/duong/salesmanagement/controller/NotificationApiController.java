@@ -166,6 +166,7 @@ public class NotificationApiController {
             case PAYMENT_SUCCESS                                -> "bi-credit-card-fill";
             case PAYMENT_FAILED                                 -> "bi-exclamation-triangle-fill";
             case NEW_REVIEW                                     -> "bi-star-fill";
+            case NEW_MESSAGE                                    -> "bi-chat-dots-fill";
             case NEW_PROMOTION                                  -> "bi-gift-fill";
             case SYSTEM_ALERT                                   -> "bi-shield-exclamation";
         };
@@ -182,6 +183,7 @@ public class NotificationApiController {
             case PAYMENT_SUCCESS                                -> "text-success";
             case PAYMENT_FAILED                                 -> "text-danger";
             case NEW_REVIEW                                     -> "text-warning";
+            case NEW_MESSAGE                                    -> "text-primary";
             case NEW_PROMOTION                                  -> "text-info";
             case SYSTEM_ALERT                                   -> "text-warning";
         };

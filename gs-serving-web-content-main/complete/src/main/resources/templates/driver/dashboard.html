@@ -1,163 +1,109 @@
 <!DOCTYPE html>
-<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'driver', ~{::main})}">
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
 <head>
     <title>Driver - Dashboard</title>
 </head>
 <body>
 <main>
-<div th:replace="~{fragments/header :: dashboard_header('driver')}"></div>
+    <div class="mb-4">
+        <h5 class="fw-bold mb-1" id="driverGreeting">Chào bạn, Tài xế!</h5>
+        <p class="text-muted small">Hôm nay bạn thế nào? Hãy bật Online để nhận đơn nhé!</p>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-bicycle me-2 text-primary"></i>Bảng điều khiển Tài xế</h4>
-        <small class="text-muted" id="driverGreeting">Đang tải...</small>
-    </div>
-    <div class="d-flex gap-2">
-        <button id="toggleStatusBtn" class="btn btn-success rounded-pill px-4 fw-bold" onclick="toggleStatus()">
-            <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Trực tuyến
-        </button>
-        <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadDashboard()">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
-    </div>
-</div>
-
-<!-- Stats -->
-<div class="row g-4 mb-4" id="statsRow">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #eff6ff, #fff);">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="bg-primary bg-opacity-10 rounded-3 p-2"><i class="bi bi-box-seam text-primary fs-4"></i></div>
-                <span class="badge bg-primary-subtle text-primary border border-primary small">Có sẵn</span>
+    <!-- Main Stats Card -->
+    <div class="mobile-card border-0 shadow-sm" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
+        <div class="row align-items-center">
+            <div class="col-7">
+                <p class="small opacity-75 mb-1">Thu nhập hôm nay (10%)</p>
+                <h3 class="fw-bold mb-0" id="statEarnings">0đ</h3>
             </div>
-            <h3 class="fw-bold text-primary" id="statAvailable">0</h3>
-            <p class="text-muted small mb-0">Đơn chờ nhận</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #fff8e1, #fff);">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="bg-warning bg-opacity-10 rounded-3 p-2"><i class="bi bi-geo-alt text-warning fs-4"></i></div>
-                <span class="badge bg-warning-subtle text-warning border border-warning small">Đang giao</span>
-            </div>
-            <h3 class="fw-bold text-warning" id="statActive">0</h3>
-            <p class="text-muted small mb-0">Đơn đang giao</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #f0fdf4, #fff);">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="bg-success bg-opacity-10 rounded-3 p-2"><i class="bi bi-check-circle text-success fs-4"></i></div>
-                <span class="badge bg-success-subtle text-success border border-success small">Hoàn thành</span>
-            </div>
-            <h3 class="fw-bold text-success" id="statCompleted">0</h3>
-            <p class="text-muted small mb-0">Đã giao thành công</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #fdf4ff, #fff);">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div class="bg-purple bg-opacity-10 rounded-3 p-2" style="background:rgba(139,92,246,0.1)!important;"><i class="bi bi-currency-dollar text-purple fs-4" style="color:#7c3aed;"></i></div>
-                <span class="badge small" style="background:rgba(139,92,246,0.1);color:#7c3aed;border:1px solid rgba(139,92,246,0.3);">Thu nhập</span>
-            </div>
-            <h3 class="fw-bold" id="statEarnings" style="color:#7c3aed;">0đ</h3>
-            <p class="text-muted small mb-0">Tổng thu nhập (10%)</p>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row g-3 mb-4">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-            <h6 class="fw-bold mb-3"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Truy cập nhanh</h6>
-            <div class="d-flex flex-column gap-2">
-                <a href="/driver/new_orders" class="btn btn-primary rounded-pill py-2 fw-semibold">
-                    <i class="bi bi-inbox me-2"></i>Nhận đơn mới
-                </a>
-                <a href="/driver/delivering" class="btn btn-success rounded-pill py-2 fw-semibold">
-                    <i class="bi bi-geo-alt me-2"></i>Đơn đang giao
-                </a>
-                <a href="/common/profile" class="btn btn-outline-secondary rounded-pill py-2 fw-semibold">
-                    <i class="bi bi-person-circle me-2"></i>Hồ sơ của tôi
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Hướng dẫn</h6>
-            <div class="d-flex flex-column gap-2">
-                <div class="d-flex align-items-start gap-2">
-                    <span class="badge bg-primary rounded-circle">1</span>
-                    <small class="text-muted">Bật trạng thái trực tuyến</small>
-                </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="badge bg-primary rounded-circle">2</span>
-                    <small class="text-muted">Vào "Nhận đơn mới" để xem đơn hàng sẵn sàng</small>
-                </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="badge bg-primary rounded-circle">3</span>
-                    <small class="text-muted">Nhấn "Nhận đơn" → đến lấy hàng → cập nhật đã giao</small>
+            <div class="col-5 text-end">
+                <div class="bg-white bg-opacity-10 rounded-3 p-2 d-inline-block">
+                    <i class="bi bi-wallet2 fs-3 text-warning"></i>
                 </div>
             </div>
         </div>
+        <div class="mt-3 pt-3 border-top border-white border-opacity-10 d-flex justify-content-between">
+            <div class="text-center flex-fill">
+                <div class="small opacity-75">Giao thành công</div>
+                <div class="fw-bold" id="statCompleted">0</div>
+            </div>
+            <div class="vr mx-2 opacity-25"></div>
+            <div class="text-center flex-fill">
+                <div class="small opacity-75">Đang giao</div>
+                <div class="fw-bold" id="statActive">0</div>
+            </div>
+        </div>
     </div>
-</div>
 
+    <!-- Quick Navigation -->
+    <div class="row g-3">
+        <div class="col-6">
+            <a href="/driver/new_orders" class="mobile-card d-block text-center text-decoration-none py-4">
+                <div class="bg-primary bg-opacity-10 rounded-circle w-50px h-50px d-flex align-items-center justify-content-center mx-auto mb-2">
+                    <i class="bi bi-lightning-charge-fill text-primary fs-4"></i>
+                </div>
+                <div class="fw-bold text-dark small">Nhận đơn mới</div>
+                <div class="badge bg-danger rounded-pill mt-1" id="statAvailable">0 đơn</div>
+            </a>
+        </div>
+        <div class="col-6">
+            <a href="/driver/delivering" class="mobile-card d-block text-center text-decoration-none py-4">
+                <div class="bg-success bg-opacity-10 rounded-circle w-50px h-50px d-flex align-items-center justify-content-center mx-auto mb-2">
+                    <i class="bi bi-geo-alt-fill text-success fs-4"></i>
+                </div>
+                <div class="fw-bold text-dark small">Đang giao hàng</div>
+                <div class="text-muted small mt-1" id="statActiveSub">0 đơn</div>
+            </a>
+        </div>
+    </div>
 
-<script>
-    const token = localStorage.getItem('jwt_token');
-    let isOnline = true;
+    <!-- Recent Activity / Info -->
+    <div class="mobile-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Mẹo cho bạn</h6>
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <div class="bg-light rounded-3 p-2"><i class="bi bi-shield-check text-success"></i></div>
+            <div class="small text-muted">Luôn kiểm tra kỹ túi đồ của nhà hàng trước khi rời đi.</div>
+        </div>
+        <div class="d-flex align-items-start gap-3">
+            <div class="bg-light rounded-3 p-2"><i class="bi bi-telephone text-primary"></i></div>
+            <div class="small text-muted">Gọi cho khách hàng ngay nếu bạn gặp khó khăn khi tìm địa chỉ.</div>
+        </div>
+    </div>
 
-    async function loadDashboard() {
-        try {
-            const res = await fetch('/api/driver/dashboard', { headers: { 'Authorization': 'Bearer ' + token } });
-            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
-            const d = await res.json();
-            document.getElementById('driverGreeting').textContent = `Xin chào, ${d.driverName || 'Tài xế'}!`;
-            document.getElementById('statAvailable').textContent = d.availableOrders || 0;
-            document.getElementById('statActive').textContent = d.activeDeliveries || 0;
-            document.getElementById('statCompleted').textContent = d.completedDeliveries || 0;
-            document.getElementById('statEarnings').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.totalEarnings || 0);
+    <style>
+        .w-50px { width: 50px; }
+        .h-50px { height: 50px; }
+    </style>
 
-            isOnline = d.isAvailable;
-            updateStatusBtn();
-        } catch {}
-    }
+    <script th:inline="javascript">
+        const token = localStorage.getItem('jwt_token');
 
-    async function toggleStatus() {
-        try {
-            const res = await fetch('/api/driver/availability', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
-            const d = await res.json();
-            isOnline = d.isAvailable;
-            updateStatusBtn();
-            showToast(d.message, isOnline ? 'success' : 'secondary');
-        } catch {}
-    }
+        async function loadDashboard() {
+            if (!token) { window.location.href = '/common/auth'; return; }
+            try {
+                const res = await fetch('/api/driver/dashboard', { headers: { 'Authorization': 'Bearer ' + token } });
+                const d = await res.json();
+                
+                document.getElementById('driverGreeting').textContent = `Chào ${d.driverName || 'bạn'}! 👋`;
+                document.getElementById('statAvailable').textContent = `${d.availableOrders || 0} đơn`;
+                document.getElementById('statActive').textContent = d.activeDeliveries || 0;
+                document.getElementById('statActiveSub').textContent = `${d.activeDeliveries || 0} đơn`;
+                document.getElementById('statCompleted').textContent = d.completedDeliveries || 0;
+                document.getElementById('statEarnings').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(d.totalEarnings || 0);
 
-    function updateStatusBtn() {
-        const btn = document.getElementById('toggleStatusBtn');
-        if (isOnline) {
-            btn.className = 'btn btn-success rounded-pill px-4 fw-bold';
-            btn.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Trực tuyến';
-        } else {
-            btn.className = 'btn btn-secondary rounded-pill px-4 fw-bold';
-            btn.innerHTML = '<i class="bi bi-circle me-1" style="font-size:0.5rem;"></i>Ngoại tuyến';
+                if (window.updateUIStatus) window.updateUIStatus(d.isAvailable);
+            } catch {}
         }
-    }
 
-    function showToast(msg, type) {
-        const t = document.createElement('div');
-        t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
-        t.style.zIndex = 9999;
-        t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-    }
+        window.onDriverStatusChange = function(isOnline) {
+            // Optional: load data again if status changed
+            loadDashboard();
+        };
 
-    loadDashboard();
-</script>
+        loadDashboard();
+        setInterval(loadDashboard, 30000); // 30s refresh
+    </script>
 </main>
 </body>
 </html>

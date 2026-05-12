@@ -134,14 +134,45 @@
         </nav>
     </div>
 
-    <!-- Right: tên user + avatar + dropdown -->
-    <div class="d-flex align-items-center gap-3">
-        <div class="d-none d-md-block text-end lh-1">
-            <div class="fw-semibold small" id="dh-username">...</div>
-            <div class="text-muted" style="font-size:0.7rem;" id="dh-role-label"></div>
+    <!-- Right: Notifications + User Profile -->
+    <div class="d-flex align-items-center gap-2 gap-md-3">
+        <!-- Notification Bell -->
+        <div class="dropdown" id="headerNotifWrapper">
+            <button class="btn btn-light rounded-circle shadow-sm position-relative d-flex align-items-center justify-content-center" 
+                    type="button" id="headerNotifBtn" data-bs-toggle="dropdown" aria-expanded="false"
+                    style="width:40px;height:40px;background:#fff;border:1px solid #e2e8f0;">
+                <i class="bi bi-bell fs-5 text-dark"></i>
+                <span id="headerNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-white" 
+                      style="font-size: 0.65rem; display: none; padding: 0.35em 0.5em; transform: translate(-70%, 15%) !important;">
+                    0
+                </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-0 mt-2" 
+                 aria-labelledby="headerNotifBtn"
+                 style="width:320px; border-radius:16px; overflow:hidden;">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light bg-opacity-50">
+                    <h6 class="mb-0 fw-bold">Thông báo</h6>
+                    <button class="btn btn-link btn-sm p-0 text-decoration-none text-danger small fw-semibold" onclick="markAllRead()">Đọc tất cả</button>
+                </div>
+                <div id="headerNotifList" style="max-height:350px; overflow-y:auto;">
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-50"></i>
+                        <small>Không có thông báo mới</small>
+                    </div>
+                </div>
+                <div class="p-2 border-top text-center bg-light bg-opacity-25">
+                    <a href="#" class="small text-decoration-none fw-semibold">Xem tất cả</a>
+                </div>
+            </div>
         </div>
+
+        <div class="d-none d-md-block text-end lh-1">
+            <div class="fw-bold text-dark" id="dh-username" style="font-size:0.9rem;">...</div>
+            <div class="text-muted fw-medium" style="font-size:0.75rem; letter-spacing: 0.02em;" id="dh-role-label"></div>
+        </div>
+        
         <div class="dropdown">
-            <button class="btn btn-light rounded-circle p-0 border-0 overflow-hidden shadow-sm"
+            <button class="btn btn-light rounded-circle p-0 border border-white shadow-sm overflow-hidden"
                     data-bs-toggle="dropdown"
                     style="width:40px;height:40px;">
                 <img id="dh-avatar"
@@ -150,10 +181,10 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2"
                 style="border-radius:12px;min-width:180px;">
-                <li><a class="dropdown-item rounded-3 py-2" href="/common/profile">
+                <li><a class="dropdown-item rounded-3 py-2 fw-medium" href="/common/profile">
                     <i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
                 <li><hr class="dropdown-divider my-1"></li>
-                <li><button class="dropdown-item text-danger rounded-3 py-2" onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
+                <li><button class="dropdown-item text-danger rounded-3 py-2 fw-medium" onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
                     <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button></li>
             </ul>
         </div>

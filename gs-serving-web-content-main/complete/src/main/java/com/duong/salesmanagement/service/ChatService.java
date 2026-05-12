@@ -6,6 +6,7 @@ import com.duong.salesmanagement.exception.ChatAccessDeniedException;
 import com.duong.salesmanagement.exception.ChatLockedException;
 import com.duong.salesmanagement.model.ChatMessage;
 import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.NotificationType;
 import com.duong.salesmanagement.model.OrderStatus;
 import com.duong.salesmanagement.model.Role;
 import com.duong.salesmanagement.model.User;
@@ -41,13 +42,16 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final FoodOrderRepository foodOrderRepository;
+    private final NotificationService notificationService;
 
     public ChatService(ChatMessageRepository chatMessageRepository,
                        UserRepository userRepository,
-                       FoodOrderRepository foodOrderRepository) {
+                       FoodOrderRepository foodOrderRepository,
+                       NotificationService notificationService) {
         this.chatMessageRepository = chatMessageRepository;
         this.userRepository = userRepository;
         this.foodOrderRepository = foodOrderRepository;
+        this.notificationService = notificationService;
     }
 
     // ----------------------------------------------------------------
@@ -85,6 +89,10 @@ public class ChatService {
 
         ChatMessage saved = chatMessageRepository.save(
                 new ChatMessage(order, sender, receiver, request.getContent().trim()));
+
+        // 🔔 Notify receiver: có tin nhắn mới
+        _notifyNewMessage(saved, order, sender, receiver);
+
         return toResponse(saved);
     }
 
@@ -105,6 +113,44 @@ public class ChatService {
                 .stream()
                 .map(this::toResponse)
                 .toList();  // immutable list, Java 16+
+    }
+
+    // ----------------------------------------------------------------
+    // Chat Notification
+    // ----------------------------------------------------------------
+
+    /**
+     * Tạo notification DB cho người nhận tin nhắn.
+     * Dùng type NEW_MESSAGE, KHÔNG dedup (mỗi tin là notification riêng).
+     * Lưu relatedOrderId để Frontend biết trang đích khi click.
+     */
+    private void _notifyNewMessage(ChatMessage msg, FoodOrder order, User sender, User receiver) {
+        try {
+            String senderLabel = switch (sender.getRole()) {
+                case CUSTOMER   -> "Khách hàng";
+                case RESTAURANT -> "Nhà hàng";
+                case DRIVER     -> "Tài xế";
+                default         -> sender.getFullName();
+            };
+            String preview = msg.getContent().length() > 60
+                    ? msg.getContent().substring(0, 60) + "…"
+                    : msg.getContent();
+
+            String title   = "💬 " + senderLabel + " nhắn tin";
+            String content = "[Đơn #" + order.getId() + "] " + sender.getFullName() + ": " + preview;
+
+            // Tạo notification trực tiếp (bypass dedup — mỗi tin nhắn là notification riêng)
+            com.duong.salesmanagement.model.Notification n =
+                    new com.duong.salesmanagement.model.Notification(
+                            receiver, title, content,
+                            NotificationType.NEW_MESSAGE,
+                            order.getId()          // relatedOrderId → action URL sẽ link đúng
+                    );
+            notificationService.save(n);
+
+        } catch (Exception e) {
+            // Silent: lỗi notification không được phép làm fail chat
+        }
     }
 
     // ----------------------------------------------------------------

@@ -312,11 +312,12 @@
         const ROLE_LABEL = { CUSTOMER:'Khách hàng', RESTAURANT:'Nhà hàng',
                              DRIVER:'Tài xế', ADMIN:'Hệ thống' };
 
-        // ── State ─────────────────────────────────────────────────
+        // ── State ────────────────────────────────────────────────────
         let _orderId      = null;
         let _receiverId   = null;
         let _targetRole   = null;
         let _isLocked     = false;
+        let _renderedIds  = new Set(); // dedup: ngăn hiển tin trùng từ WS + poll
 
         // ── WebSocket / STOMP state ───────────────────────────────
         let _stompClient      = null;
@@ -325,6 +326,10 @@
         let _reconnectAttempt = 0;
         const MAX_RECONNECT   = 5;
         const RECONNECT_DELAY = [2000, 3000, 5000, 8000, 13000]; // backoff
+
+        // ── Polling fallback state (chạy song song với WebSocket) ─
+        let _pollTimer  = null;
+        const POLL_MS   = 3000;
 
         // ── DOM refs ──────────────────────────────────────────────
         const panel     = () => document.getElementById('shopeeChatPanel');
@@ -350,11 +355,12 @@
              * @param {string} label        - Display name in header
              */
             open(orderId, targetRole, label) {
-                _orderId     = orderId;
-                _targetRole  = targetRole;
-                _receiverId  = null;
-                _isLocked    = false;
+                _orderId          = orderId;
+                _targetRole       = targetRole;
+                _receiverId       = null;
+                _isLocked         = false;
                 _reconnectAttempt = 0;
+                _renderedIds      = new Set(); // ─ reset dedup khi mở chat mới ─
 
                 _applyHeader(label, targetRole);
                 _showPanel();
@@ -364,6 +370,7 @@
             close() {
                 _hidePanel();
                 _disconnectStomp();
+                _stopPolling(); // dừng polling khi đóng chat
             },
 
             send() {
@@ -422,9 +429,12 @@
                     _hideStatusBar();
                 }
 
-                // Load history once via REST then connect WebSocket
+                // Load history once via REST, then start WebSocket + polling fallback
                 await _fetchHistoryOnce();
-                if (!_isLocked) _connectStomp();
+                if (!_isLocked) {
+                    _connectStomp();   // fast path: real-time WebSocket
+                    _startPolling();   // safe path: 3s polling fallback
+                }
 
             } catch (err) {
                 console.error('[ShopeeChat] Contact load error:', err);
@@ -465,6 +475,13 @@
                 (frame) => {
                     try {
                         const msg = JSON.parse(frame.body);
+
+                        // ── Guard 1: chỉ xử lý tin thuộc đúNG đơn hàng đang mở ──
+                        if (String(msg.orderId) !== String(_orderId)) return;
+
+                        // ── Guard 2: dedup — bỏ qua nếu đã render rồi (tránh hiển 2 lần) ──
+                        if (msg.id && _renderedIds.has(String(msg.id))) return;
+
                         const myRole     = MY_PAGE_ROLE();
                         const senderRole = (msg.senderRole || '').toUpperCase();
                         const recvRole   = (msg.receiverRole || '').toUpperCase();
@@ -473,7 +490,6 @@
                         if ((senderRole === myRole && recvRole === _targetRole) ||
                             (recvRole === myRole && senderRole === _targetRole)) {
                             _appendMessage(msg);
-                            // Notify host page about new message
                             document.dispatchEvent(new CustomEvent('chatNewMessage', { detail: msg }));
                         }
                     } catch (e) {
@@ -517,8 +533,55 @@
         }
 
         // ════════════════════════════════════════════════════════════
+        // POLLING FALLBACK — 3s interval, runs alongside WebSocket
+        // Đảm bảo receiver luôn thấy tin ngay cả khi WS thất bại
+        // ════════════════════════════════════════════════════════════
+
+        function _startPolling() {
+            _stopPolling();
+            _pollTimer = setInterval(_pollNewMessages, POLL_MS);
+        }
+
+        function _stopPolling() {
+            clearInterval(_pollTimer);
+            _pollTimer = null;
+        }
+
+        async function _pollNewMessages() {
+            if (!_orderId || !TOKEN()) return;
+            try {
+                const res = await fetch(`/api/chat/${_orderId}`, {
+                    headers: { Authorization: 'Bearer ' + TOKEN() }
+                });
+                if (!res.ok) return;
+
+                const allMessages = await res.json();
+                const myRole     = MY_PAGE_ROLE();
+                const orderIdStr = String(_orderId);
+
+                const newMsgs = allMessages.filter(m => {
+                    // Chỉ tin của đơn đang mở
+                    if (String(m.orderId) !== orderIdStr) return false;
+                    // Chỉ tin giữa đúng cặp role
+                    const sr = (m.senderRole   || '').toUpperCase();
+                    const rr = (m.receiverRole || '').toUpperCase();
+                    const pairOk = (sr === myRole && rr === _targetRole) ||
+                                   (rr === myRole && sr === _targetRole);
+                    if (!pairOk) return false;
+                    // Chỉ tin CHƯA render (dedup với _renderedIds)
+                    return !_renderedIds.has(String(m.id));
+                });
+
+                // Append từng tin mới (đã dedup)
+                newMsgs.forEach(m => _appendMessage(m));
+
+            } catch (e) { /* silent — polling không được làm crash UI */ }
+        }
+
+        // ════════════════════════════════════════════════════════════
         // HISTORY — load once via REST when chat opens
         // ════════════════════════════════════════════════════════════
+
 
         async function _fetchHistoryOnce() {
             if (!_orderId) return;
@@ -529,13 +592,19 @@
                 if (!res.ok) { _setBodyError('Không thể tải lịch sử tin nhắn'); return; }
 
                 const allMessages = await res.json();
-                const myRole = MY_PAGE_ROLE();
+                const myRole     = MY_PAGE_ROLE();
+                const orderIdStr = String(_orderId);
+
                 const filtered = allMessages.filter(m => {
+                    if (String(m.orderId) !== orderIdStr) return false;
                     const sr = (m.senderRole   || '').toUpperCase();
                     const rr = (m.receiverRole || '').toUpperCase();
                     return (sr === myRole && rr === _targetRole) ||
                            (rr === myRole && sr === _targetRole);
                 });
+
+                // ── Đăng ký ID vào dedup set trước khi render ──
+                filtered.forEach(m => { if (m.id) _renderedIds.add(String(m.id)); });
                 _renderMessages(filtered);
             } catch (err) {
                 console.error('[ShopeeChat] History load error:', err);
@@ -671,6 +740,9 @@
                 <div class="chat-time">${time}</div>`;
             el.appendChild(wrap);
 
+            // ── Đăng ký ID vào dedup set sau khi đã append ──
+            if (m.id) _renderedIds.add(String(m.id));
+
             if (wasBottom) el.scrollTop = el.scrollHeight;
         }
 
@@ -771,22 +843,77 @@
             setTimeout(() => t.remove(), 4000);
         }
 
-        // Stop WebSocket when tab hidden, reconnect when visible
+        // Stop WebSocket + polling when tab hidden; restore when visible
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 _disconnectStomp();
+                _stopPolling();
             } else if (_orderId && _receiverId && !_isLocked) {
                 _connectStomp();
+                _startPolling();
             }
         });
+
+
+        // ════════════════════════════════════════════════════════════
+        // MULTI-ROOM BACKGROUND LISTENER (For Drivers)
+        // ════════════════════════════════════════════════════════════
+        let _backgroundSubs = {}; // orderId -> subscription
+
+        window._refreshDriverChatSubs = function(orderIds) {
+            if (!_stompClient || !_stompClient.connected) {
+                // Wait for connection and retry
+                setTimeout(() => window._refreshDriverChatSubs(orderIds), 2000);
+                return;
+            }
+
+            // Remove old subs that are no longer active
+            Object.keys(_backgroundSubs).forEach(oid => {
+                if (!orderIds.includes(Number(oid))) {
+                    try { _backgroundSubs[oid].unsubscribe(); } catch(e){}
+                    delete _backgroundSubs[oid];
+                }
+            });
+
+            // Add new subs
+            orderIds.forEach(oid => {
+                if (!_backgroundSubs[oid]) {
+                    const topic = `/topic/order.${oid}`;
+                    _backgroundSubs[oid] = _stompClient.subscribe(topic, (frame) => {
+                        try {
+                            const m = JSON.parse(frame.body);
+                            const myRole = MY_PAGE_ROLE();
+                            // If it's a new message for me and NOT the currently open chat
+                            if (m.receiverRole === myRole && String(m.orderId) !== String(_orderId)) {
+                                _notifyBackgroundMessage(m);
+                            }
+                        } catch(e){}
+                    });
+                }
+            });
+        };
+
+        function _notifyBackgroundMessage(m) {
+            // Show a badge on the corresponding chat button if it exists on the page
+            const btn = document.getElementById('chatBtn-' + m.orderId);
+            if (btn) {
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-outline-primary');
+                if (!btn.innerHTML.includes('Tin mới')) {
+                    btn.innerHTML = '<i class="bi bi-chat-dots-fill me-1"></i>Tin mới!';
+                }
+            }
+            _showToast(`Tin mới đơn #${m.orderId}: ${m.message}`, 'primary');
+        }
 
         // Close on Escape key
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && panel().style.display === 'flex') {
-                window.ShopeeChat.close();
+                _closeChat();
             }
         });
 
+        window.openShopeeChat = _openChat;
     })();
     </script>
 </div>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Lịch sử giao hàng - Driver</title>
+</head>
+<body>
+<main>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">🕒 Lịch sử đơn hàng</h5>
+        <button class="btn btn-sm btn-light border rounded-pill" onclick="loadHistory()">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-secondary spinner-border-sm" role="status"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div style="font-size: 3.5rem">📜</div>
+        <h6 class="fw-bold mt-2">Chưa có lịch sử giao hàng</h6>
+        <p class="text-muted small">Các đơn hàng bạn đã giao xong sẽ xuất hiện ở đây.</p>
+    </div>
+
+    <!-- History List -->
+    <div id="historyList"></div>
+
+    <script th:inline="javascript">
+        const token = localStorage.getItem('jwt_token');
+
+        function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+        function formatDate(dt) {
+            if (!dt) return '';
+            // Handle array from Spring [y, m, d, h, m]
+            if (Array.isArray(dt)) {
+                return `${dt[2]}/${dt[1]} ${dt[3]}:${dt[4].toString().padStart(2,'0')}`;
+            }
+            return new Date(dt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadHistory() {
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('emptyState').classList.add('d-none');
+            document.getElementById('historyList').innerHTML = '';
+
+            try {
+                const res = await fetch('/api/driver/history', { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                const orders = await res.json();
+                document.getElementById('loading').classList.add('d-none');
+
+                if (!orders || orders.length === 0) {
+                    document.getElementById('emptyState').classList.remove('d-none');
+                    return;
+                }
+
+                renderHistory(orders);
+            } catch {
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('historyList').innerHTML = '<div class="alert alert-danger">Lỗi kết nối</div>';
+            }
+        }
+
+        function renderHistory(orders) {
+            const list = document.getElementById('historyList');
+            // Sort by ID descending (newest first)
+            orders.sort((a,b) => b.id - a.id);
+            
+            list.innerHTML = orders.map(o => {
+                const isCompleted = o.status === 'COMPLETED';
+                const income = isCompleted ? (o.totalAmount * 0.1) : 0;
+                const statusBadge = isCompleted 
+                    ? '<span class="badge bg-success-subtle text-success border border-success">Hoàn thành</span>'
+                    : '<span class="badge bg-danger-subtle text-danger border border-danger">Đã hủy</span>';
+
+                return `
+                <div class="mobile-card shadow-sm mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="fw-bold text-dark">Đơn #${o.id}</div>
+                            <div class="small text-muted">${formatDate(o.orderTime)}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    
+                    <div class="small text-muted mb-2"><i class="bi bi-shop me-1"></i>${o.restaurantName}</div>
+                    <div class="small text-muted mb-3"><i class="bi bi-geo-alt me-1"></i>${o.deliveryAddress}</div>
+                    
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <div class="small fw-semibold">Tổng: ${formatVND(o.totalAmount)}</div>
+                        ${isCompleted ? `<div class="text-success fw-bold">Thu nhập: +${formatVND(income)}</div>` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        loadHistory();
+    </script>
+</main>
+</body>
+</html>

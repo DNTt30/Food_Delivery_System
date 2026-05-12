@@ -8,69 +8,90 @@
 <div th:replace="~{fragments/header :: dashboard_header('restaurant')}"></div>
 
 <style>
-    .tab-btn.active { background:#212529!important;color:#fff!important;border-color:#212529!important; }
-    .order-card { border-radius:14px!important;transition:box-shadow .2s,transform .2s; }
-    .order-card:hover { box-shadow:0 8px 28px rgba(0,0,0,.11)!important;transform:translateY(-2px); }
-    .status-badge { font-size:.75rem;font-weight:600;padding:4px 12px;border-radius:30px; }
-    .contact-chip { display:inline-flex;align-items:center;gap:6px;border-radius:30px;padding:5px 14px;
-                    font-size:.8rem;font-weight:600;text-decoration:none;border:1.5px solid; }
-    .contact-chip:hover { opacity:.85; }
-    .item-chip { display:inline-flex;align-items:center;gap:4px;
-                 background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;
-                 padding:3px 10px;font-size:.8rem;margin:2px; }
-    .section-divider { font-size:.68rem;font-weight:700;letter-spacing:.07em;
-                       text-transform:uppercase;color:#9ca3af;margin:0 0 6px; }
-    .order-meta-row { font-size:.82rem;color:#6b7280;display:flex;align-items:center;gap:6px; }
-    .skeleton { background:linear-gradient(90deg,#e9ecef 25%,#f8f9fa 50%,#e9ecef 75%);
-                background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px; }
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    #filterStatus { border-radius:20px;font-size:.85rem;padding:6px 16px;border:1.5px solid #dee2e6; }
+    .kanban-col { background:#f4f6f8; border-radius:12px; padding:15px; min-height: 400px; height: 100%; display: flex; flex-direction: column; transition: background 0.3s; }
+    .kanban-col:hover { background: #edf0f2; }
+    .kanban-col-header { 
+        font-weight: 700; 
+        padding: 10px 0;
+        margin-bottom: 1rem; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        position: sticky;
+        top: 0;
+        background: inherit;
+        z-index: 10;
+    }
+    .kanban-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; min-height: 200px; max-height: calc(100vh - 280px); padding-right: 5px; }
+    .kanban-list::-webkit-scrollbar { width: 6px; }
+    .kanban-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .kanban-card { background:#fff; border-radius:12px; border:1px solid #e2e8f0; padding:12px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:transform 0.2s, box-shadow 0.2s; cursor: default; }
+    .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    
+    /* Compact Mode */
+    .compact-mode .kanban-card { padding: 8px 10px; margin-bottom: 8px; }
+    .compact-mode .order-meta-row { font-size: 0.75rem; }
+    .compact-mode .section-divider, .compact-mode .item-chip-list { display: none; }
+    .compact-mode .compact-summary { display: block !important; font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+    .compact-summary { display: none; }
+
+    .item-chip { display:inline-flex;align-items:center;gap:3px;background:#f8f9fa;border:1px solid #dee2e6; border-radius:6px;padding:2px 8px;font-size:.75rem;margin:1px; }
+    .section-divider { font-size:.65rem;font-weight:700;text-transform:uppercase;color:#9ca3af;margin:6px 0 4px; }
+    .order-meta-row { font-size:.82rem;color:#4b5563;display:flex;align-items:center;gap:6px; }
+    .btn-kanban-action { font-weight: 600; font-size: 0.9rem; padding: 8px 16px; border-radius: 8px; width: 100%; margin-top: 8px;}
+    .tracking-timeline{list-style:none;padding:0;margin:0;}
+    .tracking-timeline li{display:flex;gap:12px;padding:8px 18px;border-left:2px solid #e5e7eb;margin-left:8px;position:relative;}
+    .tracking-timeline li::before{content:'';width:12px;height:12px;border-radius:50%;background:#e5e7eb;position:absolute;left:-7px;top:14px;}
+    .tracking-timeline li.done{border-color:#f59e0b;}
+    .tracking-timeline li.done::before{background:#f59e0b;}
+    .tracking-timeline li.active-step{border-color:#22c55e;}
+    .tracking-timeline li.active-step::before{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.2);}
+    
+    .history-table th { background: #f8fafc; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
+    .history-table td { font-size: 0.9rem; vertical-align: middle; }
 </style>
 
 <!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-warning"></i>Quản lý Đơn hàng</h4>
-        <small class="text-muted">Xác nhận và theo dõi tất cả đơn hàng của nhà hàng</small>
+        <h4 class="fw-bold mb-0"><i class="bi bi-kanban me-2 text-warning"></i>Quản lý Đơn hàng</h4>
+        <small class="text-muted">Theo dõi và xử lý đơn hàng theo luồng trạng thái</small>
     </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
-        <div class="btn-group shadow-sm" role="group" id="filterStatusGroup">
-            <input type="radio" class="btn-check" name="btnradio" id="btnActive" autocomplete="off" value="ACTIVE" checked onchange="loadOrders()">
-            <label class="btn btn-outline-dark fw-semibold" for="btnActive">Cần xử lý ngay</label>
-
-            <input type="radio" class="btn-check" name="btnradio" id="btnAll" autocomplete="off" value="ALL" onchange="loadOrders()">
-            <label class="btn btn-outline-dark fw-semibold" for="btnAll">Tất cả lịch sử</label>
-        </div>
-        
-        <select id="filterStatus" onchange="syncFilter()" class="form-select w-auto shadow-sm ms-2" style="border-radius:8px;">
-            <option value="">-- Lọc chi tiết --</option>
-            <option value="PENDING">Chỉ Chờ xác nhận</option>
-            <option value="PREPARING">Chỉ Đang nấu</option>
-            <option value="DELIVERING">Chỉ Đang giao</option>
-            <option value="COMPLETED">Chỉ Hoàn thành</option>
-            <option value="CANCELLED">Chỉ Đã hủy</option>
-        </select>
-
-        <button class="btn btn-outline-secondary ms-1 shadow-sm" onclick="loadOrders()" style="border-radius:8px;">
-            <i class="bi bi-arrow-clockwise"></i>
+        <button class="btn btn-outline-secondary shadow-sm" onclick="loadOrders()" style="border-radius:8px;">
+            <i class="bi bi-arrow-clockwise"></i> Cập nhật
         </button>
     </div>
 </div>
 
-<!-- Summary Chips -->
-<div class="d-flex gap-2 mb-4 flex-wrap" id="summaryChips">
-    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger fs-6 px-3 py-2">
-        <i class="bi bi-bell-fill me-1"></i>Chờ xác nhận: <span id="cntPending">0</span>
-    </span>
-    <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary fs-6 px-3 py-2">
-        <i class="bi bi-fire me-1"></i>Đang nấu: <span id="cntPreparing">0</span>
-    </span>
-    <span class="badge rounded-pill bg-success-subtle text-success border border-success fs-6 px-3 py-2">
-        <i class="bi bi-truck me-1"></i>Đang giao: <span id="cntDelivering">0</span>
-    </span>
-    <span class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary fs-6 px-3 py-2">
-        <i class="bi bi-check2-all me-1"></i>Hôm nay hoàn thành: <span id="cntCompleted">0</span>
-    </span>
+<!-- Quick Filter & Tabs Card -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+    <div class="card-body p-3">
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="orderSearch" class="form-control border-start-0 ps-0" placeholder="Tìm ID hoặc tên khách..." onkeyup="filterOrders()">
+                </div>
+            </div>
+            <div class="col-md-5">
+                <ul class="nav nav-pills" id="orderTabs">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold px-4" id="tab-processing" onclick="switchTab('PROCESSING')" style="border-radius:10px;">Đang xử lý</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold px-4" id="tab-history" onclick="switchTab('HISTORY')" style="border-radius:10px;">Lịch sử đơn hàng</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <div class="form-check form-switch d-inline-block">
+                    <input class="form-check-input" type="checkbox" id="compactMode" onchange="toggleCompactMode()">
+                    <label class="form-check-label small fw-bold" for="compactMode">Chế độ gọn</label>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Loading -->
@@ -79,21 +100,84 @@
     <p class="text-muted mt-2">Đang tải đơn hàng...</p>
 </div>
 
-<!-- Orders Grid -->
-<div id="orderList" class="d-none row g-3"></div>
+<!-- Processing Tab: Kanban Board -->
+<div id="processingSection">
+    <div id="kanbanBoard" class="row g-3 d-none align-items-stretch">
+        <!-- Col 1: PENDING -->
+        <div class="col-md-4">
+            <div class="kanban-col border-top border-4 border-danger">
+                <div class="kanban-col-header text-danger">
+                    <span><i class="bi bi-bell-fill me-1"></i>MỚI NHẬN</span>
+                    <span class="badge bg-danger rounded-pill" id="cnt-pending">0</span>
+                </div>
+                <div id="list-pending" class="kanban-list"></div>
+            </div>
+        </div>
+        <!-- Col 2: PREPARING -->
+        <div class="col-md-4">
+            <div class="kanban-col border-top border-4 border-primary">
+                <div class="kanban-col-header text-primary">
+                    <span><i class="bi bi-fire me-1"></i>ĐANG NẤU</span>
+                    <span class="badge bg-primary rounded-pill" id="cnt-preparing">0</span>
+                </div>
+                <div id="list-preparing" class="kanban-list"></div>
+            </div>
+        </div>
+        <!-- Col 3: DELIVERING & COMPLETED -->
+        <div class="col-md-4">
+            <div class="kanban-col border-top border-4 border-success">
+                <div class="kanban-col-header text-success">
+                    <span><i class="bi bi-truck me-1"></i>GIAO HÀNG / HOÀN THÀNH</span>
+                    <span class="badge bg-success rounded-pill" id="cnt-done">0</span>
+                </div>
+                <div id="list-done" class="kanban-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History Tab: Data Table -->
+<div id="historySection" class="d-none">
+    <div class="card border-0 shadow-sm" style="border-radius:12px;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table history-table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Ngày đặt</th>
+                            <th>Khách hàng</th>
+                            <th>Trạng thái</th>
+                            <th>Tổng tiền</th>
+                            <th class="text-end pe-4">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-0 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="small text-muted" id="historyInfo">Đang tải...</div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="historyPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Empty State -->
 <div id="emptyOrders" class="text-center py-5 d-none">
     <div style="font-size:4rem">📋</div>
-    <h5 class="fw-bold mt-2">Không có đơn hàng nào</h5>
-    <p class="text-muted">Các đơn hàng mới sẽ xuất hiện ở đây</p>
+    <h5 class="fw-bold mt-2">Không có đơn hàng nào hôm nay</h5>
 </div>
 
-<!-- Order Detail Modal -->
+<!-- Detail + Tracking Modal -->
 <div class="modal fade" id="orderDetailModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content" style="border-radius:16px;border:none;">
-            <div class="modal-header border-0 pb-0">
+            <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#fffbeb,#fff);">
                 <h5 class="modal-title fw-bold" id="modalTitle">Chi tiết đơn hàng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -107,290 +191,306 @@
 <script>
 const token = localStorage.getItem('jwt_token');
 let allOrders = [];
+let currentTab = 'PROCESSING';
+let historyPage = 0;
+let historySize = 10;
 
-const STATUS_LABELS = {
-    PENDING:    '<span class="status-badge" style="background:#fee2e2;color:#dc2626;">⏳ Chờ xác nhận</span>',
-    PREPARING:  '<span class="status-badge" style="background:#dbeafe;color:#2563eb;">🍳 Đang nấu</span>',
-    DELIVERING: '<span class="status-badge" style="background:#d1fae5;color:#059669;">🛵 Đang giao</span>',
-    COMPLETED:  '<span class="status-badge" style="background:#e5e7eb;color:#374151;">✅ Hoàn thành</span>',
-    CANCELLED:  '<span class="status-badge" style="background:#fde8e8;color:#b91c1c;">❌ Đã hủy</span>'
-};
+function fmtVND(n){return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n||0);}
+function fmtTime(dt){if(!dt)return '';const d=Array.isArray(dt)?new Date(dt[0],dt[1]-1,dt[2],dt[3]||0,dt[4]||0):new Date(dt);return d.toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit'});}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function fmtVND(n) {
-    return new Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'}).format(n || 0);
-}
-function fmtTime(dt) {
-    if (!dt) return '';
-    const d = Array.isArray(dt) ? new Date(dt[0],dt[1]-1,dt[2],dt[3]||0,dt[4]||0) : new Date(dt);
-    return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-}
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function loadOrders(){
+    if(currentTab !== 'PROCESSING') return;
+    try{
+        const res=await fetch(`/api/restaurant/orders?status=ALL`,{headers:{'Authorization':'Bearer '+token}});
+        if(res.status===401||res.status===403){window.location.href='/common/auth';return;}
+        if(!res.ok) throw new Error('Network response was not ok');
+        
+        let data=await res.json();
+        
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${y}-${m}-${d}`;
 
-async function loadOrders() {
-    let status = 'ACTIVE';
-    // Check which radio is active
-    const activeRadio = document.querySelector('input[name="btnradio"]:checked');
-    if (activeRadio) {
-        status = activeRadio.value;
-    }
-
-    // Override with select if a specific filter is chosen
-    const specificStatus = document.getElementById('filterStatus').value;
-    if (specificStatus !== "") {
-        status = specificStatus;
-        // Uncheck radios to avoid confusion
-        document.querySelectorAll('input[name="btnradio"]').forEach(r => r.checked = false);
-    }
-
-    document.getElementById('loading').classList.remove('d-none');
-    document.getElementById('orderList').classList.add('d-none');
-    document.getElementById('emptyOrders').classList.add('d-none');
-
-    try {
-        const res = await fetch(`/api/restaurant/orders?status=${status}`, {
-            headers: { 'Authorization': 'Bearer ' + token }
+        allOrders = data.filter(o => {
+            if (o.status === 'COMPLETED' || o.status === 'CANCELLED') {
+                const dt = o.orderTime;
+                let dateStr = "";
+                if (Array.isArray(dt)) {
+                    dateStr = `${dt[0]}-${String(dt[1]).padStart(2,'0')}-${String(dt[2]).padStart(2,'0')}`;
+                } else if (dt) {
+                    const od = new Date(dt);
+                    dateStr = `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, '0')}-${String(od.getDate()).padStart(2, '0')}`;
+                }
+                return dateStr === todayStr;
+            }
+            return true;
         });
-        if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
-        allOrders = await res.json();
-        document.getElementById('loading').classList.add('d-none');
-        updateSummaryChips();
-        renderOrders(allOrders);
-    } catch (e) {
-        document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối</div>';
+
+        renderKanban(allOrders);
+        filterOrders();
+    }catch(e){
+        console.error('Load orders failed:', e);
+        document.getElementById('loading').innerHTML='<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-2 d-block mb-2"></i>Lỗi kết nối hoặc dữ liệu không hợp lệ</div>';
     }
 }
 
-function syncFilter() {
-    const val = document.getElementById('filterStatus').value;
-    if (val === "") {
-        // Reset to ACTIVE if user clears the select dropdown
-        document.getElementById('btnActive').checked = true;
+function renderKanban(orders){
+    document.getElementById('loading').classList.add('d-none');
+    if(!orders.length){
+        document.getElementById('emptyOrders').classList.remove('d-none');
+        document.getElementById('kanbanBoard').classList.add('d-none');
+        return;
     }
-    loadOrders();
+    document.getElementById('emptyOrders').classList.add('d-none');
+    document.getElementById('kanbanBoard').classList.remove('d-none');
+    
+    const pending = orders.filter(o => o.status === 'PENDING');
+    const preparing = orders.filter(o => o.status === 'PREPARING');
+    const done = orders.filter(o => o.status === 'DELIVERING' || o.status === 'COMPLETED' || o.status === 'CANCELLED');
+
+    document.getElementById('cnt-pending').textContent = pending.length;
+    document.getElementById('cnt-preparing').textContent = preparing.length;
+    document.getElementById('cnt-done').textContent = done.length;
+
+    renderCol('list-pending', pending, 'PENDING');
+    renderCol('list-preparing', preparing, 'PREPARING');
+    renderCol('list-done', done, 'DONE');
 }
 
-function updateSummaryChips() {
-    // Always fetch ALL for summary counts
-    fetch('/api/restaurant/orders?status=ALL', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(r => r.json()).then(all => {
-            document.getElementById('cntPending').textContent    = all.filter(o => o.status==='PENDING').length;
-            document.getElementById('cntPreparing').textContent  = all.filter(o => o.status==='PREPARING').length;
-            document.getElementById('cntDelivering').textContent = all.filter(o => o.status==='DELIVERING').length;
-            document.getElementById('cntCompleted').textContent  = all.filter(o => o.status==='COMPLETED').length;
-        }).catch(()=>{});
-}
-
-function renderOrders(orders) {
-    const el    = document.getElementById('orderList');
-    const empty = document.getElementById('emptyOrders');
-
-    if (!orders.length) { el.classList.add('d-none'); empty.classList.remove('d-none'); return; }
-    empty.classList.add('d-none');
-    el.classList.remove('d-none');
-    el.innerHTML = '';
-
-    orders.forEach(o => {
-        const itemsList = (o.items || []).map(i =>
-            `<span class="item-chip"><i class="bi bi-dot text-warning"></i>${esc(i.itemName)} ×${i.quantity}</span>`
-        ).join('');
-
-        const actions  = getActions(o);
-        const contacts = getContactBtns(o);
-
-        el.insertAdjacentHTML('beforeend', `
-        <div class="col-lg-6">
-        <div class="card border-0 shadow-sm order-card h-100" id="order-${o.id}">
-            <div class="card-body p-4">
-                <!-- Header row -->
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h6 class="fw-bold mb-1">Đơn #${o.id}</h6>
-                        <div class="order-meta-row">
-                            <i class="bi bi-clock"></i>${fmtTime(o.orderTime)}
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        ${STATUS_LABELS[o.status] || o.status}
-                    </div>
-                </div>
-
-                <!-- Customer info -->
-                <div class="mb-2">
-                    <div class="section-divider">Khách hàng</div>
-                    <div class="order-meta-row mb-1">
-                        <i class="bi bi-person-fill text-primary"></i>
-                        <strong>${esc(o.customerName || '—')}</strong>
-                        ${o.customerPhone ? `<a href="tel:${esc(o.customerPhone)}" class="ms-2 text-primary text-decoration-none small"><i class="bi bi-telephone-fill"></i> ${esc(o.customerPhone)}</a>` : ''}
-                    </div>
-                    ${o.deliveryAddress ? `<div class="order-meta-row"><i class="bi bi-geo-alt-fill text-danger"></i>${esc(o.deliveryAddress)}</div>` : ''}
-                </div>
-
-                <!-- Driver info (if assigned) -->
+function renderCol(elId, orders, type) {
+    const el = document.getElementById(elId);
+    el.innerHTML = orders.map(o => {
+        const itemsList = (o.items||[]).map(i=>`<span class="item-chip">${i.quantity}x ${esc(i.itemName)}</span>`).join('');
+        const itemsCount = (o.items||[]).reduce((sum, i) => sum + i.quantity, 0);
+        
+        let actions = '';
+        if(o.status === 'PENDING') {
+            actions = `
+                <button class="btn btn-success btn-kanban-action shadow-sm rounded-pill" onclick="updateStatus(${o.id},'PREPARING')">
+                    <i class="bi bi-check-circle-fill me-1"></i> XÁC NHẬN
+                </button>
+            `;
+        } else if (o.status === 'PREPARING') {
+            actions = `
                 ${o.driverName ? `
-                <div class="mb-2">
-                    <div class="section-divider">Tài xế</div>
-                    <div class="order-meta-row">
-                        <i class="bi bi-person-badge-fill text-success"></i>
-                        <strong>${esc(o.driverName)}</strong>
-                        ${o.driverPhone ? `<a href="tel:${esc(o.driverPhone)}" class="ms-2 text-success text-decoration-none small"><i class="bi bi-telephone-fill"></i> ${esc(o.driverPhone)}</a>` : ''}
-                    </div>
-                </div>` : ''}
-
-                <!-- Items -->
-                <div class="mb-3">
-                    <div class="section-divider">Món ăn</div>
-                    <div>${itemsList}</div>
+                <div class="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success border-opacity-20">
+                    <div class="small fw-bold text-success"><i class="bi bi-bicycle me-1"></i>${esc(o.driverName)}</div>
                 </div>
-
-                <!-- Footer -->
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
-                    <span class="fw-bold text-danger fs-5">${fmtVND(o.totalAmount)}</span>
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
-                        ${contacts}
-                        ${actions}
-                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3"
-                                onclick="showDetail(${o.id})">
-                            <i class="bi bi-eye me-1"></i>Chi tiết
-                        </button>
-                    </div>
+                ` : '<div class="text-center mb-2 p-2 rounded bg-light small text-muted fst-italic">Đang tìm tài xế...</div>'}
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm flex-fill rounded-pill" onclick="openChat(${o.id},'CUSTOMER','KH')"><i class="bi bi-chat-dots"></i></button>
+                    <button class="btn btn-light border btn-sm flex-fill rounded-pill" onclick="showTracking(${o.id})"><i class="bi bi-eye"></i></button>
                 </div>
+            `;
+        } else {
+             const statusTxt = o.status === 'DELIVERING' ? '<span class="text-success fw-bold">🛵 Đang giao</span>' : 
+                               (o.status === 'COMPLETED' ? '<span class="text-secondary fw-bold">✅ Xong</span>' : '<span class="text-danger fw-bold">❌ Hủy</span>');
+             actions = `<div class="mt-2 text-center p-2 rounded bg-light small">${statusTxt}</div>`;
+        }
+
+        return `
+        <div class="kanban-card" data-search="${o.id} ${esc(o.customerName||'').toLowerCase()}">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark">#${o.id}</span>
+                <span class="text-muted small">${fmtTime(o.orderTime)}</span>
             </div>
+            <div class="order-meta-row mb-1">
+                <i class="bi bi-person text-primary"></i> <span class="fw-semibold">${esc(o.customerName||'—')}</span>
+            </div>
+            
+            <div class="compact-summary">${itemsCount} món • ${fmtVND(o.totalAmount)}</div>
+
+            <div class="item-chip-list">
+                <div class="section-divider">Món ăn</div>
+                <div class="mb-2">${itemsList}</div>
+                <div class="fw-bold text-danger text-end fs-6 border-top pt-2 mt-2">${fmtVND(o.totalAmount)}</div>
+            </div>
+            
+            <div class="actions-area">${actions}</div>
         </div>
-        </div>`);
+        `;
+    }).join('');
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-processing').classList.toggle('active', tab === 'PROCESSING');
+    document.getElementById('tab-history').classList.toggle('active', tab === 'HISTORY');
+    
+    document.getElementById('processingSection').classList.toggle('d-none', tab !== 'PROCESSING');
+    document.getElementById('historySection').classList.toggle('d-none', tab !== 'HISTORY');
+    
+    if (tab === 'PROCESSING') {
+        loadOrders();
+    } else {
+        loadHistory(0);
+    }
+}
+
+function filterOrders() {
+    const keyword = document.getElementById('orderSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.kanban-card');
+    cards.forEach(card => {
+        const text = card.getAttribute('data-search');
+        card.style.display = text.includes(keyword) ? 'block' : 'none';
     });
 }
 
-function getActions(o) {
-    if (o.status === 'PENDING') return `
-        <button class="btn btn-success btn-sm rounded-pill px-3 fw-semibold"
-                onclick="updateStatus(${o.id},'PREPARING')">
-            <i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu
-        </button>
-        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold"
-                onclick="updateStatus(${o.id},'CANCELLED')">
-            <i class="bi bi-x-lg me-1"></i>Từ chối
-        </button>`;
-    if (o.status === 'PREPARING') return `
-        <span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Chờ tài xế...</span>`;
-    return '';
+function toggleCompactMode() {
+    const isCompact = document.getElementById('compactMode').checked;
+    document.getElementById('kanbanBoard').classList.toggle('compact-mode', isCompact);
 }
 
-function getContactBtns(o) {
-    const canContact = o.status === 'PREPARING' || o.status === 'DELIVERING';
-    if (!canContact) return '';
-    let btns = '';
-    if (o.customerPhone) {
-        btns += `<a href="tel:${esc(o.customerPhone)}" class="contact-chip" style="color:#2563eb;border-color:#93c5fd;">
-                    <i class="bi bi-telephone-fill"></i>Gọi KH
-                 </a>`;
-    }
-    btns += `<button class="btn btn-outline-primary btn-sm rounded-pill px-3"
-                     onclick="openChat(${o.id},'CUSTOMER','Khách hàng')">
-                <i class="bi bi-chat-dots me-1"></i>Chat KH
-             </button>`;
-    if (o.driverName) {
-        if (o.driverPhone) {
-            btns += `<a href="tel:${esc(o.driverPhone)}" class="contact-chip" style="color:#059669;border-color:#6ee7b7;">
-                        <i class="bi bi-telephone-fill"></i>Gọi TX
-                     </a>`;
-        }
-        btns += `<button class="btn btn-outline-success btn-sm rounded-pill px-3"
-                         onclick="openChat(${o.id},'DRIVER','Tài xế')">
-                    <i class="bi bi-chat-dots me-1"></i>Chat TX
-                 </button>`;
-    }
-    return btns;
-}
-
-async function updateStatus(orderId, status) {
-    const labels = { PREPARING:'xác nhận và bắt đầu nấu', CANCELLED:'từ chối' };
-    if (!confirm(`Bạn có chắc muốn ${labels[status] || status} đơn hàng #${orderId}?`)) return;
+async function loadHistory(page) {
+    historyPage = page;
+    const body = document.getElementById('historyTableBody');
+    body.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-warning"></div> Đang tải...</td></tr>';
+    
     try {
-        const res = await fetch(`/api/restaurant/orders/${orderId}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-            body: JSON.stringify({ status })
+        const res = await fetch(`/api/restaurant/orders/history?page=${page}&size=${historySize}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
         });
-        const d = await res.json();
-        if (res.ok) { showToast(d.message || 'Cập nhật thành công!', 'success'); loadOrders(); }
-        else showToast(d.error || 'Lỗi cập nhật', 'danger');
-    } catch { showToast('Lỗi kết nối!', 'danger'); }
-}
-
-async function showDetail(orderId) {
-    const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
-    document.getElementById('modalTitle').textContent = `Chi tiết đơn #${orderId}`;
-    document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-warning"></div></div>';
-    modal.show();
-    try {
-        const res = await fetch(`/api/restaurant/orders/${orderId}`, {
-            headers: { 'Authorization':'Bearer '+token }
-        });
-        const o = await res.json();
-        const itemsHtml = (o.items || []).map(i => `
+        const data = await res.json();
+        
+        body.innerHTML = data.orders.map(o => `
             <tr>
-                <td>${esc(i.itemName)}</td>
-                <td class="text-center">${i.quantity}</td>
-                <td class="text-end">${fmtVND(i.price)}</td>
-                <td class="text-end">${fmtVND((i.price||0)*i.quantity)}</td>
-            </tr>`).join('');
-
-        document.getElementById('modalBody').innerHTML = `
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="section-divider">Thông tin khách hàng</div>
-                    <p class="mb-1"><i class="bi bi-person-fill text-primary me-2"></i><strong>${esc(o.customerName||'—')}</strong></p>
-                    ${o.customerPhone ? `<p class="mb-1"><i class="bi bi-telephone me-2"></i><a href="tel:${esc(o.customerPhone)}">${esc(o.customerPhone)}</a></p>` : ''}
-                    ${o.deliveryAddress ? `<p class="mb-1"><i class="bi bi-geo-alt text-danger me-2"></i>${esc(o.deliveryAddress)}</p>` : ''}
-                </div>
-                <div class="col-md-6">
-                    <div class="section-divider">Trạng thái & Tài xế</div>
-                    <p class="mb-1">${STATUS_LABELS[o.status] || o.status}</p>
-                    ${o.driverName ? `<p class="mb-1"><i class="bi bi-person-badge text-success me-2"></i>${esc(o.driverName)}
-                        ${o.driverPhone ? `<a href="tel:${esc(o.driverPhone)}" class="ms-2">${esc(o.driverPhone)}</a>` : ''}</p>` : '<p class="text-muted small mb-1">Chưa có tài xế</p>'}
-                </div>
-                <div class="col-12">
-                    <div class="section-divider">Danh sách món</div>
-                    <table class="table table-sm">
-                        <thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Đơn giá</th><th class="text-end">Thành tiền</th></tr></thead>
-                        <tbody>${itemsHtml}</tbody>
-                        <tfoot><tr><td colspan="3" class="text-end fw-bold">Tổng cộng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr></tfoot>
-                    </table>
-                </div>
-                ${(o.status==='PENDING'||o.status==='PREPARING') ? `
-                <div class="col-12 d-flex gap-2 justify-content-end">
-                    ${o.status==='PENDING' ? `<button class="btn btn-success rounded-pill px-4" onclick="updateStatus(${o.id},'PREPARING')">
-                        <i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu
-                    </button>
-                    <button class="btn btn-outline-danger rounded-pill px-4" onclick="updateStatus(${o.id},'CANCELLED')">
-                        <i class="bi bi-x-lg me-1"></i>Từ chối
-                    </button>` : '<span class="text-muted small align-self-center"><i class="bi bi-hourglass-split me-1"></i>Đang chờ tài xế nhận đơn...</span>'}
-                </div>` : ''}
-            </div>`;
+                <td class="ps-4 fw-bold">#${o.id}</td>
+                <td>${fmtTime(o.orderTime)}</td>
+                <td>
+                    <div class="fw-semibold">${esc(o.customerName)}</div>
+                    <small class="text-muted">${esc(o.customerPhone)}</small>
+                </td>
+                <td><span class="badge ${getStatusBadge(o.status)}">${o.status}</span></td>
+                <td class="fw-bold text-danger">${fmtVND(o.totalAmount)}</td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-light border rounded-pill" onclick="showTracking(${o.id})">Chi tiết</button>
+                </td>
+            </tr>
+        `).join('');
+        
+        renderPagination(data.totalPages, data.currentPage);
+        document.getElementById('historyInfo').textContent = `Hiển thị ${data.orders.length} đơn trên tổng số ${data.totalItems}`;
     } catch (e) {
-        document.getElementById('modalBody').innerHTML = '<div class="text-danger text-center py-3">Lỗi tải chi tiết đơn hàng</div>';
+        body.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Lỗi tải dữ liệu</td></tr>';
     }
 }
 
-function openChat(orderId, targetRole, label) {
-    if (typeof window.openShopeeChat === 'function') {
-        window.openShopeeChat(orderId, targetRole, label);
-    } else {
-        alert('Chat Component chưa sẵn sàng');
-    }
+function getStatusBadge(s) {
+    if (s === 'COMPLETED') return 'bg-success bg-opacity-10 text-success';
+    if (s === 'CANCELLED') return 'bg-danger bg-opacity-10 text-danger';
+    if (s === 'DELIVERING') return 'bg-info bg-opacity-10 text-info';
+    return 'bg-warning bg-opacity-10 text-warning';
 }
 
-function showToast(msg, type) {
-    const t = document.createElement('div');
-    t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
-    t.style.zIndex = 9999;
-    t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+function renderPagination(total, current) {
+    const nav = document.getElementById('historyPagination');
+    let html = '';
+    for (let i = 0; i < total; i++) {
+        html += `<li class="page-item ${i === current ? 'active' : ''}">
+            <button class="page-link" onclick="loadHistory(${i})">${i + 1}</button>
+        </li>`;
+    }
+    nav.innerHTML = html;
+}
+
+async function updateStatus(orderId,status){
+    const labels={PREPARING:'xác nhận và bắt đầu nấu',CANCELLED:'từ chối'};
+    if(!confirm(`Bạn có chắc muốn ${labels[status]||status} đơn hàng #${orderId}?`))return;
+    try{
+        const res=await fetch(`/api/restaurant/orders/${orderId}/status`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({status})});
+        const d=await res.json();
+        if(res.ok){
+            showToast(d.message||'Cập nhật thành công!','success');
+            // Close modal if open
+            const modalEl = document.getElementById('orderDetailModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            loadOrders();
+        }
+        else showToast(d.error||'Lỗi cập nhật','danger');
+    }catch{showToast('Lỗi kết nối!','danger');}
+}
+
+// ── Tracking Timeline ──────────────────────────────────────────────
+const TRACK_STEPS=[
+    {status:'PENDING',   label:'Chờ xác nhận', icon:'⏳'},
+    {status:'PREPARING', label:'Đang nấu',      icon:'🍳'},
+    {status:'DELIVERING',label:'Đang giao',     icon:'🛵'},
+    {status:'COMPLETED', label:'Hoàn thành',    icon:'✅'},
+];
+
+async function showTracking(orderId){
+    const modalEl = document.getElementById('orderDetailModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    
+    document.getElementById('modalTitle').textContent=`📦 Chi tiết & Theo dõi Đơn #${orderId}`;
+    document.getElementById('modalBody').innerHTML='<div class="text-center py-4"><div class="spinner-border text-warning"></div></div>';
+    
+    modal.show();
+    try{
+        const res=await fetch(`/api/restaurant/orders/${orderId}`,{headers:{'Authorization':'Bearer '+token}});
+        const o=await res.json();
+        const curIdx=TRACK_STEPS.findIndex(s=>s.status===o.status);
+        const isCancelled=o.status==='CANCELLED';
+        const timeline=isCancelled
+            ?`<li class="active-step ps-3"><span style="font-size:1.4rem">❌</span><div class="ms-2"><strong class="text-danger">Đơn đã bị hủy</strong></div></li>`
+            :TRACK_STEPS.map((s,i)=>{
+                const cls=i<curIdx?'done':(i===curIdx?'active-step':'');
+                return `<li class="${cls} ps-3">
+                    <span style="font-size:1.3rem;margin-left:4px">${s.icon}</span>
+                    <div class="ms-2">
+                        <strong class="${i===curIdx?'text-success':''}">${s.label}</strong>
+                        ${i===curIdx?'<br><small class="text-success">◉ Đang ở bước này</small>':''}
+                        ${i<curIdx?'<br><small class="text-muted">✓ Hoàn thành</small>':''}
+                    </div></li>`;
+              }).join('');
+        const itemsHtml=(o.items||[]).map(i=>`<tr><td>${esc(i.itemName)}</td><td class="text-center">${i.quantity}</td><td class="text-end">${fmtVND(i.price)}</td><td class="text-end">${fmtVND((i.price||0)*i.quantity)}</td></tr>`).join('');
+        document.getElementById('modalBody').innerHTML=`
+        <div class="row g-3">
+          <div class="col-md-5 border-end">
+            <p class="section-divider">🗺 Lộ trình đơn hàng</p>
+            <ul class="tracking-timeline mt-2">${timeline}</ul>
+          </div>
+          <div class="col-md-7">
+            <p class="section-divider">👤 Khách hàng</p>
+            <p class="mb-1 small"><i class="bi bi-person-fill text-primary me-1"></i><strong>${esc(o.customerName||'—')}</strong>${o.customerPhone?` <a href="tel:${esc(o.customerPhone)}" class="ms-1 text-primary">${esc(o.customerPhone)}</a>`:''}</p>
+            <p class="mb-2 small text-muted"><i class="bi bi-geo-alt text-danger me-1"></i>${esc(o.deliveryAddress||'—')}</p>
+            ${o.driverName?`<p class="section-divider">🛵 Tài xế</p>
+            <p class="mb-2 small"><i class="bi bi-person-badge text-success me-1"></i><strong>${esc(o.driverName)}</strong>${o.driverPhone?` <a href="tel:${esc(o.driverPhone)}" class="ms-1 text-success">${esc(o.driverPhone)}</a>`:''}</p>`:''}
+            <p class="section-divider">🍽 Món ăn</p>
+            <table class="table table-sm mb-0"><thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Giá</th><th class="text-end">T.Tiền</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot><tr><td colspan="3" class="text-end fw-bold">Tổng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr></tfoot></table>
+          </div>
+          ${o.status==='PENDING'?`<div class="col-12 d-flex gap-2 justify-content-end border-top pt-3">
+            <button class="btn btn-success rounded-pill px-4" onclick="updateStatus(${o.id},'PREPARING')"><i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu</button>
+            <button class="btn btn-outline-danger rounded-pill px-4" onclick="updateStatus(${o.id},'CANCELLED')"><i class="bi bi-x-lg me-1"></i>Từ chối</button>
+          </div>`:''}
+        </div>`;
+    }catch(e){document.getElementById('modalBody').innerHTML='<div class="text-danger text-center py-3">Lỗi tải chi tiết</div>';}
+}
+
+const showDetail=showTracking;
+
+function openChat(orderId,targetRole,label){
+    if(typeof window.openShopeeChat==='function')window.openShopeeChat(orderId,targetRole,label);
+    else alert('Chat Component chưa sẵn sàng');
+}
+
+function showToast(msg,type){
+    const t=document.createElement('div');
+    t.className=`position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+    t.style.zIndex=9999;
+    t.innerHTML=`<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+    document.body.appendChild(t);setTimeout(()=>t.remove(),3500);
 }
 
 loadOrders();
-setInterval(loadOrders, 30000); // Auto-refresh every 30s
+setInterval(loadOrders,15000); // 15s refresh for real-time feel
 </script>
 
 <!-- Chat Widget -->
