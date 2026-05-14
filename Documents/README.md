@@ -172,7 +172,7 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 
 ---
 
-## ✅ Tuần 4, 5 & 6 – Hoàn thiện, Chat Real-time & UUID Migration
+## ✅ Tuần 5 – Hoàn thiện, Chat Real-time & UUID Migration
 
 **Mục tiêu:** Hoàn thiện 100% chức năng, chuyển đổi hệ thống Chat sang WebSocket và di chuyển định danh người dùng sang UUID để tăng cường bảo mật.
 

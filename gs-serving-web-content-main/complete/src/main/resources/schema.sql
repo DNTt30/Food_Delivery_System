@@ -1,0 +1,13 @@
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS food_orders;
+DROP TABLE IF EXISTS menu_items;
+DROP TABLE IF EXISTS restaurant_profiles;
+DROP TABLE IF EXISTS driver_profiles;
+DROP TABLE IF EXISTS customer_profiles;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS users;
+SET FOREIGN_KEY_CHECKS = 1;

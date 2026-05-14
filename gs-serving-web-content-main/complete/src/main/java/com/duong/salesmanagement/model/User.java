@@ -2,15 +2,14 @@ package com.duong.salesmanagement.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @Column(length = 36)
+    private String id;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -40,9 +39,12 @@ public class User {
     /** Thời điểm OTP hết hạn (15 phút sau khi tạo) */
     private LocalDateTime codeExpiry;
 
-    public User() {}
+    public User() {
+        this.id = java.util.UUID.randomUUID().toString();
+    }
 
     public User(String username, String password, String fullName, String email, Role role) {
+        this.id = java.util.UUID.randomUUID().toString();
         this.username = username;
         this.password = password;
         this.fullName = fullName;
@@ -52,8 +54,8 @@ public class User {
     }
 
     // ---- Getters & Setters ----
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }

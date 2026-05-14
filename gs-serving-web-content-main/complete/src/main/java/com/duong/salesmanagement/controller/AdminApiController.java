@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -82,7 +81,7 @@ public class AdminApiController {
     }
 
     @PutMapping("/users/{id}/toggle-status")
-    public ResponseEntity<?> toggleUserStatus(Authentication authentication, @PathVariable UUID id) {
+    public ResponseEntity<?> toggleUserStatus(Authentication authentication, @PathVariable String id) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         User user = userRepository.findById(id).orElse(null);
@@ -99,7 +98,7 @@ public class AdminApiController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(Authentication authentication, @PathVariable UUID id) {
+    public ResponseEntity<?> deleteUser(Authentication authentication, @PathVariable String id) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         User user = userRepository.findById(id).orElse(null);
@@ -227,14 +226,14 @@ public class AdminApiController {
 
     // ---- DTOs ----
     public static class UserDTO {
-        public UUID id;
+        public String id;
         public String username;
         public String fullName;
         public String email;
         public String role;
         public boolean enabled;
 
-        public UserDTO(UUID id, String username, String fullName, String email, String role, boolean enabled) {
+        public UserDTO(String id, String username, String fullName, String email, String role, boolean enabled) {
             this.id = id; this.username = username; this.fullName = fullName;
             this.email = email; this.role = role; this.enabled = enabled;
         }
