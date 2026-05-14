@@ -167,6 +167,18 @@ src/main/java/com/duong/salesmanagement/
 
 ## 📝 Nhật ký Cập nhật
 
+### 📅 14/05/2026 — Security Hardening & UUID Migration
+- **UUID Primary Key Migration:**
+    - Chuyển đổi toàn bộ hệ thống định danh người dùng từ `Long` sang `UUID` để tăng cường tính bảo mật và khả năng mở rộng.
+    - Cập nhật thực thể `User`, `UserRepository` và các DTO liên quan (`UserDTO`, `ChatMessageRequest`, `ChatMessageResponse`, `ContactDto`) để tương thích với định dạng UUID.
+    - Đồng bộ hóa thành công với cơ sở dữ liệu MySQL trên Aiven, giải quyết triệt để lỗi `SQLDataException` khi khởi động.
+- **Chat System Stabilization:**
+    - Khắc phục các lỗi phân giải class (IDE Resolution Errors) trong `ChatApiController`, `WebSocketChatController` và `ContactService` bằng cách sử dụng Fully Qualified Names.
+    - Tối ưu hóa các khối `catch` ngoại lệ tùy chỉnh (`ChatAccessDeniedException`, `ChatLockedException`) để đảm bảo phản hồi API chính xác.
+- **Null-Safety Enforcement:**
+    - Rà soát và thêm các kiểm tra null-safety nghiêm ngặt trong `NotificationApiController` và `NotificationService` để ngăn chặn lỗi `NullPointerException` trong môi trường runtime.
+    - Loại bỏ các cảnh báo `@SuppressWarnings` không cần thiết, hướng tới mã nguồn sạch và ổn định.
+
 ### 📅 13/05/2026 — UI Modernization & Management Excellence
 - **Restaurant Management 2.0:**
     - **Giao diện Kanban thông minh:** Chuyển đổi quản lý đơn hàng sang dạng 3 cột dọc (Mới nhận, Đang nấu, Xong) giúp theo dõi luồng vận hành trực quan.

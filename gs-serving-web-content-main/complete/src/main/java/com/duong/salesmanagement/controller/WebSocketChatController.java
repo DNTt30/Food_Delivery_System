@@ -2,8 +2,6 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.dto.ChatMessageRequest;
 import com.duong.salesmanagement.dto.ChatMessageResponse;
-import com.duong.salesmanagement.exception.ChatAccessDeniedException;
-import com.duong.salesmanagement.exception.ChatLockedException;
 import com.duong.salesmanagement.service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -59,7 +57,7 @@ public class WebSocketChatController {
             ChatMessageResponse saved = chatService.sendMessage(request, principal.getName());
             // Broadcast saved message to all order participants in real-time
             messagingTemplate.convertAndSend("/topic/order." + request.getOrderId(), saved);
-        } catch (ChatLockedException | ChatAccessDeniedException e) {
+        } catch (com.duong.salesmanagement.exception.ChatLockedException | com.duong.salesmanagement.exception.ChatAccessDeniedException e) {
             sendError(principal.getName(), e.getMessage());
         } catch (Exception e) {
             sendError(principal.getName(), "Không thể gửi tin nhắn: " + e.getMessage());

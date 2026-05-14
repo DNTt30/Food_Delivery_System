@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Order-based Chat Service (Polling Architecture – no WebSocket).
@@ -243,8 +244,8 @@ public class ChatService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user: " + username));
     }
 
-    private User requireUserById(Long userId) {
-        final Long id = Objects.requireNonNull(userId, "userId must not be null");
+    private User requireUserById(UUID userId) {
+        final UUID id = Objects.requireNonNull(userId, "userId must not be null");
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user ID: " + id));
     }

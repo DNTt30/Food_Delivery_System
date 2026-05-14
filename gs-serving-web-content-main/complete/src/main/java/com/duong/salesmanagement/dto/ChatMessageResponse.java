@@ -2,6 +2,8 @@ package com.duong.salesmanagement.dto;
 
 import java.time.LocalDateTime;
 
+import java.util.UUID;
+
 /**
  * DTO trả về cho Frontend khi lấy / gửi tin nhắn.
  * Không expose sensitive data (password, email, v.v.)
@@ -11,11 +13,11 @@ public class ChatMessageResponse {
     private Long id;
     private Long orderId;
 
-    private Long senderId;
+    private UUID senderId;
     private String senderName;
     private String senderRole;      // CUSTOMER | RESTAURANT | DRIVER
 
-    private Long receiverId;
+    private UUID receiverId;
     private String receiverName;
     private String receiverRole;
 
@@ -31,8 +33,8 @@ public class ChatMessageResponse {
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
 
-    public Long getSenderId() { return senderId; }
-    public void setSenderId(Long senderId) { this.senderId = senderId; }
+    public UUID getSenderId() { return senderId; }
+    public void setSenderId(UUID senderId) { this.senderId = senderId; }
 
     public String getSenderName() { return senderName; }
     public void setSenderName(String senderName) { this.senderName = senderName; }
@@ -40,8 +42,8 @@ public class ChatMessageResponse {
     public String getSenderRole() { return senderRole; }
     public void setSenderRole(String senderRole) { this.senderRole = senderRole; }
 
-    public Long getReceiverId() { return receiverId; }
-    public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
+    public UUID getReceiverId() { return receiverId; }
+    public void setReceiverId(UUID receiverId) { this.receiverId = receiverId; }
 
     public String getReceiverName() { return receiverName; }
     public void setReceiverName(String receiverName) { this.receiverName = receiverName; }
@@ -63,10 +65,10 @@ public class ChatMessageResponse {
 
         public Builder id(Long id)                          { obj.id = id; return this; }
         public Builder orderId(Long orderId)                { obj.orderId = orderId; return this; }
-        public Builder senderId(Long senderId)              { obj.senderId = senderId; return this; }
+        public Builder senderId(UUID senderId)              { obj.senderId = senderId; return this; }
         public Builder senderName(String senderName)        { obj.senderName = senderName; return this; }
         public Builder senderRole(String senderRole)        { obj.senderRole = senderRole; return this; }
-        public Builder receiverId(Long receiverId)          { obj.receiverId = receiverId; return this; }
+        public Builder receiverId(UUID receiverId)          { obj.receiverId = receiverId; return this; }
         public Builder receiverName(String receiverName)    { obj.receiverName = receiverName; return this; }
         public Builder receiverRole(String receiverRole)    { obj.receiverRole = receiverRole; return this; }
         public Builder content(String content)              { obj.content = content; return this; }

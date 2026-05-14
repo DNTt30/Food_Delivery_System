@@ -2,7 +2,6 @@ package com.duong.salesmanagement.service;
 
 import com.duong.salesmanagement.dto.ContactInfoResponse;
 import com.duong.salesmanagement.dto.ContactInfoResponse.ContactDto;
-import com.duong.salesmanagement.exception.ChatAccessDeniedException;
 import com.duong.salesmanagement.model.CustomerProfile;
 import com.duong.salesmanagement.model.DriverProfile;
 import com.duong.salesmanagement.model.FoodOrder;
@@ -11,7 +10,6 @@ import com.duong.salesmanagement.model.RestaurantProfile;
 import com.duong.salesmanagement.model.Role;
 import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
-import com.duong.salesmanagement.util.PhoneMaskUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,7 +60,7 @@ public class ContactService {
 
         User currentUser = resolveParticipant(order, currentUsername);
         if (currentUser == null) {
-            throw new ChatAccessDeniedException(
+            throw new com.duong.salesmanagement.exception.ChatAccessDeniedException(
                     "Bạn không có quyền xem thông tin liên lạc của đơn hàng này");
         }
 
@@ -141,7 +139,7 @@ public class ContactService {
         CustomerProfile cp = order.getCustomer();
         User user = cp.getUser();
         return new ContactDto(user.getId(), user.getFullName(), "CUSTOMER",
-                PhoneMaskUtil.maskIf(cp.getPhoneNumber(), closed), null);
+                com.duong.salesmanagement.util.PhoneMaskUtil.maskIf(cp.getPhoneNumber(), closed), null);
     }
 
     private ContactDto restaurantContact(FoodOrder order) {
@@ -155,7 +153,7 @@ public class ContactService {
         DriverProfile dp = order.getDriver();
         User user = dp.getUser();
         return new ContactDto(user.getId(), user.getFullName(), "DRIVER",
-                PhoneMaskUtil.maskIf(dp.getPhoneNumber(), closed), null);
+                com.duong.salesmanagement.util.PhoneMaskUtil.maskIf(dp.getPhoneNumber(), closed), null);
     }
 
     // ----------------------------------------------------------------

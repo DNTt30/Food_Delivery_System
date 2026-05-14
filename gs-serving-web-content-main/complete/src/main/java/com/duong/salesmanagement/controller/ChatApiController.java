@@ -3,8 +3,6 @@ package com.duong.salesmanagement.controller;
 import com.duong.salesmanagement.dto.ChatMessageRequest;
 import com.duong.salesmanagement.dto.ChatMessageResponse;
 import com.duong.salesmanagement.dto.ContactInfoResponse;
-import com.duong.salesmanagement.exception.ChatAccessDeniedException;
-import com.duong.salesmanagement.exception.ChatLockedException;
 import com.duong.salesmanagement.service.ChatService;
 import com.duong.salesmanagement.service.ContactService;
 import jakarta.validation.Valid;
@@ -62,8 +60,8 @@ public class ChatApiController {
         try {
             ContactInfoResponse response = contactService.getContactInfo(id, auth.getName());
             return ResponseEntity.ok(response);
-        } catch (ChatAccessDeniedException e) {
-            return forbidden(e.getMessage());
+        } catch (com.duong.salesmanagement.exception.ChatAccessDeniedException e) {
+            return this.forbidden(e.getMessage());
         } catch (RuntimeException e) {
             return notFound(e.getMessage());
         }
@@ -82,8 +80,8 @@ public class ChatApiController {
         try {
             List<ChatMessageResponse> messages = chatService.getOrderMessages(orderId, auth.getName());
             return ResponseEntity.ok(messages);
-        } catch (ChatAccessDeniedException e) {
-            return forbidden(e.getMessage());
+        } catch (com.duong.salesmanagement.exception.ChatAccessDeniedException e) {
+            return this.forbidden(e.getMessage());
         } catch (RuntimeException e) {
             return notFound(e.getMessage());
         }
@@ -112,8 +110,8 @@ public class ChatApiController {
                     "/topic/order." + saved.getOrderId(), saved);
 
             return ResponseEntity.ok(saved);
-        } catch (ChatLockedException | ChatAccessDeniedException e) {
-            return forbidden(e.getMessage());
+        } catch (com.duong.salesmanagement.exception.ChatLockedException | com.duong.salesmanagement.exception.ChatAccessDeniedException e) {
+            return this.forbidden(e.getMessage());
         } catch (RuntimeException e) {
             return badRequest(e.getMessage());
         }

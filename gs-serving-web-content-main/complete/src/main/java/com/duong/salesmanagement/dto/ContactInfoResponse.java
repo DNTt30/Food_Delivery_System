@@ -1,6 +1,7 @@
 package com.duong.salesmanagement.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO trả về thông tin liên lạc cho 1 đơn hàng.
@@ -55,7 +56,7 @@ public class ContactInfoResponse {
     // ────────────────────────────────────────────
     public static class ContactDto {
 
-        private Long userId;
+        private UUID userId;
         private String displayName;
 
         /**
@@ -76,7 +77,7 @@ public class ContactInfoResponse {
 
         public ContactDto() {}
 
-        public ContactDto(Long userId, String displayName, String role, String phone, String avatarUrl) {
+        public ContactDto(UUID userId, String displayName, String role, String phone, String avatarUrl) {
             this.userId = userId;
             this.displayName = displayName;
             this.role = role;
@@ -84,8 +85,8 @@ public class ContactInfoResponse {
             this.avatarUrl = avatarUrl;
         }
 
-        public Long getUserId() { return userId; }
-        public void setUserId(Long userId) { this.userId = userId; }
+        public UUID getUserId() { return userId; }
+        public void setUserId(UUID userId) { this.userId = userId; }
 
         public String getDisplayName() { return displayName; }
         public void setDisplayName(String displayName) { this.displayName = displayName; }

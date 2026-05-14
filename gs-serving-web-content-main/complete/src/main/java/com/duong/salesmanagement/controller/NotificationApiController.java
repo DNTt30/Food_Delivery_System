@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/notifications")
-@SuppressWarnings("null")
 public class NotificationApiController {
 
     private final NotificationService notificationService;
@@ -43,7 +42,7 @@ public class NotificationApiController {
     // ── Auth helper ───────────────────────────────────────────────────────
 
     private User getUser(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) return null;
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null) return null;
         return userRepository.findByUsername(auth.getName()).orElse(null);
     }
 
@@ -145,7 +144,9 @@ public class NotificationApiController {
      *             Driver → /driver/delivering
      */
     private String getActionUrl(Notification n) {
-        if (n.getRelatedOrderId() == null) return null;
+        if (n == null || n.getRelatedOrderId() == null || n.getUser() == null || n.getUser().getRole() == null) {
+            return null;
+        }
         String role = n.getUser().getRole().name();
         return switch (role) {
             case "CUSTOMER"   -> "/customer/tracking?orderId=" + n.getRelatedOrderId();

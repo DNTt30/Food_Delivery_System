@@ -19,7 +19,6 @@ import java.util.List;
  * </ul>
  */
 @Service
-@SuppressWarnings("null")
 public class NotificationService {
 
     private static final int MAX_NOTIFICATIONS = 50;
@@ -41,6 +40,7 @@ public class NotificationService {
     @Transactional
     public Notification createNotification(User user, String title, String message,
                                            NotificationType type, Long relatedOrderId) {
+        if (user == null) return null;
         // Chống spam: không tạo trùng
         if (relatedOrderId != null &&
                 notificationRepository.existsByUserAndTypeAndRelatedOrderIdAndReadFalse(
@@ -58,6 +58,7 @@ public class NotificationService {
      */
     @Transactional
     public Notification save(Notification notification) {
+        if (notification == null) return null;
         return notificationRepository.save(notification);
     }
 
@@ -77,6 +78,7 @@ public class NotificationService {
      * Lấy tối đa 50 thông báo mới nhất của user.
      */
     public List<Notification> getNotificationsByUser(User user) {
+        if (user == null) return List.of();
         return notificationRepository.findByUserOrderByCreatedAtDesc(
                 user, PageRequest.of(0, MAX_NOTIFICATIONS));
     }
@@ -85,6 +87,7 @@ public class NotificationService {
      * Đếm số thông báo chưa đọc.
      */
     public long countUnread(User user) {
+        if (user == null) return 0;
         return notificationRepository.countByUserAndReadFalse(user);
     }
 
@@ -98,8 +101,9 @@ public class NotificationService {
      */
     @Transactional
     public boolean markAsRead(Long notificationId, User user) {
+        if (notificationId == null || user == null) return false;
         Notification n = notificationRepository.findById(notificationId).orElse(null);
-        if (n == null || !n.getUser().getId().equals(user.getId())) return false;
+        if (n == null || n.getUser() == null || !n.getUser().getId().equals(user.getId())) return false;
         n.setRead(true);
         notificationRepository.save(n);
         return true;
