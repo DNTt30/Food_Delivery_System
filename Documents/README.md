@@ -172,6 +172,50 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 
 ---
 
+## ✅ Tuần 4, 5 & 6 – Hoàn thiện, Chat Real-time & UUID Migration
+
+**Mục tiêu:** Hoàn thiện 100% chức năng, chuyển đổi hệ thống Chat sang WebSocket và di chuyển định danh người dùng sang UUID để tăng cường bảo mật.
+
+### 🔍 Hoạt động đã thực hiện
+
+#### 1. Hệ thống Chat Real-time (WebSocket STOMP Architecture)
+- **Nâng cấp công nghệ:** Thay thế hoàn toàn cơ chế Polling cũ bằng WebSocket/STOMP, giúp tin nhắn được truyền tải tức thời.
+- **Tính năng nổi bật:** 
+    - Widget chat pop-up phong cách ShopeeFood.
+    - Tự động khóa/mở chat dựa trên trạng thái đơn hàng (Pending/Preparing/Delivering).
+    - Phân quyền chặt chẽ: Chỉ người tham gia đơn hàng mới có thể nhắn tin.
+    - Masking số điện thoại khi đơn hàng đã hoàn thành để bảo mật thông tin.
+
+#### 2. Hiện đại hóa Giao diện & Trải nghiệm Người dùng (UI/UX)
+- **Restaurant Dashboard 2.0:** 
+    - Triển khai **Kanban Board** quản lý đơn hàng theo cột (Mới nhận, Đang nấu, Hoàn thành).
+    - Tối ưu hóa hiệu năng với phân trang Server-side và bộ lọc nhanh.
+- **Driver Mobile-First:** 
+    - Giao diện tối ưu cho thiết bị di động với Bottom Navigation.
+    - Luồng xử lý đơn hàng trực quan: Nhận đơn → Đến nhà hàng → Lấy hàng → Giao hàng.
+- **Landing Page Redesign:** 
+    - Sử dụng phong cách **Glassmorphism**, hiệu ứng animations (fade-up, floating).
+    - Tự động điều hướng người dùng (Routing logic) dựa trên vai trò sau khi đăng nhập.
+
+#### 3. Bảo mật & Di chuyển Dữ liệu (UUID Migration)
+- **UUID Primary Key:** Chuyển đổi toàn bộ `User ID` từ kiểu `Long` sang `UUID` để ngăn chặn việc dò quét dữ liệu và hỗ trợ mở rộng hệ thống.
+- **Security Hardening:** 
+    - Hoàn thiện hệ thống xác thực OTP qua Gmail.
+    - Rà soát Null-safety và tối ưu hóa các khối xử lý ngoại lệ trong `Notification` và `Chat` API.
+
+### 📦 Sản phẩm giai đoạn hoàn thiện
+
+| # | Sản phẩm | Trạng thái |
+| :--- | :--- | :--- |
+| 1 | Hệ thống Chat Real-time (WebSocket) | ✅ |
+| 2 | Quản lý Đơn hàng Kanban (Restaurant) | ✅ |
+| 3 | Giao diện Mobile-First (Driver) | ✅ |
+| 4 | Database UUID Migration | ✅ |
+| 5 | Hệ thống Thông báo & OTP | ✅ |
+| 6 | Landing Page Modern UI | ✅ |
+
+---
+
 ## 📌 Các tuần trước
 
 ### Tuần 1–2
@@ -179,6 +223,12 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 - Xây dựng Use Case Diagram và các kịch bản
 - Tạo repository Git, cấu trúc ban đầu
 
+### Tuần 3 – Thiết kế Lớp và Tạo cơ sở Code
+- Xây dựng Class Diagram (16 entity chính).
+- Tạo khung mã nguồn (Skeleton) Spring Boot.
+- Triển khai hệ thống đăng ký & xác thực OTP Email.
+
 ---
 
-*Cập nhật lần cuối: Tuần 3 – Tháng 4/2026*
+*Cập nhật lần cuối: 14/05/2026*
+

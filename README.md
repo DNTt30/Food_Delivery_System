@@ -144,7 +144,7 @@ Sử dụng Maven Wrapper:
 src/main/java/com/duong/salesmanagement/
 ├── controller/     # API Endpoints & Web Controllers (Chat, Profile, Order...)
 ├── model/          # Entities (User, FoodOrder, ChatMessage, MenuItem...)
-├── service/        # Business Logic (ChatService, ContactService, OrderService...)
+├── service/        # Business Logic (ChatService, OrderService...)
 ├── repository/     # Data Access Layer (JPA)
 ├── security/       # JWT, WebSocket Auth Interceptor
 ├── dto/            # Request/Response DTOs
@@ -167,62 +167,9 @@ src/main/java/com/duong/salesmanagement/
 
 ## 📝 Nhật ký Cập nhật
 
-### 📅 14/05/2026 — Security Hardening & UUID Migration
-- **UUID Primary Key Migration:**
-    - Chuyển đổi toàn bộ hệ thống định danh người dùng từ `Long` sang `UUID` để tăng cường tính bảo mật và khả năng mở rộng.
-    - Cập nhật thực thể `User`, `UserRepository` và các DTO liên quan (`UserDTO`, `ChatMessageRequest`, `ChatMessageResponse`, `ContactDto`) để tương thích với định dạng UUID.
-    - Đồng bộ hóa thành công với cơ sở dữ liệu MySQL trên Aiven, giải quyết triệt để lỗi `SQLDataException` khi khởi động.
-- **Chat System Stabilization:**
-    - Khắc phục các lỗi phân giải class (IDE Resolution Errors) trong `ChatApiController`, `WebSocketChatController` và `ContactService` bằng cách sử dụng Fully Qualified Names.
-    - Tối ưu hóa các khối `catch` ngoại lệ tùy chỉnh (`ChatAccessDeniedException`, `ChatLockedException`) để đảm bảo phản hồi API chính xác.
-- **Null-Safety Enforcement:**
-    - Rà soát và thêm các kiểm tra null-safety nghiêm ngặt trong `NotificationApiController` và `NotificationService` để ngăn chặn lỗi `NullPointerException` trong môi trường runtime.
-    - Loại bỏ các cảnh báo `@SuppressWarnings` không cần thiết, hướng tới mã nguồn sạch và ổn định.
-
-### 📅 13/05/2026 — UI Modernization & Management Excellence
-- **Restaurant Management 2.0:**
-    - **Giao diện Kanban thông minh:** Chuyển đổi quản lý đơn hàng sang dạng 3 cột dọc (Mới nhận, Đang nấu, Xong) giúp theo dõi luồng vận hành trực quan.
-    - **Quick Filter & Search:** Tích hợp bộ lọc nhanh theo ID/Tên khách hàng và Sticky Headers giúp thao tác mượt mà ngay cả khi có hàng trăm đơn.
-    - **Compact Mode:** Chế độ hiển thị thu gọn giúp tăng mật độ thông tin trên màn hình lên gấp 3 lần.
-    - **Server-side History:** Triển khai bảng lịch sử đơn hàng có phân trang (Pagination) tại phía Server, tối ưu hiệu năng tuyệt đối.
-    - **Inline Menu Toggle:** Quản lý thực đơn dạng bảng với nút gạt trạng thái (Availability) cập nhật tức thì qua AJAX.
-- **Driver "Mobile-First" App:**
-    - **Thiết kế Mobile-First:** Hoàn thiện Layout di động với thanh điều hướng dưới (Bottom Nav) và thanh trạng thái trên (Top Bar).
-    - **Status Toggle:** Nút gạt Online/Offline chuyên nghiệp với hiệu ứng pulse.
-    - **Order Feed:** Danh sách đơn hàng mới (New Orders) được thiết kế dạng thẻ dọc, hiển thị ước tính khoảng cách và thu nhập (10% commission).
-    - **Delivery Journey:** Quy trình giao hàng từng bước (Pickup → Dropoff) với các nút Call/Chat ngữ cảnh.
-- **Infrastructure & UX Optimization:**
-    - **Dashboard Header 2.0:** Nâng cấp Header đồng bộ cho toàn bộ actor, tích hợp chuông thông báo (Notification Bell) với số lượng unread badge.
-    - **Background Chat Listener:** Driver có thể nhận thông báo tin nhắn mới từ tất cả các đơn hàng đang xử lý ngay cả khi không mở hộp chat.
-    - **Fixes:** Sửa lỗi lọc ngày theo múi giờ địa phương, tối ưu hóa quản lý Bootstrap Modals và cải thiện tốc độ load trang.
-
-### 📅 12/05/2026 — Real-time Chat Migration
-- **Chuyển đổi sang WebSocket STOMP:** Thay thế hoàn toàn cơ chế Polling cũ bằng WebSocket, giúp tin nhắn được gửi và nhận tức thời không có độ trễ.
-- **Backend Implementation:** Triển khai `WebSocketChatController` xử lý message mapping và broadcasting theo order-specific topics (`/topic/messages/{orderId}`).
-- **Frontend STOMP Integration:** Refactor `chat_widget.html` tích hợp `Stomp.js`, xử lý kết nối/ngắt kết nối tự động và cập nhật UI ngay khi có tin nhắn mới.
-- **Tối ưu hóa UI/UX:** Fix lỗi giao diện trang chủ Khách hàng (`home.html`) và chi tiết món ăn (`detail.html`), cải thiện luồng xác thực tại `/common/auth`.
-- **Refactor Core Logic:** Cập nhật `OrderService` và `RestaurantProfile` để hỗ trợ tốt hơn cho việc truy vấn dữ liệu liên quan đến chat và quản lý đơn hàng.
-
-### 📅 11/05/2026 — Landing Page UI/UX
-- **Redesign toàn diện Landing Page (`index.html`):** Nâng cấp giao diện người dùng theo phong cách ứng dụng Food Delivery thương mại hiện đại.
-- **Tối ưu trải nghiệm UI:** Bổ sung hiệu ứng fade-up, floating animation, navbar glassmorphism và phối màu đồng bộ (Đỏ cam - Vàng).
-- **Hoàn thiện Javascript Authentication Routing:** Xử lý logic nút "Đặt món ngay" kết hợp `localStorage` để điều hướng tự động dựa trên role (Customer, Restaurant, Driver, Admin) hoặc trả về trang `/common/auth` nếu chưa đăng nhập.
-
-### 📅 10/05/2026 — Chat System
-- **Hoàn thiện hệ thống Chat Polling:** Triển khai widget chat pop-up phong cách ShopeeFood cho 3 cặp vai trò.
-- **Phân quyền chat theo trạng thái đơn:** Mở rộng visibility matrix — Customer có thể chat với Restaurant xuyên suốt quá trình giao hàng.
-- **Fix lỗi tin nhắn trùng lặp:** Lọc tin nhắn theo cặp role (`myRole ↔ targetRole`) tránh hiện nhầm chat giữa các box.
-- **Hiển thị SĐT trong header chat:** Số điện thoại Tài xế/Khách hiện dưới tên, tự động mask khi đơn đóng.
-- **Fix lỗi DB schema:** Bảng `chat_messages` tạo lại đúng cấu trúc với FK constraints và cột `created_at`.
-- **Tối ưu parse ngày giờ:** Hỗ trợ cả định dạng ISO string và mảng số từ Jackson/Spring.
-- **Bảo mật code:** Fix `@NonNull` annotations, loại bỏ multi-catch redundant trong ChatApiController.
-
-### 📅 08/05/2026
-- **Hoàn thiện 100% Use Cases:** Tích hợp đầy đủ các chức năng từ Admin đến Shipper.
-- **Nâng cấp Dashboard:** Sử dụng Chart.js cho các biểu đồ thống kê chuyên nghiệp.
-- **Tối ưu UI/UX:** Tinh chỉnh layout, header/footer đồng bộ và hiệu ứng loading.
-- **Bảo mật:** Hoàn thiện luồng OTP qua Gmail và phân quyền JWT chặt chẽ.
-- **Kiến trúc:** Cập nhật sơ đồ kiến trúc hệ thống và luồng dữ liệu JWT.
+Chi tiết quá trình phát triển và các bản cập nhật tính năng (Tuần 1 - Tuần 6) được ghi chép đầy đủ tại:  
+👉 [**Tài liệu Dự án – Nhật ký Phát triển**](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/Documents/README.md)
 
 ---
 *Dự án thuộc học phần thực hành Phát triển ứng dụng Web.*
+
