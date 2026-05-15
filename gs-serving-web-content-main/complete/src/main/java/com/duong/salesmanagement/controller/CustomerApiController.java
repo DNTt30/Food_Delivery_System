@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -172,6 +173,13 @@ public class CustomerApiController {
                     o.getOrderItems().stream().map(oi -> new OrderItemDTO(
                             oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
                     )).collect(Collectors.toList());
+            
+            // Tìm đánh giá cho đơn hàng này
+            Optional<Review> reviewOpt = reviewRepository.findByOrder(o);
+            boolean isReviewed = reviewOpt.isPresent();
+            Integer reviewRating = isReviewed ? reviewOpt.get().getRating() : null;
+            String reviewComment = isReviewed ? reviewOpt.get().getComment() : null;
+
             return new OrderSummaryDTO(
                     o.getId(),
                     o.getRestaurant().getRestaurantName(),
@@ -180,7 +188,10 @@ public class CustomerApiController {
                     o.getTotalAmount(),
                     o.getOrderTime() != null ? o.getOrderTime().toString() : "",
                     o.getDeliveryAddress(),
-                    items
+                    items,
+                    isReviewed,
+                    reviewRating,
+                    reviewComment
             );
         }).collect(Collectors.toList());
 
@@ -204,6 +215,12 @@ public class CustomerApiController {
         String driverName = (order.getDriver() != null) ? order.getDriver().getUser().getFullName() : null;
         String driverPhone = (order.getDriver() != null) ? order.getDriver().getPhoneNumber() : null;
 
+        // Tìm đánh giá cho đơn hàng này
+        Optional<Review> reviewOpt = reviewRepository.findByOrder(order);
+        boolean isReviewed = reviewOpt.isPresent();
+        Integer reviewRating = isReviewed ? reviewOpt.get().getRating() : null;
+        String reviewComment = isReviewed ? reviewOpt.get().getComment() : null;
+
         OrderDetailDTO dto = new OrderDetailDTO(
                 order.getId(),
                 order.getRestaurant().getRestaurantName(),
@@ -213,7 +230,10 @@ public class CustomerApiController {
                 order.getDeliveryAddress(),
                 driverName,
                 driverPhone,
-                items
+                items,
+                isReviewed,
+                reviewRating,
+                reviewComment
         );
         return ResponseEntity.ok(dto);
     }
@@ -317,12 +337,19 @@ public class CustomerApiController {
         public String orderTime;
         public String deliveryAddress;
         public List<OrderItemDTO> items;
+        public boolean isReviewed;
+        public Integer reviewRating;
+        public String reviewComment;
 
         public OrderSummaryDTO(Long id, String restaurantName, String restaurantImage, String status,
-                               Double totalAmount, String orderTime, String deliveryAddress, List<OrderItemDTO> items) {
+                               Double totalAmount, String orderTime, String deliveryAddress, List<OrderItemDTO> items,
+                               boolean isReviewed, Integer reviewRating, String reviewComment) {
             this.id = id; this.restaurantName = restaurantName; this.restaurantImage = restaurantImage;
             this.status = status; this.totalAmount = totalAmount; this.orderTime = orderTime;
             this.deliveryAddress = deliveryAddress; this.items = items;
+            this.isReviewed = isReviewed;
+            this.reviewRating = reviewRating;
+            this.reviewComment = reviewComment;
         }
     }
 
@@ -332,8 +359,9 @@ public class CustomerApiController {
 
         public OrderDetailDTO(Long id, String restaurantName, String status, Double totalAmount,
                               String orderTime, String deliveryAddress, String driverName,
-                              String driverPhone, List<OrderItemDTO> items) {
-            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items);
+                              String driverPhone, List<OrderItemDTO> items, boolean isReviewed, 
+                              Integer reviewRating, String reviewComment) {
+            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items, isReviewed, reviewRating, reviewComment);
             this.driverName = driverName;
             this.driverPhone = driverPhone;
         }

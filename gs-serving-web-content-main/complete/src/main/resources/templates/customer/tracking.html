@@ -5,7 +5,6 @@
 </head>
 <body>
 <main>
-<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
 
 <div class="container mb-5" style="max-width: 700px;">
 
@@ -52,9 +51,14 @@
         <!-- Order Info -->
         <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
             <h6 class="fw-bold mb-3"><i class="bi bi-shop me-2 text-danger"></i>Thông tin đơn hàng</h6>
-            <div class="d-flex justify-content-between mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small">Nhà hàng</span>
-                <span class="fw-semibold small" id="orderRestaurant"></span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-semibold small" id="orderRestaurant"></span>
+                    <button onclick="openRestaurantChat()" class="btn btn-sm btn-outline-warning rounded-pill px-2 py-0" style="font-size: 0.75rem;" title="Nhắn tin cho nhà hàng">
+                         <i class="bi bi-chat-dots-fill"></i>
+                    </button>
+                </div>
             </div>
             <div class="d-flex justify-content-between mb-2">
                 <span class="text-muted small">Mã đơn hàng</span>
@@ -103,16 +107,24 @@
             </div>
         </div>
 
-        <!-- Restaurant Chat shortcut (PENDING / PREPARING) -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 d-none" id="restaurantChatCard">
-            <div class="d-flex align-items-center justify-content-between">
-                <span class="small text-muted">
-                    <i class="bi bi-shop me-2"></i>
-                    Câu hỏi về đơn hàng? Nhắn tin nhà hàng ngay!
-                </span>
+        <!-- Restaurant Chat shortcut -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 d-none mb-4" id="restaurantChatCard">
+            <h6 class="fw-bold mb-3"><i class="bi bi-shop text-warning me-2"></i>Liên hệ nhà hàng</h6>
+            <div class="d-flex align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                         style="width:50px;height:50px;">
+                        <i class="bi bi-shop text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <p class="fw-bold mb-0" id="chatRestaurantName"></p>
+                        <p class="text-muted small mb-0">Câu hỏi về món ăn? Nhắn tin ngay!</p>
+                    </div>
+                </div>
                 <button onclick="openRestaurantChat()"
-                        class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold">
-                    <i class="bi bi-chat-dots me-1"></i>Chat với Nhà hàng
+                        class="btn btn-warning text-white rounded-pill px-3 fw-semibold"
+                        style="white-space:nowrap; background: #f59e0b; border:none;">
+                    <i class="bi bi-chat-dots-fill me-1"></i>Nhắn tin
                 </button>
             </div>
         </div>
@@ -214,6 +226,15 @@
         }
     }
 
+    // Polling dự phòng mỗi 30s nếu WebSocket gặp sự cố
+    window.fallbackPolling = setInterval(() => {
+        if (currentOrder && (currentOrder.status === 'COMPLETED' || currentOrder.status === 'CANCELLED')) {
+            clearInterval(window.fallbackPolling);
+            return;
+        }
+        loadOrder();
+    }, 30000);
+
     function renderOrder(order) {
         const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
         const banner = document.getElementById('statusBanner');
@@ -243,24 +264,25 @@
         const driverCard = document.getElementById('driverCard');
         const restaurantChatCard = document.getElementById('restaurantChatCard');
 
-        if (order.driverName && order.status === 'DELIVERING') {
+        // Show driver card if name is present (usually PREPARING or DELIVERING)
+        if (order.driverName) {
             driverCard.classList.remove('d-none');
-            restaurantChatCard.classList.add('d-none');
             document.getElementById('driverName').textContent = order.driverName;
             const phoneEl = document.getElementById('driverPhone');
             if (order.driverPhone) {
                 phoneEl.textContent = '📞 ' + order.driverPhone;
                 phoneEl.href = 'tel:' + order.driverPhone;
             }
-            switchChatType('DRIVER');
         } else {
             driverCard.classList.add('d-none');
-            if (order.status === 'PENDING' || order.status === 'PREPARING') {
-                restaurantChatCard.classList.remove('d-none');
-                switchChatType('RESTAURANT');
-            } else {
-                restaurantChatCard.classList.add('d-none');
-            }
+        }
+
+        // Always allow chat with restaurant unless COMPLETED/CANCELLED
+        if (order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING') {
+            restaurantChatCard.classList.remove('d-none');
+            document.getElementById('chatRestaurantName').textContent = order.restaurantName;
+        } else {
+            restaurantChatCard.classList.add('d-none');
         }
 
         // Cancel button
@@ -289,8 +311,12 @@
         } else {
             STATUS_STEPS.forEach((step, i) => {
                 let cls = '';
-                if (i < currentIdx) cls = 'done';
-                else if (i === currentIdx) cls = 'current';
+                if (status === 'COMPLETED') {
+                    cls = 'done'; // Tất cả các bước đều xanh lá khi hoàn thành
+                } else {
+                    if (i < currentIdx) cls = 'done';
+                    else if (i === currentIdx) cls = 'current';
+                }
                 html += `<div class="timeline-step ${cls}">
                     <div class="step-icon"><i class="bi ${step.icon}"></i></div>
                     <div class="mt-1">
@@ -467,6 +493,7 @@
         // Stop subscription when order is terminal
         if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
             disconnect();
+            if (window.fallbackPolling) clearInterval(window.fallbackPolling);
         }
     }
 
@@ -530,7 +557,10 @@
     });
 
     // ── Cleanup khi rời trang ───────────────────────────────────────────
-    window.addEventListener('beforeunload', disconnect);
+    window.addEventListener('beforeunload', () => {
+        disconnect();
+        if (window.fallbackPolling) clearInterval(window.fallbackPolling);
+    });
 
 })();
 </script>

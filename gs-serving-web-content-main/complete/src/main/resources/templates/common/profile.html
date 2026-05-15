@@ -1,461 +1,428 @@
-<html th:replace="~{layouts/main_layout :: layout(~{::title}, ~{::main}, false)}">
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
-    <title>Hồ Sơ Cá Nhân - Food Delivery System</title>
-    <!-- Thêm CSS để ẩn footer mặc định của main_layout trên trang profile -->
+    <title>Hồ Sơ Cá Nhân | Food Delivery</title>
     <style>
-        .main-footer { display: none !important; }
+        :root {
+            --profile-accent: #FF4B2B;
+        }
+
+        .profile-cover {
+            height: 180px;
+            background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%);
+            border-radius: 24px;
+            position: relative;
+            margin-bottom: 70px;
+            box-shadow: 0 10px 20px rgba(255, 75, 43, 0.15);
+        }
+
+        .profile-avatar-wrapper {
+            position: absolute;
+            bottom: -60px;
+            left: 40px;
+            padding: 5px;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--profile-accent);
+        }
+
+        .profile-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .info-card {
+            border: 1px solid #f1f5f9;
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+        }
+
+        .form-label-premium {
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-premium {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .input-premium:focus {
+            background: white;
+            border-color: var(--profile-accent);
+            box-shadow: 0 0 0 4px rgba(255, 75, 43, 0.1);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 16px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(255, 75, 43, 0.3);
+            transition: all 0.3s;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 75, 43, 0.4);
+            color: white;
+        }
+        
+        .section-icon {
+            width: 42px;
+            height: 42px;
+            background: #fff5f5;
+            color: var(--profile-accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .banner-preview-box {
+            width: 100%;
+            height: 200px;
+            background: #f8fafc;
+            border: 2px dashed #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
     </style>
 </head>
 <body>
 <main>
-    <!-- Placeholder cho Dynamic Header -->
-    <div id="dynamicHeader"></div>
-<div class="container py-5" style="max-width: 800px;">
-    <!-- Thêm div để hiển thị thông báo -->
-    <div id="alertMessage" class="alert d-none" role="alert"></div>
+    <div class="container py-5" style="max-width: 800px;">
+        <!-- Alert Message -->
+        <div id="alertMessage" class="alert d-none animate__animated animate__fadeInDown" role="alert" 
+             style="border-radius: 16px; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"></div>
 
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Thông Tin Hồ Sơ</h2>
-            <p class="text-muted small mb-0">Quản lý thông tin cá nhân và cài đặt tài khoản</p>
+        <!-- Profile Header: Centered -->
+        <div class="info-card text-center mb-4">
+            <div class="position-relative mb-4 d-inline-block">
+                <div style="width: 120px; height: 120px; padding: 5px; background: linear-gradient(135deg, #FF4B2B, #FF416C); border-radius: 30px; box-shadow: 0 10px 20px rgba(255, 75, 43, 0.2);">
+                    <div id="navAvatarCircle" class="w-100 h-100 bg-white d-flex align-items-center justify-content-center fw-bold text-danger fs-1" style="border-radius: 25px;">U</div>
+                </div>
+                <span id="roleBadge" class="position-absolute bottom-0 start-100 translate-middle badge rounded-pill bg-dark px-3 py-2 shadow-sm border border-2 border-white" style="font-size: 0.65rem; letter-spacing: 1px;">GUEST</span>
+            </div>
+            
+            <h3 class="fw-bold mb-1" id="profileNameDisplay">Tên người dùng</h3>
+            <p class="text-muted small" id="profileEmailDisplay">email@example.com</p>
         </div>
-        <span id="roleBadge" class="badge bg-secondary text-uppercase shadow-sm" style="font-size: 0.9rem;">Đang tải...</span>
-    </div>
 
-    <div class="card shadow-sm mb-4 border-0 overflow-hidden">
-        <div class="bg-warning p-1"></div>
-        <div class="card-body p-4 p-md-5">
+        <!-- Section: Personal Info -->
+        <div class="info-card mb-4">
+            <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+                <div class="section-icon"><i class="bi bi-person-vcard"></i></div>
+                <h5 class="fw-bold mb-0">Thông tin cá nhân</h5>
+            </div>
+
             <form id="profileForm">
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Họ và Tên</label>
-                        <input type="text" id="fullName" class="form-control form-control-lg" placeholder="Nhập họ tên" required>
+                        <label class="form-label-premium">HỌ VÀ TÊN</label>
+                        <input type="text" id="fullName" class="form-control input-premium" placeholder="Nhập họ tên đầy đủ" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Email</label>
-                        <input type="email" id="email" class="form-control form-control-lg bg-light" disabled>
+                        <label class="form-label-premium">ĐỊA CHỈ EMAIL</label>
+                        <input type="email" id="email" class="form-control input-premium bg-light" disabled>
+                        <small class="text-muted" style="font-size: 0.7rem;">Email không thể thay đổi</small>
                     </div>
-                </div>
-                
-                <hr class="my-4 opacity-25">
-                
-                <!-- Section Title for Role-specific info -->
-                <div id="roleInfoTitle" class="mb-4">
-                    <h5 class="fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-info-circle text-warning"></i> Thông tin bổ sung
-                    </h5>
-                </div>
 
-                <!-- Customer Fields -->
-                <div class="dynamic-field" id="fieldCustomer" style="display:none;">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Số điện thoại</label>
-                        <input type="text" id="phoneNumber" class="form-control" placeholder="09xxx">
+                    <!-- Dynamic Fields -->
+                    <div class="col-12 dynamic-field" id="fieldCustomer" style="display:none;">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">SỐ ĐIỆN THOẠI</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent border-end-0 rounded-start-4"><i class="bi bi-telephone text-muted"></i></span>
+                                    <input type="text" id="phoneNumber" class="form-control input-premium rounded-start-0" placeholder="09xxxxxxxx">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">ĐỊA CHỈ GIAO HÀNG</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent border-end-0 rounded-start-4"><i class="bi bi-geo-alt text-muted"></i></span>
+                                    <input type="text" id="deliveryAddress" class="form-control input-premium rounded-start-0" placeholder="Địa chỉ mặc định">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Địa chỉ giao hàng mặc định</label>
-                        <input type="text" id="deliveryAddress" class="form-control" placeholder="Số nhà, tên đường...">
-                    </div>
-                </div>
 
-                <!-- Driver Fields -->
-                <div class="dynamic-field" id="fieldDriver" style="display:none;">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Số điện thoại</label>
-                        <input type="text" id="driverPhone" class="form-control" placeholder="09xxx">
+                    <div class="col-12 dynamic-field" id="fieldDriver" style="display:none;">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">SỐ ĐIỆN THOẠI</label>
+                                <input type="text" id="driverPhone" class="form-control input-premium">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">BIỂN SỐ XE</label>
+                                <input type="text" id="licensePlate" class="form-control input-premium" placeholder="29X-XXXX">
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Biển số xe</label>
-                        <input type="text" id="licensePlate" class="form-control" placeholder="29A-XXXXX">
-                    </div>
-                </div>
 
-                <!-- Restaurant Fields -->
-                <div class="dynamic-field" id="fieldRestaurant" style="display:none;">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Tên Nhà Hàng</label>
-                        <input type="text" id="restaurantName" class="form-control" placeholder="Tên quán ăn">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Địa chỉ kinh doanh</label>
-                        <input type="text" id="address" class="form-control" placeholder="Địa chỉ nhà hàng">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Banner Cửa Hàng</label>
-                        <input type="file" id="bannerFile" class="form-control" accept="image/*" onchange="uploadBanner(this)">
-                        <input type="hidden" id="bannerUrl">
-                        <div class="mt-3 border rounded-4 p-2 bg-light text-center shadow-inner" style="min-height: 160px; overflow: hidden;">
-                            <img id="bannerPreview" src="" alt="Banner Preview" class="img-fluid rounded-3 d-none" style="max-height: 200px; width: 100%; object-fit: cover;">
-                            <div id="bannerPlaceholder" class="text-muted small py-5">
-                                <i class="bi bi-image fs-1 d-block mb-2 opacity-25"></i>
-                                Chưa có banner
+                    <div class="col-12 dynamic-field" id="fieldRestaurant" style="display:none;">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">TÊN NHÀ HÀNG</label>
+                                <input type="text" id="restaurantName" class="form-control input-premium">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">ĐỊA CHỈ KINH DOANH</label>
+                                <input type="text" id="address" class="form-control input-premium">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-premium">BANNER NHÀ HÀNG</label>
+                                <div class="mb-3">
+                                    <input type="file" id="bannerFile" class="form-control rounded-4" accept="image/*" onchange="uploadBanner(this)">
+                                    <input type="hidden" id="bannerUrl">
+                                </div>
+                                <div class="banner-preview-box">
+                                    <img id="bannerPreview" src="" class="img-fluid d-none" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <div id="bannerPlaceholder" class="text-center text-muted">
+                                        <i class="bi bi-image fs-1 opacity-25"></i>
+                                        <p class="small mb-0">Chưa có banner</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-5">
-                    <button type="submit" class="btn btn-warning btn-lg px-5 shadow-sm fw-bold">
-                        <i class="bi bi-save2 me-2"></i>Lưu Thay Đổi
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-save w-100 py-3">
+                        Lưu thông tin thay đổi
                     </button>
                 </div>
             </form>
         </div>
-    </div>
-    
-    <div class="d-flex align-items-center mb-4">
-        <h3 class="fw-bold mb-0">Bảo mật</h3>
-    </div>
 
-    <div class="card shadow-sm border-0 mb-5 overflow-hidden">
-        <div class="bg-danger p-1"></div>
-        <div class="card-body p-4 p-md-5">
+        <!-- Section: Security -->
+        <div class="info-card mb-4">
+            <div class="d-flex align-items-center gap-3 mb-4 pb-2 border-bottom">
+                <div class="section-icon" style="background: #f0f9ff; color: #0ea5e9;"><i class="bi bi-shield-lock"></i></div>
+                <h5 class="fw-bold mb-0">Bảo mật tài khoản</h5>
+            </div>
+
             <form id="passwordForm">
                 <div class="mb-4">
-                    <label class="form-label fw-bold small text-muted text-uppercase">Mật khẩu cũ</label>
-                    <input type="password" id="oldPassword" class="form-control" required>
+                    <label class="form-label-premium">MẬT KHẨU HIỆN TẠI</label>
+                    <input type="password" id="oldPassword" class="form-control input-premium" placeholder="Nhập mật khẩu hiện tại" required>
                 </div>
-                <div class="row g-4">
+                <div class="row g-4 mb-4">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Mật khẩu mới</label>
-                        <input type="password" id="newPassword" class="form-control" required>
+                        <label class="form-label-premium">MẬT KHẨU MỚI</label>
+                        <input type="password" id="newPassword" class="form-control input-premium" placeholder="Tối thiểu 8 ký tự" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Xác nhận mật khẩu</label>
-                        <input type="password" id="confirmPassword" class="form-control" required>
+                        <label class="form-label-premium">XÁC NHẬN MẬT KHẨU</label>
+                        <input type="password" id="confirmPassword" class="form-control input-premium" placeholder="Nhập lại mật khẩu mới" required>
                     </div>
                 </div>
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-dark btn-lg px-4 fw-semibold">
-                        <i class="bi bi-shield-lock me-2"></i>Đổi Mật Khẩu
+                <div>
+                    <button type="submit" class="btn btn-dark w-100 py-3 rounded-4 fw-bold">
+                        Đổi mật khẩu bảo mật
                     </button>
                 </div>
             </form>
         </div>
+
+        <!-- Logout Area -->
+        <div class="text-center py-3">
+            <button class="btn btn-link text-danger text-decoration-none fw-bold" onclick="localStorage.clear(); window.location.href='/';">
+                <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất tài khoản
+            </button>
+        </div>
     </div>
-</div>
 
-<!-- Placeholder cho Dynamic Footer -->
-<div id="dynamicFooter"></div>
-
-<script th:inline="javascript">
-    const token = localStorage.getItem('jwt_token');
-    
-    if (!token) {
-        window.location.href = '/common/auth';
-    }
-
-    function showAlert(message, type) {
-        const alertBox = document.getElementById('alertMessage');
-        alertBox.textContent = message;
-        alertBox.className = `alert alert-${type} d-block shadow-sm rounded-3 animate__animated animate__fadeInDown`;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => { alertBox.className = 'alert d-none'; }, 4000);
-    }
-
-    function previewBanner(url) {
-        const img = document.getElementById('bannerPreview');
-        const placeholder = document.getElementById('bannerPlaceholder');
-        if (url) {
-            img.src = url;
-            img.classList.remove('d-none');
-            placeholder.classList.add('d-none');
-        } else {
-            img.src = '';
-            img.classList.add('d-none');
-            placeholder.classList.remove('d-none');
+    <style>
+        .input-group-text {
+            border: 1px solid #e2e8f0;
+            border-right: none;
+            padding-left: 1rem;
         }
-    }
+        .input-premium {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+        }
+        input:not(.input-premium) {
+            border-radius: 14px !important;
+        }
+    </style>
 
-    async function uploadBanner(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const res = await fetch('/api/upload/image', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token },
-                body: formData
-            });
-            const data = await res.json();
-            if (res.ok) {
-                document.getElementById('bannerUrl').value = data.url;
-                previewBanner(data.url);
-                showAlert('Tải ảnh lên thành công!', 'success');
+    <script th:inline="javascript">
+        // Helper to switch sections
+        function showSection(section) {
+            document.querySelectorAll('.profile-section').forEach(el => el.classList.add('d-none'));
+            document.querySelectorAll('.btn-light').forEach(el => el.classList.remove('active-tab'));
+            
+            if (section === 'personal') {
+                document.getElementById('sectionPersonal').classList.remove('d-none');
+                event.currentTarget.classList.add('active-tab');
             } else {
-                showAlert(data.error || 'Tải ảnh thất bại', 'danger');
+                document.getElementById('sectionSecurity').classList.remove('d-none');
+                event.currentTarget.classList.add('active-tab');
             }
-        } catch (err) {
-            console.error(err);
-            showAlert('Lỗi kết nối khi tải ảnh', 'danger');
         }
-    }
 
-    function renderHeaderFooter(role, username) {
-        const headerContainer = document.getElementById('dynamicHeader');
-        const footerContainer = document.getElementById('dynamicFooter');
-        const initial = (username || 'U').charAt(0).toUpperCase();
-        const LOGOUT = "localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';";
+        const token = localStorage.getItem('jwt_token');
+        if (!token) window.location.href = '/common/auth';
 
-        if (role === 'ROLE_CUSTOMER' || role === 'CUSTOMER') {
-            /* ── Navbar đồng bộ với navbar_customer.html ── */
-            headerContainer.innerHTML = `
-            <nav class="navbar navbar-expand-lg bg-white mb-4"
-                 style="border-bottom:3px solid #ef4444;box-shadow:0 2px 20px rgba(0,0,0,0.08);">
-              <div class="container">
-                <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/customer/home">
-                  <div class="rounded-3 d-flex align-items-center justify-content-center"
-                       style="width:38px;height:38px;background:linear-gradient(135deg,#ef4444,#dc2626);">
-                    <i class="bi bi-motorcycle text-white" style="font-size:1.1rem;"></i>
-                  </div>
-                  <div class="lh-1">
-                    <div class="fw-bold text-dark" style="font-size:1rem;">Food<span class="text-danger">Delivery</span></div>
-                    <div class="text-muted" style="font-size:0.6rem;letter-spacing:0.06em;">GIAO HÀNG TẬN NƠI</div>
-                  </div>
-                </a>
-                <div class="ms-auto d-flex align-items-center gap-3">
-                  <a href="/customer/home" class="text-dark text-decoration-none fw-semibold small">
-                    <i class="bi bi-house me-1 text-danger"></i>Trang chủ
-                  </a>
-                  <a href="/customer/history" class="text-dark text-decoration-none fw-semibold small">
-                    <i class="bi bi-receipt-cutoff me-1 text-danger"></i>Đơn hàng
-                  </a>
-                  <span class="fw-semibold small text-danger border-bottom border-danger pb-1">
-                    <i class="bi bi-person-circle me-1"></i>Hồ sơ
-                  </span>
-                  <div class="vr mx-1 opacity-25"></div>
-                  <div class="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white"
-                       style="width:34px;height:34px;background:linear-gradient(135deg,#ef4444,#7c3aed);font-size:0.8rem;cursor:default;">
-                    ${initial}
-                  </div>
-                  <button onclick="${LOGOUT}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold">
-                    <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
-                  </button>
-                </div>
-              </div>
-            </nav>`;
-
-            footerContainer.innerHTML = `
-            <footer class="mt-5" style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-top:4px solid #ef4444;">
-              <div class="container py-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                  <a href="/customer/home" class="d-flex align-items-center gap-2 text-decoration-none">
-                    <div class="rounded-2 d-flex align-items-center justify-content-center"
-                         style="width:32px;height:32px;background:linear-gradient(135deg,#ef4444,#dc2626);">
-                      <i class="bi bi-motorcycle text-white small"></i>
-                    </div>
-                    <span class="fw-bold" style="color:#fca5a5;">FoodDelivery</span>
-                  </a>
-                  <div class="d-flex gap-4 small">
-                    <a href="/customer/home"    style="color:#94a3b8;text-decoration:none;">Trang chủ</a>
-                    <a href="/customer/history" style="color:#94a3b8;text-decoration:none;">Đơn hàng</a>
-                    <span style="color:#ef4444;font-weight:600;">Hồ sơ</span>
-                  </div>
-                  <p class="mb-0 small" style="color:#64748b;">&copy; 2026 Food Delivery System</p>
-                </div>
-              </div>
-            </footer>`;
-
-        } else {
-            /* ── Dashboard actors: Restaurant / Driver / Admin ── */
-            const CFG = {
-                ROLE_RESTAURANT: { name:'Nhà Hàng', icon:'bi-shop',        color:'#d97706', accent:'#f59e0b', home:'/restaurant/dashboard' },
-                RESTAURANT:      { name:'Nhà Hàng', icon:'bi-shop',        color:'#d97706', accent:'#f59e0b', home:'/restaurant/dashboard' },
-                ROLE_DRIVER:     { name:'Tài Xế',   icon:'bi-bicycle',     color:'#2563eb', accent:'#3b82f6', home:'/driver/dashboard'     },
-                DRIVER:          { name:'Tài Xế',   icon:'bi-bicycle',     color:'#2563eb', accent:'#3b82f6', home:'/driver/dashboard'     },
-                ROLE_ADMIN:      { name:'Quản Trị', icon:'bi-shield-lock', color:'#dc2626', accent:'#ef4444', home:'/admin/dashboard'      },
-                ADMIN:           { name:'Quản Trị', icon:'bi-shield-lock', color:'#dc2626', accent:'#ef4444', home:'/admin/dashboard'      }
-            };
-            const cfg = CFG[role] || { name:'Portal', icon:'bi-grid', color:'#374151', accent:'#6b7280', home:'/' };
-
-            headerContainer.innerHTML = `
-            <header class="d-flex align-items-center justify-content-between px-4 py-3 mb-4 bg-dark text-white"
-                    style="border-bottom:3px solid ${cfg.accent};box-shadow:0 2px 16px rgba(0,0,0,0.15);">
-              <div class="d-flex align-items-center gap-3">
-                <div class="rounded-3 d-flex align-items-center justify-content-center"
-                     style="width:38px;height:38px;background:rgba(255,255,255,0.08);">
-                  <i class="bi ${cfg.icon}" style="color:${cfg.accent};font-size:1.2rem;"></i>
-                </div>
-                <div class="lh-1">
-                  <div class="fw-bold" style="font-size:0.95rem;">Cổng ${cfg.name}</div>
-                  <div style="font-size:0.65rem;color:#94a3b8;letter-spacing:0.06em;">HỒ SƠ CÁ NHÂN</div>
-                </div>
-              </div>
-              <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center justify-content-center rounded-circle fw-bold text-dark"
-                     style="width:34px;height:34px;background:${cfg.accent};font-size:0.8rem;">
-                  ${initial}
-                </div>
-                <a href="${cfg.home}" class="btn btn-sm btn-outline-light rounded-pill px-3">
-                  <i class="bi bi-arrow-left me-1"></i>Dashboard
-                </a>
-                <button onclick="${LOGOUT}" class="btn btn-sm rounded-pill px-3"
-                        style="background:${cfg.accent};color:${role.includes('RESTAURANT')?'#000':'#fff'};border:none;">
-                  <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
-                </button>
-              </div>
-            </header>`;
-
-            footerContainer.innerHTML = `
-            <footer class="mt-5 py-3 border-top" style="background:#f8f9fa;">
-              <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-muted">
-                <span><i class="bi ${cfg.icon} me-1" style="color:${cfg.accent};"></i>${cfg.name} Portal &copy; 2026</span>
-                <div class="d-flex gap-3">
-                  <a href="${cfg.home}" class="text-muted text-decoration-none">
-                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
-                  </a>
-                  <a href="/common/profile" class="fw-semibold" style="color:${cfg.accent};text-decoration:none;">
-                    <i class="bi bi-person me-1"></i>Hồ sơ
-                  </a>
-                </div>
-              </div>
-            </footer>`;
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertMessage');
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type} d-block shadow-sm mb-4`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { alertBox.classList.add('d-none'); }, 3000);
         }
-    }
 
-    async function loadProfile() {
-        try {
-            const res = await fetch('/api/profile/me', {
-                method: 'GET',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-
-            if (res.status === 401) { 
-                localStorage.clear();
-                window.location.href = '/';
-                return; 
+        function previewBanner(url) {
+            const img = document.getElementById('bannerPreview');
+            const placeholder = document.getElementById('bannerPlaceholder');
+            if (url) {
+                img.src = url;
+                img.classList.remove('d-none');
+                placeholder.classList.add('d-none');
+            } else {
+                img.classList.add('d-none');
+                placeholder.classList.remove('d-none');
             }
+        }
 
-            const data = await res.json();
-            if (res.ok) {
-                const role = data.role;
-                renderHeaderFooter(role, data.fullName || data.username || ''); // Truyền username để hiện avatar
-                
-                // Info common
-                document.getElementById('fullName').value = data.fullName || '';
-                document.getElementById('email').value = data.email || '';
-                
-                const badge = document.getElementById('roleBadge');
-                badge.textContent = role;
-                
-                // Reset all dynamic fields
-                document.querySelectorAll('.dynamic-field').forEach(el => el.style.display = 'none');
-
-                if (role === 'CUSTOMER') {
-                    badge.className = 'badge bg-info text-uppercase shadow-sm';
-                    document.getElementById('fieldCustomer').style.display = 'block';
-                    document.getElementById('phoneNumber').value = data.phoneNumber || '';
-                    document.getElementById('deliveryAddress').value = data.deliveryAddress || '';
-                } 
-                else if (role === 'DRIVER') {
-                    badge.className = 'badge bg-success text-uppercase shadow-sm';
-                    document.getElementById('fieldDriver').style.display = 'block';
-                    document.getElementById('driverPhone').value = data.phoneNumber || '';
-                    document.getElementById('licensePlate').value = data.licensePlate || '';
+        async function uploadBanner(input) {
+            if (!input.files?.[0]) return;
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            try {
+                const res = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('bannerUrl').value = data.url;
+                    previewBanner(data.url);
+                    showAlert('Tải banner thành công!', 'success');
                 }
-                else if (role === 'RESTAURANT') {
-                    badge.className = 'badge bg-warning text-dark text-uppercase shadow-sm';
-                    document.getElementById('fieldRestaurant').style.display = 'block';
-                    document.getElementById('restaurantName').value = data.restaurantName || '';
-                    document.getElementById('address').value = data.address || '';
-                    document.getElementById('bannerUrl').value = data.bannerUrl || '';
-                    previewBanner(data.bannerUrl);
+            } catch (err) { showAlert('Lỗi khi tải ảnh', 'danger'); }
+        }
+
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/profile/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.status === 401) { window.location.href = '/'; return; }
+                const data = await res.json();
+                if (res.ok) {
+                    const role = data.role;
+                    document.getElementById('roleBadge').textContent = role;
+                    document.getElementById('fullName').value = data.fullName || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('profileNameDisplay').textContent = data.fullName || data.username;
+                    document.getElementById('profileEmailDisplay').textContent = data.email;
+                    document.getElementById('navAvatarCircle').textContent = (data.fullName || data.username).charAt(0).toUpperCase();
+
+                    document.querySelectorAll('.dynamic-field').forEach(el => el.style.display = 'none');
+                    if (role === 'CUSTOMER') {
+                        document.getElementById('fieldCustomer').style.display = 'block';
+                        document.getElementById('phoneNumber').value = data.phoneNumber || '';
+                        document.getElementById('deliveryAddress').value = data.deliveryAddress || '';
+                    } else if (role === 'DRIVER') {
+                        document.getElementById('fieldDriver').style.display = 'block';
+                        document.getElementById('driverPhone').value = data.phoneNumber || '';
+                        document.getElementById('licensePlate').value = data.licensePlate || '';
+                    } else if (role === 'RESTAURANT') {
+                        document.getElementById('fieldRestaurant').style.display = 'block';
+                        document.getElementById('restaurantName').value = data.restaurantName || '';
+                        document.getElementById('address').value = data.address || '';
+                        document.getElementById('bannerUrl').value = data.bannerUrl || '';
+                        previewBanner(data.bannerUrl);
+                    }
                 }
-            } else {
-                showAlert(data.error || 'Lỗi tải hồ sơ', 'danger');
+            } catch (err) { showAlert('Lỗi kết nối', 'danger'); }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const role = document.getElementById('roleBadge').textContent;
+            const payload = { fullName: document.getElementById('fullName').value };
+            if (role === 'CUSTOMER') {
+                payload.phoneNumber = document.getElementById('phoneNumber').value;
+                payload.deliveryAddress = document.getElementById('deliveryAddress').value;
+            } else if (role === 'DRIVER') {
+                payload.phoneNumber = document.getElementById('driverPhone').value;
+                payload.licensePlate = document.getElementById('licensePlate').value;
+            } else if (role === 'RESTAURANT') {
+                payload.restaurantName = document.getElementById('restaurantName').value;
+                payload.address = document.getElementById('address').value;
+                payload.bannerUrl = document.getElementById('bannerUrl').value;
             }
-        } catch (err) {
-            console.error(err);
-            showAlert('Lỗi kết nối máy chủ', 'danger');
-        }
-    }
+            try {
+                const res = await fetch('/api/profile/me', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) { showAlert('Cập nhật thành công!', 'success'); loadProfile(); }
+            } catch (err) { showAlert('Cập nhật thất bại', 'danger'); }
+        });
 
-    // Cập nhật Profile
-    document.getElementById('profileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const role = document.getElementById('roleBadge').textContent;
-        const payload = {
-            fullName: document.getElementById('fullName').value
-        };
-
-        if (role === 'CUSTOMER') {
-            payload.phoneNumber = document.getElementById('phoneNumber').value;
-            payload.deliveryAddress = document.getElementById('deliveryAddress').value;
-        } 
-        else if (role === 'DRIVER') {
-            payload.phoneNumber = document.getElementById('driverPhone').value;
-            payload.licensePlate = document.getElementById('licensePlate').value;
-        }
-        else if (role === 'RESTAURANT') {
-            payload.restaurantName = document.getElementById('restaurantName').value;
-            payload.address = document.getElementById('address').value;
-            payload.bannerUrl = document.getElementById('bannerUrl').value;
-        }
-
-        try {
-            const res = await fetch('/api/profile/me', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (res.ok) {
-                showAlert(data.message, 'success');
-                loadProfile(); // Reload to sync UI
-            } else {
-                showAlert(data.error || 'Cập nhật thất bại', 'danger');
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            if (newPassword !== document.getElementById('confirmPassword').value) {
+                showAlert('Mật khẩu xác nhận không khớp', 'danger'); return;
             }
-        } catch (err) {
-            console.error(err);
-            showAlert('Lỗi kết nối máy chủ', 'danger');
-        }
-    });
+            try {
+                const res = await fetch('/api/profile/password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ oldPassword, newPassword })
+                });
+                if (res.ok) { showAlert('Đổi mật khẩu thành công!', 'success'); e.target.reset(); }
+                else { const d = await res.json(); showAlert(d.error || 'Lỗi đổi mật khẩu', 'danger'); }
+            } catch (err) { showAlert('Lỗi kết nối', 'danger'); }
+        });
 
-    // Đổi Mật Khẩu
-    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const oldPassword = document.getElementById('oldPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (newPassword !== confirmPassword) {
-            showAlert('Xác nhận mật khẩu không khớp!', 'danger');
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/profile/password', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({ oldPassword, newPassword })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                showAlert(data.message, 'success');
-                document.getElementById('passwordForm').reset();
-            } else {
-                showAlert(data.error || 'Đổi mật khẩu thất bại', 'danger');
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('Lỗi kết nối máy chủ', 'danger');
-        }
-    });
-
-    // Chạy khi load trang
-    loadProfile();
-</script>
+        loadProfile();
+    </script>
 </main>
 </body>
 </html>

@@ -5,7 +5,6 @@
 </head>
 <body>
 <main>
-<div th:replace="~{fragments/navbar_customer :: navbar}"></div>
 
 <div class="container mb-5" style="max-width: 800px;">
 
@@ -176,7 +175,19 @@
                                 <div class="d-flex gap-2">
                                     ${isActive ? `<a href="/customer/tracking?orderId=${o.id}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">Theo dõi</a>` : ''}
                                     ${isPending ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
-                                    ${isCompleted ? `<button class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" onclick="openReview(${o.id}, '${o.restaurantName.replace(/'/g,"&#39;")}')"><i class="bi bi-star me-1"></i>Đánh giá</button>` : ''}
+                                    ${isCompleted ? (o.isReviewed ? 
+                                        `<div class="text-end">
+                                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-bold" 
+                                                  style="font-size: 0.8rem; cursor: pointer;" 
+                                                  onclick="viewReview(${o.id})"
+                                                  title="Bấm để xem lại nhận xét">
+                                                <i class="bi bi-star-fill text-warning me-1"></i>${o.reviewRating}.0
+                                            </span>
+                                         </div>` : 
+                                        `<button class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold" onclick="openReview(${o.id}, '${o.restaurantName.replace(/'/g,"&#39;")}')">
+                                            <i class="bi bi-star me-1"></i>Đánh giá
+                                         </button>`
+                                    ) : ''}
                                     ${!isActive ? `<button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="reorder(${o.id})"><i class="bi bi-arrow-repeat me-1"></i>Đặt lại</button>` : ''}
                                     <button class="btn btn-sm btn-outline-primary rounded-pill px-2 fw-semibold"
                                             title="Chat với nhà hàng"
@@ -214,10 +225,36 @@
     function openReview(orderId, restaurantName) {
         document.getElementById('reviewOrderId').value = orderId;
         document.getElementById('reviewRestaurantName').textContent = restaurantName;
+        document.querySelector('#reviewModal .modal-title').innerHTML = '<i class="bi bi-star-fill text-warning me-2"></i>Đánh giá đơn hàng';
         document.getElementById('reviewComment').value = '';
+        document.getElementById('reviewComment').readOnly = false;
+        document.getElementById('btnSubmitReview').classList.remove('d-none');
         document.getElementById('reviewAlert').className = 'alert d-none';
         selectedRating = 0;
         selectStar(0);
+        
+        // Kích hoạt lại sự kiện click cho sao
+        document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'auto');
+        
+        reviewModalInstance.show();
+    }
+
+    function viewReview(orderId) {
+        const order = allOrders.find(o => o.id === orderId);
+        if (!order || !order.isReviewed) return;
+
+        document.getElementById('reviewRestaurantName').textContent = order.restaurantName;
+        document.querySelector('#reviewModal .modal-title').innerHTML = '<i class="bi bi-eye-fill text-primary me-2"></i>Xem lại đánh giá';
+        document.getElementById('reviewComment').value = order.reviewComment || 'Không có nhận xét';
+        document.getElementById('reviewComment').readOnly = true;
+        document.getElementById('btnSubmitReview').classList.add('d-none');
+        document.getElementById('reviewAlert').className = 'alert d-none';
+        
+        selectStar(order.reviewRating);
+        
+        // Vô hiệu hóa sự kiện click cho sao khi ở chế độ xem
+        document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'none');
+        
         reviewModalInstance.show();
     }
 

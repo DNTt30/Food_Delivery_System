@@ -1,237 +1,300 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<nav th:fragment="navbar" class="navbar navbar-expand-lg sticky-top sticky-navbar" id="customerNavbar">
+    <style>
+        :root {
+            --nav-bg: rgba(255, 255, 255, 0.95);
+            --nav-accent: #FF4B2B;
+            --nav-text: #1f2937;
+        }
 
-<nav th:fragment="navbar" class="navbar navbar-expand-lg bg-white sticky-top" id="customerNavbar"
-     style="border-bottom: 3px solid #ef4444; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
-  <div class="container">
+        .sticky-navbar {
+            background: var(--nav-bg) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            padding: 12px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            position: relative;
+            z-index: 1050;
+        }
 
-    <!-- Brand -->
-    <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/customer/home">
-      <div class="d-flex align-items-center justify-content-center rounded-3"
-           style="width:38px;height:38px;background:linear-gradient(135deg,#ef4444,#dc2626);">
-        <i class="bi bi-motorcycle text-white" style="font-size:1.1rem;"></i>
-      </div>
-      <div class="lh-1">
-        <div class="fw-black text-dark" style="font-size:1.05rem;letter-spacing:-0.5px;">Food<span class="text-danger">Delivery</span></div>
-        <div class="text-muted" style="font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;">Giao hàng tận nơi</div>
-      </div>
-    </a>
+        .sticky-navbar::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #FF4B2B, #FF416C);
+            opacity: 0.9;
+        }
 
-    <!-- Hamburger -->
-    <button class="navbar-toggler border-0 shadow-none ms-auto me-2" type="button"
-            data-bs-toggle="collapse" data-bs-target="#navbarCustomer">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+        .navbar-brand .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
 
-    <div class="collapse navbar-collapse" id="navbarCustomer">
+        .nav-search-wrapper {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 4px 6px;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+            max-width: 450px;
+            width: 100%;
+        }
 
-      <!-- Search bar -->
-      <div class="mx-auto my-2 my-lg-0" style="max-width:420px;width:100%;">
-        <div class="input-group" style="border-radius:30px;overflow:hidden;border:1.5px solid #e5e7eb;background:#f9fafb;">
-          <span class="input-group-text border-0 bg-transparent ps-3">
-            <i class="bi bi-search text-muted small"></i>
-          </span>
-          <input type="text" id="navSearchInput"
-                 class="form-control border-0 bg-transparent shadow-none py-2"
-                 placeholder="Tìm nhà hàng, món ăn..."
-                 style="font-size:0.875rem;"
-                 onkeydown="if(event.key==='Enter')navSearch()">
-          <button class="btn btn-danger px-3 border-0 m-1 rounded-pill fw-semibold"
-                  style="font-size:0.8rem;" onclick="navSearch()">Tìm</button>
+        .nav-search-wrapper:focus-within {
+            background: white;
+            border-color: var(--nav-accent);
+            box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.08);
+        }
+
+        .nav-action-btn {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.2s;
+            color: #374151;
+            position: relative;
+            background: #f9fafb;
+        }
+
+        .nav-action-btn:hover {
+            background: #f3f4f6;
+            color: var(--nav-accent);
+            transform: translateY(-2px);
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--nav-accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-profile-btn {
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #f9fafb;
+            transition: all 0.2s;
+        }
+
+        .user-profile-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .avatar-ring {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #FF4B2B, #FF416C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .dropdown-menu-premium {
+            border: 1px solid #f3f4f6;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 10px;
+            min-width: 220px;
+        }
+
+        .dropdown-item-premium {
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #4b5563;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item-premium:hover {
+            background: #fef2f2;
+            color: var(--nav-accent);
+        }
+    </style>
+    <div class="container">
+        <!-- Brand Logo -->
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="/customer/home">
+            <div class="brand-logo">
+                <i class="bi bi-lightning-fill text-white"></i>
+            </div>
+            <span class="fw-bold text-dark fs-5">Food<span style="color: var(--nav-accent);">Delivery</span></span>
+        </a>
+
+        <!-- Hamburger -->
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCustomer">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarCustomer">
+            <!-- Search Bar -->
+            <div class="mx-auto my-3 my-lg-0 nav-search-wrapper d-flex align-items-center">
+                <i class="bi bi-search text-muted ms-2 small"></i>
+                <input type="text" id="navSearchInput" 
+                       class="form-control border-0 bg-transparent shadow-none small" 
+                       placeholder="Bạn muốn ăn gì?"
+                       onkeydown="if(event.key==='Enter')navSearch()">
+                <button class="btn btn-sm text-white px-3 fw-bold" 
+                        style="background: var(--nav-accent); border-radius: 8px;" 
+                        onclick="navSearch()">Tìm</button>
+            </div>
+
+            <!-- Action Buttons -->
+            <ul class="navbar-nav ms-auto align-items-center gap-3">
+                <li class="nav-item">
+                    <a class="nav-action-btn text-decoration-none" href="/customer/history">
+                        <i class="bi bi-receipt"></i>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-action-btn text-decoration-none" href="javascript:void(0)" onclick="goToCart(event)">
+                        <i class="bi bi-bag"></i>
+                        <span id="cartBadge" class="nav-badge d-none">0</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <div th:replace="~{fragments/notification_bell :: bell}"></div>
+                </li>
+
+                <!-- User Profile -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link user-profile-btn d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                        <div id="navAvatarCircle" class="avatar-ring">U</div>
+                        <span class="fw-bold text-dark small d-none d-lg-block" id="navUserName">Khách</span>
+                        <i class="bi bi-chevron-down text-muted small d-none d-lg-block"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-premium shadow">
+                        <li class="px-3 py-2 mb-1">
+                            <small class="text-muted d-block">Tài khoản,</small>
+                            <span class="fw-bold" id="navDropdownName">Người dùng</span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item dropdown-item-premium" href="/common/profile"><i class="bi bi-person"></i> Hồ sơ</a></li>
+                        <li><a class="dropdown-item dropdown-item-premium" href="/customer/history"><i class="bi bi-clock-history"></i> Đơn hàng</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button class="dropdown-item dropdown-item-premium text-danger fw-bold" 
+                                    onclick="localStorage.clear(); window.location.href='/';">
+                                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                            </button>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </div>
-      </div>
-
-      <!-- Right actions -->
-      <ul class="navbar-nav ms-auto align-items-center gap-1 ms-lg-3">
-
-        <!-- Đơn hàng -->
-        <li class="nav-item">
-          <a class="nav-link px-2 d-flex align-items-center gap-1 fw-semibold rounded-3"
-             href="/customer/history"
-             style="font-size:0.875rem;color:#374151;"
-             id="navLinkOrders">
-            <i class="bi bi-receipt-cutoff text-danger"></i>
-            <span class="d-none d-lg-inline">Đơn hàng</span>
-          </a>
-        </li>
-
-        <!-- Giỏ hàng -->
-        <li class="nav-item">
-          <a class="nav-link px-2 position-relative" href="javascript:void(0)" onclick="goToCart(event)">
-            <div class="d-flex align-items-center justify-content-center rounded-3"
-                 style="width:38px;height:38px;background:#fef2f2;transition:background 0.2s;"
-                 onmouseenter="this.style.background='#fee2e2'"
-                 onmouseleave="this.style.background='#fef2f2'">
-              <i class="bi bi-bag text-danger" style="font-size:1.1rem;"></i>
-            </div>
-            <span id="cartBadge"
-                  class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger d-none"
-                  style="font-size:0.6rem;padding:0.3em 0.5em;min-width:18px;">0</span>
-          </a>
-        </li>
-
-        <!-- Thông báo -->
-        <li class="nav-item d-flex align-items-center">
-          <div th:replace="~{fragments/notification_bell :: bell}"></div>
-        </li>
-
-        <!-- Divider -->
-        <li class="nav-item d-none d-lg-block">
-          <span class="text-muted" style="padding:0 4px;">|</span>
-        </li>
-
-        <!-- User avatar dropdown -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-1 rounded-3"
-             href="#" data-bs-toggle="dropdown" style="text-decoration:none;">
-            <div id="navAvatarCircle"
-                 class="d-flex align-items-center justify-content-center rounded-circle fw-bold text-white"
-                 style="width:36px;height:36px;background:linear-gradient(135deg,#ef4444,#7c3aed);font-size:0.875rem;flex-shrink:0;">
-              U
-            </div>
-            <div class="d-none d-lg-block lh-1 text-start">
-              <div class="fw-semibold text-dark" id="navUserName" style="font-size:0.8rem;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Khách</div>
-              <div class="text-muted" style="font-size:0.65rem;">Tài khoản</div>
-            </div>
-            <i class="bi bi-chevron-down text-muted d-none d-lg-block" style="font-size:0.65rem;"></i>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 mt-1"
-              style="border-radius:14px;min-width:200px;">
-            <!-- User info header -->
-            <li>
-              <div class="px-3 py-2 mb-1 rounded-3" style="background:#fef2f2;">
-                <div class="fw-bold text-dark small" id="navDropdownName">Khách hàng</div>
-                <div class="text-danger" style="font-size:0.7rem;">Khách hàng</div>
-              </div>
-            </li>
-            <li>
-              <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2" href="/common/profile">
-                <div class="rounded-2 d-flex align-items-center justify-content-center"
-                     style="width:28px;height:28px;background:#eff6ff;">
-                  <i class="bi bi-person text-primary small"></i>
-                </div>
-                <span class="small">Hồ sơ cá nhân</span>
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2" href="/customer/history">
-                <div class="rounded-2 d-flex align-items-center justify-content-center"
-                     style="width:28px;height:28px;background:#f0fdf4;">
-                  <i class="bi bi-clock-history text-success small"></i>
-                </div>
-                <span class="small">Lịch sử đơn hàng</span>
-              </a>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li>
-              <button class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-danger"
-                      onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
-                <div class="rounded-2 d-flex align-items-center justify-content-center"
-                     style="width:28px;height:28px;background:#fef2f2;">
-                  <i class="bi bi-box-arrow-right text-danger small"></i>
-                </div>
-                <span class="small fw-semibold">Đăng xuất</span>
-              </button>
-            </li>
-          </ul>
-        </li>
-      </ul>
     </div>
-  </div>
 </nav>
 
 <script>
 (function () {
-  /* ── Cart badge ── */
-  function updateCartBadge() {
-    let total = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('fd_cart_')) {
-        try { total += Object.values(JSON.parse(localStorage.getItem(k)) || {}).reduce((s, it) => s + (it.quantity || 0), 0); } catch {}
-      }
+    function updateCartBadge() {
+        let total = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('fd_cart_')) {
+                try { total += Object.values(JSON.parse(localStorage.getItem(k)) || {}).reduce((s, it) => s + (it.quantity || 0), 0); } catch {}
+            }
+        }
+        const badge = document.getElementById('cartBadge');
+        if (!badge) return;
+        if (total > 0) { 
+            badge.textContent = total > 99 ? '99+' : total; 
+            badge.classList.remove('d-none'); 
+        } else {
+            badge.classList.add('d-none');
+        }
     }
-    const badge = document.getElementById('cartBadge');
-    if (!badge) return;
-    if (total > 0) { badge.textContent = total > 99 ? '99+' : total; badge.classList.remove('d-none'); }
-    else badge.classList.add('d-none');
-  }
 
-  /* ── User info ── */
-  function applyUserInfo(username) {
-    if (!username) return;
-    var initial = username.charAt(0).toUpperCase();
-    var el    = document.getElementById('navAvatarCircle');
-    var nameEl = document.getElementById('navUserName');
-    var dropEl = document.getElementById('navDropdownName');
-    if (el)     { el.textContent = initial; }
-    if (nameEl) { nameEl.textContent = username; }
-    if (dropEl) { dropEl.textContent = username; }
-  }
-  function updateNavUser() {
-    var token    = localStorage.getItem('jwt_token');
-    var username = localStorage.getItem('username') || '';
-    if (username) { applyUserInfo(username); return; }
-    /* Fallback: nếu có token nhưng chưa có username → fetch từ API */
-    if (token) {
-      fetch('/api/profile/me', { headers: { 'Authorization': 'Bearer ' + token } })
-        .then(function(r) { return r.ok ? r.json() : null; })
-        .then(function(d) {
-          if (!d) return;
-          var name = d.fullName || d.username || '';
-          if (name) {
-            localStorage.setItem('username', name);
-            if (d.role) localStorage.setItem('role', d.role);
-            applyUserInfo(name);
-          }
-        }).catch(function() {});
+    function applyUserInfo(username) {
+        if (!username) return;
+        const initial = username.charAt(0).toUpperCase();
+        const avatar = document.getElementById('navAvatarCircle');
+        const nameLabel = document.getElementById('navUserName');
+        const dropName = document.getElementById('navDropdownName');
+        if (avatar) avatar.textContent = initial;
+        if (nameLabel) nameLabel.textContent = username;
+        if (dropName) dropName.textContent = username;
     }
-  }
 
-  /* ── Active link ── */
-  function highlightActive() {
-    const path = window.location.pathname;
-    document.querySelectorAll('#customerNavbar .nav-link').forEach(function (a) {
-      if (a.getAttribute('href') === path) {
-        a.style.color = '#ef4444';
-        a.classList.add('fw-bold');
-      }
+    function updateNavUser() {
+        const token = localStorage.getItem('jwt_token');
+        const username = localStorage.getItem('username');
+        if (username) {
+            applyUserInfo(username);
+        } else if (token) {
+            fetch('/api/profile/me', { headers: { 'Authorization': 'Bearer ' + token } })
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                    if (d) {
+                        const name = d.fullName || d.username;
+                        localStorage.setItem('username', name);
+                        applyUserInfo(name);
+                    }
+                }).catch(() => {});
+        }
+    }
+
+    window.navSearch = function () {
+        const q = document.getElementById('navSearchInput')?.value.trim();
+        if (q) window.location.href = '/customer/home?search=' + encodeURIComponent(q);
+    };
+
+    window.goToCart = function (e) {
+        e?.preventDefault();
+        let found = null;
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('fd_cart_')) {
+                try {
+                    const c = JSON.parse(localStorage.getItem(k));
+                    if (Object.values(c || {}).some(it => (it.quantity || 0) > 0)) { found = k; break; }
+                } catch {}
+            }
+        }
+        window.location.href = found ? '/customer/cart?restaurantId=' + found.replace('fd_cart_', '') : '/customer/home';
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateCartBadge();
+        updateNavUser();
+        
+        // Change navbar on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('customerNavbar');
+            if (window.scrollY > 20) {
+                nav.style.padding = '8px 0';
+                nav.style.boxShadow = '0 10px 30px rgba(0,0,0,0.05)';
+            } else {
+                nav.style.padding = '12px 0';
+                nav.style.boxShadow = 'none';
+            }
+        });
     });
-  }
-
-  /* ── Go to cart ── */
-  window.goToCart = function (e) {
-    e && e.preventDefault();
-    let found = null;
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('fd_cart_')) {
-        try {
-          const c = JSON.parse(localStorage.getItem(k));
-          if (Object.values(c || {}).some(it => (it.quantity || 0) > 0)) { found = k; break; }
-        } catch {}
-      }
-    }
-    window.location.href = found
-      ? '/customer/cart?restaurantId=' + found.replace('fd_cart_', '')
-      : '/customer/home';
-  };
-
-  /* ── Search ── */
-  window.navSearch = function () {
-    const q = (document.getElementById('navSearchInput') || {}).value;
-    if (q && q.trim()) window.location.href = '/customer/home?search=' + encodeURIComponent(q.trim());
-  };
-
-  /* ── Logout ── */
-  window.customerLogout = function () { localStorage.clear(); window.location.href = '/'; };
-
-  document.addEventListener('DOMContentLoaded', function () {
-    updateCartBadge();
-    updateNavUser();
-    highlightActive();
-  });
-  window.addEventListener('storage', updateCartBadge);
+    window.addEventListener('storage', updateCartBadge);
 })();
 </script>
 

@@ -128,26 +128,6 @@
     </div>
 </div>
 
-<!-- Page Header -->
-<div class="page-header d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
-    <div>
-        <h3 class="mb-1">📊 Tổng Quan Hôm Nay</h3>
-        <p class="subtitle mb-0" id="currentDate">Đang tải dữ liệu...</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-        <!-- Toggle mở/đóng cửa -->
-        <button id="toggleStatusBtn" class="btn quick-action-btn px-4 fw-bold" onclick="toggleRestaurantStatus()" style="min-width:160px;">
-            <span id="toggleStatusIcon"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i></span>
-            <span id="toggleStatusLabel">Đang tải...</span>
-        </button>
-        <a href="/restaurant/orders" class="btn btn-warning quick-action-btn text-dark">
-            <i class="bi bi-receipt"></i> Xử lý đơn
-        </a>
-        <button class="btn btn-outline-secondary quick-action-btn" onclick="loadDashboard()">
-            <i class="bi bi-arrow-clockwise"></i> Làm mới
-        </button>
-    </div>
-</div>
 
 <!-- Auth Error Banner (hidden by default) -->
 <div id="authErrorBanner" class="alert alert-warning alert-no-token d-none text-center">
@@ -192,6 +172,22 @@
 
 <!-- Dashboard Content -->
 <div id="dashboardContent" class="d-none">
+    
+    <!-- Top Row: Title & Status -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold mb-0">📊 Tổng Quan Hôm Nay</h4>
+            <small class="text-muted" id="currentDate">Đang tải...</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button id="toggleStatusBtn" class="btn btn-sm px-3 fw-bold rounded-pill" onclick="toggleRestaurantStatus()">
+                <span id="toggleStatusLabel">Đang tải...</span>
+            </button>
+            <button class="btn btn-sm btn-light border shadow-sm px-3 rounded-pill" onclick="loadDashboard()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- Stats Cards -->
     <div class="row g-4 mb-4">
@@ -280,33 +276,6 @@
         </div>
     </div>
 
-    <!-- Quick Action Shortcuts -->
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="card chart-card p-4">
-                <h6 class="section-title mb-3">
-                    <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Truy Cập Nhanh
-                </h6>
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="/restaurant/orders" class="btn btn-danger quick-action-btn text-white px-4">
-                        <i class="bi bi-receipt"></i> Quản lý Đơn Hàng
-                    </a>
-                    <a href="/restaurant/menu" class="btn btn-success quick-action-btn text-white px-4">
-                        <i class="bi bi-card-list"></i> Quản lý Thực Đơn
-                    </a>
-                    <a href="/restaurant/vouchers" class="btn btn-warning quick-action-btn text-dark px-4">
-                        <i class="bi bi-tag-fill"></i> Quản lý Voucher
-                    </a>
-                    <a href="/restaurant/reviews" class="btn btn-outline-warning quick-action-btn px-4">
-                        <i class="bi bi-star-fill"></i> Xem Đánh Giá
-                    </a>
-                    <a href="/common/profile" class="btn btn-outline-secondary quick-action-btn px-4">
-                        <i class="bi bi-person-circle"></i> Hồ Sơ Nhà Hàng
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 
 </div>
 

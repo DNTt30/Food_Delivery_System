@@ -26,16 +26,6 @@
     .filter-btn.active { background:#212529!important;color:#fff!important;border-color:#212529!important; }
 </style>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-    <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-star-fill me-2" style="color:#f59e0b;"></i>Đánh giá của khách hàng</h4>
-        <small class="text-muted">Theo dõi phản hồi và cải thiện chất lượng dịch vụ</small>
-    </div>
-    <button class="btn btn-outline-secondary rounded-pill px-3 btn-sm" onclick="loadReviews()">
-        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
-    </button>
-</div>
 
 <!-- Loading -->
 <div id="loading" class="text-center py-5">
@@ -66,13 +56,18 @@
     </div>
 
     <!-- Filter by stars -->
-    <div class="d-flex gap-2 mb-4 flex-wrap align-items-center">
-        <span class="text-muted small fw-semibold me-1">Lọc:</span>
-        <button class="btn btn-outline-secondary filter-btn active" data-stars="0" onclick="filterReviews(0, this)">Tất cả</button>
-        <button class="btn btn-outline-warning filter-btn" data-stars="5" onclick="filterReviews(5, this)">⭐⭐⭐⭐⭐ 5 sao</button>
-        <button class="btn btn-outline-success filter-btn" data-stars="4" onclick="filterReviews(4, this)">⭐⭐⭐⭐ 4 sao</button>
-        <button class="btn btn-outline-info filter-btn" data-stars="3" onclick="filterReviews(3, this)">⭐⭐⭐ 3 sao</button>
-        <button class="btn btn-outline-danger filter-btn" data-stars="2" onclick="filterReviews(2, this)">⭐⭐ ≤2 sao</button>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span class="text-muted small fw-semibold me-1">Lọc:</span>
+            <button class="btn btn-outline-secondary filter-btn active" data-stars="0" onclick="filterReviews(0, this)">Tất cả</button>
+            <button class="btn btn-outline-warning filter-btn" data-stars="5" onclick="filterReviews(5, this)">⭐⭐⭐⭐⭐ 5 sao</button>
+            <button class="btn btn-outline-success filter-btn" data-stars="4" onclick="filterReviews(4, this)">⭐⭐⭐⭐ 4 sao</button>
+            <button class="btn btn-outline-info filter-btn" data-stars="3" onclick="filterReviews(3, this)">⭐⭐⭐ 3 sao</button>
+            <button class="btn btn-outline-danger filter-btn" data-stars="2" onclick="filterReviews(2, this)">⭐⭐ ≤2 sao</button>
+        </div>
+        <button class="btn btn-light border rounded-pill px-3 shadow-sm btn-sm" onclick="loadReviews()" title="Cập nhật">
+            <i class="bi bi-arrow-clockwise"></i> Làm mới
+        </button>
     </div>
 
     <!-- Reviews List -->

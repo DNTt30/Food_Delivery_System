@@ -53,6 +53,8 @@
     </style>
 </head>
 <body>
+    <div th:replace="~{fragments/navbar_customer :: navbar}"></div>
+
     <!-- Main Content injected here -->
     <main class="py-4 min-vh-100">
         <th:block th:replace="${content}"></th:block>
