@@ -1,570 +1,123 @@
 <!DOCTYPE html>
-<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/customer_layout :: layout(~{::head}, ~{::main})}">
 <head>
-    <title>Theo dõi đơn hàng - Food Delivery</title>
+    <title>Theo dõi đơn hàng - Premium Delivery</title>
+    <!-- Leaflet Core -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" th:href="@{/css/map-premium.css}" />
 </head>
 <body>
-<main>
 
-<div class="container mb-5" style="max-width: 700px;">
+    <main>
+        <div class="container mt-5 mb-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header bg-white p-4 border-0">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <a href="/customer/orders" class="btn btn-outline-secondary btn-sm rounded-circle me-3">
+                                        <i class="bi bi-arrow-left"></i>
+                                    </a>
+                                    <div>
+                                        <h4 class="fw-bold mb-0">Theo dõi đơn hàng #<span th:text="${order.id}">000</span></h4>
+                                        <span class="text-muted small">Nhà hàng: <span th:text="${order.restaurant.restaurantName}">The Coffee House</span></span>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-primary rounded-pill px-3 py-2 mb-1" id="orderPhaseBadge" th:text="${order.status}">ĐANG GIAO</span>
+                                    <div id="driverNameLabel" class="small fw-bold text-muted" th:text="${order.driver != null ? order.driver.user.fullName : 'Đang tìm tài xế...'}">Tài xế</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body p-0 position-relative">
+                            <div id="map-container" style="height: 550px;">
+                                <div id="tracking-map" style="width: 100%; height: 100%;">
+                                    <div class="d-flex h-100 align-items-center justify-content-center bg-light text-muted">
+                                        <div class="text-center">
+                                            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                                            <p class="small mb-0">Đang khởi tạo bản đồ...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-white rounded-circle shadow position-absolute top-0 end-0 m-3" 
+                                        style="z-index: 1000; width: 45px; height: 45px; border: 1px solid #ddd;" 
+                                        onclick="MapTracker.focusOnDriver()" title="Định vị tài xế">
+                                    <i class="bi bi-crosshair text-primary"></i>
+                                </button>
 
-    <div class="d-flex align-items-center gap-3 mb-4">
-        <a href="/customer/home" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-            <i class="bi bi-house me-1"></i>Trang chủ
-        </a>
-        <h4 class="fw-bold mb-0"><i class="bi bi-pin-map-fill text-danger me-2"></i>Theo dõi đơn hàng</h4>
-    </div>
-
-    <!-- Loading -->
-    <div id="loading" class="text-center py-5">
-        <div class="spinner-border text-danger"></div>
-        <p class="text-muted mt-2">Đang tải thông tin...</p>
-    </div>
-
-    <!-- Order not found -->
-    <div id="notFound" class="text-center py-5 d-none">
-        <div style="font-size:4rem">😕</div>
-        <h5 class="fw-bold">Không tìm thấy đơn hàng</h5>
-        <a href="/customer/history" class="btn btn-outline-danger rounded-pill mt-2">Xem lịch sử đơn hàng</a>
-    </div>
-
-    <!-- Order Detail -->
-    <div id="orderDetail" class="d-none">
-
-        <!-- Status Banner -->
-        <div id="statusBanner" class="rounded-4 p-4 mb-4 text-white shadow-sm">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1" id="statusTitle"></h5>
-                    <p class="mb-0 opacity-75 small" id="statusSubtitle"></p>
-                </div>
-                <div style="font-size:3rem" id="statusEmoji"></div>
-            </div>
-        </div>
-
-        <!-- Progress Timeline -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-            <h6 class="fw-bold mb-4"><i class="bi bi-diagram-3 me-2 text-danger"></i>Trạng thái đơn hàng</h6>
-            <div class="position-relative" id="timeline"></div>
-        </div>
-
-        <!-- Order Info -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-shop me-2 text-danger"></i>Thông tin đơn hàng</h6>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small">Nhà hàng</span>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="fw-semibold small" id="orderRestaurant"></span>
-                    <button onclick="openRestaurantChat()" class="btn btn-sm btn-outline-warning rounded-pill px-2 py-0" style="font-size: 0.75rem;" title="Nhắn tin cho nhà hàng">
-                         <i class="bi bi-chat-dots-fill"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted small">Mã đơn hàng</span>
-                <span class="fw-semibold small text-muted" id="orderId"></span>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted small">Địa chỉ giao</span>
-                <span class="fw-semibold small text-end" style="max-width:60%" id="orderAddress"></span>
-            </div>
-            <div class="d-flex justify-content-between">
-                <span class="text-muted small">Tổng tiền</span>
-                <span class="fw-bold text-danger" id="orderTotal"></span>
-            </div>
-        </div>
-
-        <!-- Items -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-            <h6 class="fw-bold mb-3"><i class="bi bi-bag me-2"></i>Các món đã đặt</h6>
-            <div id="orderItems"></div>
-        </div>
-
-        <!-- Driver Info + Direct Chat -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 d-none" id="driverCard">
-            <h6 class="fw-bold mb-3"><i class="bi bi-bicycle text-success me-2"></i>Thông tin tài xế</h6>
-            <div class="d-flex align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                         style="width:50px;height:50px;">
-                        <i class="bi bi-person-fill text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-0" id="driverName"></p>
-                        <a id="driverPhone" class="text-muted small text-decoration-none"></a>
+                                <div class="map-overlay-card d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-muted small">Thời gian dự kiến</div>
+                                        <h5 class="fw-bold mb-0 text-primary" id="etaLabel" 
+                                            th:text="${order.estimatedTimeOfArrival != null ? #temporals.format(order.estimatedTimeOfArrival, 'HH:mm') : '--:--'}">--:--</h5>
+                                    </div>
+                                    <div class="vr mx-3"></div>
+                                    <div>
+                                        <div class="text-muted small">Khoảng cách</div>
+                                        <h5 class="fw-bold mb-0" th:text="${order.distance != null ? order.distance + ' km' : '--'}">0 km</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <!-- Nút nhắn tin trực tiếp với tài xế -->
-                <button id="chatDriverBtn"
-                        onclick="openDriverChat()"
-                        class="btn btn-success rounded-pill px-3 fw-semibold position-relative"
-                        style="white-space:nowrap;">
-                    <i class="bi bi-chat-dots-fill me-1"></i>Nhắn tin
-                    <span id="driverChatBadge"
-                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                          style="display:none;font-size:.65rem;">!</span>
-                </button>
             </div>
         </div>
 
-        <!-- Restaurant Chat shortcut -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 d-none mb-4" id="restaurantChatCard">
-            <h6 class="fw-bold mb-3"><i class="bi bi-shop text-warning me-2"></i>Liên hệ nhà hàng</h6>
-            <div class="d-flex align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
-                         style="width:50px;height:50px;">
-                        <i class="bi bi-shop text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <p class="fw-bold mb-0" id="chatRestaurantName"></p>
-                        <p class="text-muted small mb-0">Câu hỏi về món ăn? Nhắn tin ngay!</p>
-                    </div>
-                </div>
-                <button onclick="openRestaurantChat()"
-                        class="btn btn-warning text-white rounded-pill px-3 fw-semibold"
-                        style="white-space:nowrap; background: #f59e0b; border:none;">
-                    <i class="bi bi-chat-dots-fill me-1"></i>Nhắn tin
-                </button>
-            </div>
-        </div>
+        <!-- Scripts bản đồ -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        <script th:src="@{/js/map-tracking.js}"></script>
+        <script th:src="@{/js/websocket-manager.js}"></script>
+        <script th:src="@{/js/tracking-service.js}"></script>
 
-        <!-- Cancel Button (only for PENDING orders) -->
-        <div id="cancelSection" class="d-none mt-3">
-            <div class="alert alert-warning rounded-4 d-flex justify-content-between align-items-center">
-                <small><i class="bi bi-info-circle me-2"></i>Bạn có thể hủy đơn khi nhà hàng chưa xác nhận.</small>
-                <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="cancelOrder()">Hủy đơn</button>
-            </div>
-        </div>
+        <script th:inline="javascript">
+            document.addEventListener("DOMContentLoaded", function() {
+                // Chỉ lấy các giá trị số đơn giản, không lấy cả đối tượng Order phức tạp
+                const orderId = /*[[${order.id}]]*/ 0;
+                let rLat = parseFloat(/*[[${order.restaurantLat}]]*/);
+                let rLng = parseFloat(/*[[${order.restaurantLng}]]*/);
+                let cLat = parseFloat(/*[[${order.deliveryLat}]]*/);
+                let cLng = parseFloat(/*[[${order.deliveryLng}]]*/);
+                
+                const mapId = 'tracking-map';
+                const container = document.getElementById(mapId);
 
-        <!-- Refresh -->
-        <div class="text-center mt-4">
-            <button class="btn btn-outline-secondary rounded-pill px-4" onclick="loadOrder()">
-                <i class="bi bi-arrow-clockwise me-1"></i>Làm mới trạng thái
-            </button>
-            <a href="/customer/history" class="btn btn-link text-muted ms-2">Xem tất cả đơn hàng</a>
-        </div>
-    </div>
-</div>
-
-
-<style>
-.timeline-step { display: flex; gap: 16px; margin-bottom: 24px; position: relative; }
-.timeline-step:not(:last-child)::before {
-    content: ''; position: absolute; left: 19px; top: 40px;
-    width: 2px; height: calc(100% - 8px);
-    background: #dee2e6;
-}
-.timeline-step.done::before { background: #198754; }
-.step-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 2px solid #dee2e6; background: #fff; z-index: 1; }
-.timeline-step.done .step-icon { background: #198754; border-color: #198754; color: white; }
-.timeline-step.current .step-icon { background: #0d6efd; border-color: #0d6efd; color: white; animation: pulse-ring 1.5s infinite; }
-.timeline-step.cancelled .step-icon { background: #dc3545; border-color: #dc3545; color: white; }
-@keyframes pulse-ring {
-    0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
-}
-</style>
-
-<script>
-    const token = localStorage.getItem('jwt_token');
-    if (!token) window.location.href = '/common/auth';
-
-    const urlParams = new URLSearchParams(window.location.search);
-    let orderId = urlParams.get('orderId');
-    let currentOrder = null;
-
-    const STATUS_STEPS = [
-        { key: 'PENDING', icon: 'bi-clock-fill', label: 'Đang chờ xác nhận', sub: 'Nhà hàng đang xem xét đơn' },
-        { key: 'PREPARING', icon: 'bi-fire', label: 'Đang chuẩn bị', sub: 'Nhà hàng đang nấu món của bạn' },
-        { key: 'DELIVERING', icon: 'bi-bicycle', label: 'Đang giao hàng', sub: 'Tài xế đang trên đường đến' },
-        { key: 'COMPLETED', icon: 'bi-check-circle-fill', label: 'Đã giao thành công', sub: 'Chúc bạn ngon miệng!' },
-    ];
-
-    const STATUS_CONFIG = {
-        PENDING: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', title: 'Đang chờ xác nhận', subtitle: 'Nhà hàng đang xem xét đơn của bạn...', emoji: '⏳' },
-        PREPARING: { bg: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', title: 'Đang chuẩn bị món', subtitle: 'Các đầu bếp đang nấu cho bạn!', emoji: '👨‍🍳' },
-        DELIVERING: { bg: 'linear-gradient(135deg, #10b981, #059669)', title: 'Đang giao hàng', subtitle: 'Tài xế đang trên đường đến!', emoji: '🛵' },
-        COMPLETED: { bg: 'linear-gradient(135deg, #22c55e, #16a34a)', title: 'Giao hàng thành công!', subtitle: 'Chúc bạn ngon miệng! 🎉', emoji: '✅' },
-        CANCELLED: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', title: 'Đơn hàng đã bị hủy', subtitle: 'Đơn hàng này đã bị hủy.', emoji: '❌' }
-    };
-
-    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
-
-    async function loadOrder() {
-        if (!orderId) {
-            // Redirect to history if no orderId
-            window.location.href = '/customer/history';
-            return;
-        }
-
-        document.getElementById('loading').classList.remove('d-none');
-        document.getElementById('orderDetail').classList.add('d-none');
-        document.getElementById('notFound').classList.add('d-none');
-
-        try {
-            const res = await fetch(`/api/customer/orders/${orderId}`, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-
-            if (res.status === 401) { window.location.href = '/common/auth'; return; }
-
-            document.getElementById('loading').classList.add('d-none');
-
-            if (!res.ok) {
-                document.getElementById('notFound').classList.remove('d-none');
-                return;
-            }
-
-            currentOrder = await res.json();
-            renderOrder(currentOrder);
-            document.getElementById('orderDetail').classList.remove('d-none');
-
-        } catch {
-            document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
-        }
-    }
-
-    // Polling dự phòng mỗi 30s nếu WebSocket gặp sự cố
-    window.fallbackPolling = setInterval(() => {
-        if (currentOrder && (currentOrder.status === 'COMPLETED' || currentOrder.status === 'CANCELLED')) {
-            clearInterval(window.fallbackPolling);
-            return;
-        }
-        loadOrder();
-    }, 30000);
-
-    function renderOrder(order) {
-        const config = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
-        const banner = document.getElementById('statusBanner');
-        banner.style.background = config.bg;
-        document.getElementById('statusTitle').textContent = config.title;
-        document.getElementById('statusSubtitle').textContent = config.subtitle;
-        document.getElementById('statusEmoji').textContent = config.emoji;
-
-        document.getElementById('orderRestaurant').textContent = order.restaurantName;
-        document.getElementById('orderId').textContent = '#' + order.id;
-        document.getElementById('orderAddress').textContent = order.deliveryAddress;
-        document.getElementById('orderTotal').textContent = formatVND(order.totalAmount);
-
-        // Items
-        const itemsEl = document.getElementById('orderItems');
-        itemsEl.innerHTML = (order.items || []).map(i =>
-            `<div class="d-flex justify-content-between py-1 border-bottom">
-                <span class="small">${i.itemName} × ${i.quantity}</span>
-                <span class="small fw-semibold">${formatVND(i.price * i.quantity)}</span>
-             </div>`
-        ).join('');
-
-        // Timeline
-        renderTimeline(order.status);
-
-        // Driver card + direct chat button
-        const driverCard = document.getElementById('driverCard');
-        const restaurantChatCard = document.getElementById('restaurantChatCard');
-
-        // Show driver card if name is present (usually PREPARING or DELIVERING)
-        if (order.driverName) {
-            driverCard.classList.remove('d-none');
-            document.getElementById('driverName').textContent = order.driverName;
-            const phoneEl = document.getElementById('driverPhone');
-            if (order.driverPhone) {
-                phoneEl.textContent = '📞 ' + order.driverPhone;
-                phoneEl.href = 'tel:' + order.driverPhone;
-            }
-        } else {
-            driverCard.classList.add('d-none');
-        }
-
-        // Always allow chat with restaurant unless COMPLETED/CANCELLED
-        if (order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING') {
-            restaurantChatCard.classList.remove('d-none');
-            document.getElementById('chatRestaurantName').textContent = order.restaurantName;
-        } else {
-            restaurantChatCard.classList.add('d-none');
-        }
-
-        // Cancel button
-        if (order.status === 'PENDING') {
-            document.getElementById('cancelSection').classList.remove('d-none');
-        } else {
-            document.getElementById('cancelSection').classList.add('d-none');
-        }
-
-        // Auto-refresh: đã được thay thế bằng WebSocket subscription (xem bên dưới)
-        // setTimeout được giữ lại như fallback nếu WebSocket không kết nối được
-    }
-
-    function renderTimeline(status) {
-        const el = document.getElementById('timeline');
-        const statusOrder = ['PENDING', 'PREPARING', 'DELIVERING', 'COMPLETED'];
-        const currentIdx = statusOrder.indexOf(status);
-        const isCancelled = status === 'CANCELLED';
-
-        let html = '';
-        if (isCancelled) {
-            html = `<div class="timeline-step cancelled">
-                <div class="step-icon"><i class="bi bi-x-lg"></i></div>
-                <div class="mt-2"><p class="fw-bold mb-0 small text-danger">Đã hủy đơn hàng</p></div>
-            </div>`;
-        } else {
-            STATUS_STEPS.forEach((step, i) => {
-                let cls = '';
-                if (status === 'COMPLETED') {
-                    cls = 'done'; // Tất cả các bước đều xanh lá khi hoàn thành
-                } else {
-                    if (i < currentIdx) cls = 'done';
-                    else if (i === currentIdx) cls = 'current';
+                // NẾU LÀ ĐƠN HÀNG CŨ (CHƯA CÓ TỌA ĐỘ) -> DÙNG TỌA ĐỘ GIẢ (ĐH PHENIKAA) ĐỂ TEST BẢN ĐỒ
+                if (isNaN(rLat) || isNaN(cLat)) {
+                    console.warn("⚠️ Đơn hàng này chưa có tọa độ thật. Đang dùng tọa độ ảo để test.");
+                    rLat = 20.962622; rLng = 105.740172;
+                    cLat = 20.968500; cLng = 105.745050;
                 }
-                html += `<div class="timeline-step ${cls}">
-                    <div class="step-icon"><i class="bi ${step.icon}"></i></div>
-                    <div class="mt-1">
-                        <p class="fw-bold mb-0 small ${cls === '' ? 'text-muted' : ''}">${step.label}</p>
-                        <small class="text-muted">${step.sub}</small>
-                    </div>
-                </div>`;
-            });
-        }
-        el.innerHTML = html;
-    }
 
-    async function cancelOrder() {
-        if (!confirm('Bạn có chắc muốn hủy đơn hàng này không?')) return;
-        try {
-            const res = await fetch(`/api/customer/orders/${orderId}/cancel`, {
-                method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            const data = await res.json();
-            if (res.ok) {
-                alert('Đã hủy đơn hàng thành công!');
-                loadOrder();
-            } else {
-                alert(data.error || 'Không thể hủy đơn hàng!');
-            }
-        } catch (e) {
-            console.error('Cancel order error:', e);
-            alert('Lỗi kết nối khi hủy đơn!');
-        }
-    }
+                try {
+                    if (typeof MapTracker === 'undefined') throw new Error("MapTracker not found");
 
-    // Chat helpers (delegates to ShopeeChat polling widget)
-    window.MY_ROLE = 'CUSTOMER';
+                    // Khởi tạo Map
+                    MapTracker.init(mapId, (rLat + cLat)/2, (rLng + cLng)/2);
+                    MapTracker.initCustomerMap(rLat, rLng, cLat, cLng);
 
-    window.openRestaurantChat = function () {
-        window.ShopeeChat && window.ShopeeChat.open(orderId, 'RESTAURANT', 'Nhà hàng');
-    };
+                    window.ORDER_COORDS = { rLat, rLng, cLat, cLng };
+                    window.ORDER_ID = orderId;
 
-    window.openDriverChat = function () {
-        const badge = document.getElementById('driverChatBadge');
-        if (badge) badge.style.display = 'none';
-        window.ShopeeChat && window.ShopeeChat.open(orderId, 'DRIVER', 'Tài xế');
-    };
-
-    // Auto-open correct chat when order renders
-    window.switchChatType = function (type) {
-        // No auto-open needed to prevent annoying popup
-    };
-
-    // Mirror new-message badge onto driver card button
-    document.addEventListener('chatNewMessage', function () {
-        const badge = document.getElementById('driverChatBadge');
-        if (badge) badge.style.display = '';
-    });
-
-    // Start loading order on page load
-    loadOrder();
-</script>
-
-<!-- Real-time Chat Widget (loads SockJS + StompJS CDN) -->
-<div th:replace="~{fragments/chat_widget :: chatWidget}"></div>
-
-<!-- ══════════════════════════════════════════════════════════ -->
-<!--  TASK-03 · Real-time Order Status Notification (WebSocket STOMP)         -->
-<!--  Subscribe: /topic/order-status.{orderId}                                   -->
-<!--  NOTE: phải đặt SAU chat_widget để SockJS và StompJS đã được load         -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<script>
-(function () {
-    'use strict';
-
-    // ── Constants ────────────────────────────────────────────────────────
-    const TOKEN = () => localStorage.getItem('jwt_token') || '';
-    const MAX_RECONNECT   = 5;
-    const RECONNECT_DELAY = [2000, 3000, 5000, 8000, 13000];
-
-    // ── STOMP state ──────────────────────────────────────────────────────
-    let _stomp          = null;
-    let _subscription   = null;
-    let _reconnectTimer = null;
-    let _attempts       = 0;
-    let _activeOrderId  = null;   // ID đơn được subscribe hiện tại
-
-    // ── STATUS mapping cho toast messages ───────────────────────────────
-    const STATUS_TOAST = {
-        PREPARING:  { msg: '✅ Nhà hàng đã xác nhận đơn! Đang chuẩn bị món...', cls: 'success' },
-        DELIVERING: { msg: '🚵 Tài xế đã nhận đơn! Đang trên đưṑng đến...', cls: 'info'    },
-        COMPLETED:  { msg: '🎉 Giao hàng thành công! Chúc bạ ngon miệng!',  cls: 'success' },
-        CANCELLED:  { msg: '❌ Đơn hàng đã bị hủy.',                       cls: 'danger'  }
-    };
-
-    // ── Connect ──────────────────────────────────────────────────────────
-    function connect(targetOrderId) {
-        disconnect();
-        clearTimeout(_reconnectTimer);
-        _activeOrderId = targetOrderId;
-
-        try {
-            const socket = new SockJS('/ws');
-            _stomp = Stomp.over(socket);
-            _stomp.debug = null;
-
-            _stomp.connect(
-                { Authorization: 'Bearer ' + TOKEN() },
-                function onConnected() {
-                    console.log('[OrderStatus] ✅ WebSocket connected');
-                    _attempts = 0;
-
-                    _subscription = _stomp.subscribe(
-                        '/topic/order-status.' + _activeOrderId,
-                        function onFrame(frame) {
-                            try {
-                                const notification = JSON.parse(frame.body);
-                                onStatusUpdate(notification);
-                            } catch (e) {
-                                console.error('[OrderStatus] Parse error:', e);
-                            }
-                        }
-                    );
-                },
-                function onError(err) {
-                    console.warn('[OrderStatus] STOMP error:', err);
-                    scheduleReconnect();
+                    const token = localStorage.getItem('jwt_token');
+                    if (window.ORDER_ID && token) {
+                        TrackingService.init(window.ORDER_ID, token);
+                    }
+                } catch (e) {
+                    console.error("Map error:", e);
+                    container.innerHTML = '<div class="p-4 text-center text-danger">Lỗi nạp bản đồ. Vui lòng F5.</div>';
                 }
-            );
-        } catch (e) {
-            console.error('[OrderStatus] Connect error:', e);
-            scheduleReconnect();
-        }
-    }
+            });
+        </script>
+    </main>
 
-    function disconnect() {
-        clearTimeout(_reconnectTimer);
-        if (_subscription) { try { _subscription.unsubscribe(); } catch(e){} _subscription = null; }
-        if (_stomp && _stomp.connected) { try { _stomp.disconnect(); } catch(e){} }
-        _stomp = null;
-    }
-
-    function scheduleReconnect() {
-        if (_attempts >= MAX_RECONNECT) {
-            showToast('⚠️ Mất kết nối. Vui lòng tải lại trang.', 'warning');
-            return;
-        }
-        const delay = RECONNECT_DELAY[_attempts] || 13000;
-        _attempts++;
-        console.log('[OrderStatus] Reconnect attempt', _attempts, 'in', delay, 'ms');
-        _reconnectTimer = setTimeout(() => {
-            if (_activeOrderId) connect(_activeOrderId);
-        }, delay);
-    }
-
-    // ── Handle incoming status notification ──────────────────────────────
-    function onStatusUpdate(notification) {
-        const newStatus = notification.status;
-        const prevStatus = currentOrder ? currentOrder.status : null;
-
-        // Update currentOrder in-place
-        if (currentOrder) {
-            currentOrder.status      = newStatus;
-            currentOrder.driverName  = notification.driverName  || currentOrder.driverName;
-            currentOrder.driverPhone = notification.driverPhone || currentOrder.driverPhone;
-            renderOrder(currentOrder);
-        } else {
-            // Fallback: reload from server if currentOrder not yet set
-            loadOrder();
-        }
-
-        // Show toast if status actually changed
-        if (newStatus !== prevStatus && STATUS_TOAST[newStatus]) {
-            showToast(STATUS_TOAST[newStatus].msg, STATUS_TOAST[newStatus].cls);
-        }
-
-        // Stop subscription when order is terminal
-        if (newStatus === 'COMPLETED' || newStatus === 'CANCELLED') {
-            disconnect();
-            if (window.fallbackPolling) clearInterval(window.fallbackPolling);
-        }
-    }
-
-    // ── Toast helper ─────────────────────────────────────────────────────
-    function showToast(msg, type) {
-        const t = document.createElement('div');
-        t.style.cssText = [
-            'position:fixed;top:20px;left:50%;transform:translateX(-50%);',
-            'z-index:9999;max-width:380px;width:90%;',
-            'padding:12px 20px;border-radius:12px;',
-            'font-size:.875rem;font-weight:600;',
-            'box-shadow:0 8px 24px rgba(0,0,0,.18);',
-            'animation:toastIn .25s ease-out;'
-        ].join('');
-        const colors = {
-            success: { bg:'#d1fae5', color:'#065f46', border:'#6ee7b7' },
-            info:    { bg:'#dbeafe', color:'#1e40af', border:'#93c5fd' },
-            warning: { bg:'#fef3c7', color:'#92400e', border:'#fcd34d' },
-            danger:  { bg:'#fee2e2', color:'#991b1b', border:'#fca5a5' },
-        };
-        const c = colors[type] || colors.info;
-        t.style.background = c.bg;
-        t.style.color      = c.color;
-        t.style.border     = '1px solid ' + c.border;
-        t.textContent      = msg;
-
-        // Inject animation keyframe once
-        if (!document.getElementById('toast-anim-style')) {
-            const s = document.createElement('style');
-            s.id = 'toast-anim-style';
-            s.textContent = '@keyframes toastIn{from{opacity:0;top:0}to{opacity:1;top:20px}}';
-            document.head.appendChild(s);
-        }
-
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 4500);
-    }
-
-    // ── Start WebSocket after initial REST load ───────────────────────────
-    //    Hook vào sau khi loadOrder() render xong thì bắt đầu subscribe
-    const _origRenderOrder = window.renderOrder;
-    window.renderOrder = function(order) {
-        _origRenderOrder && _origRenderOrder(order);
-
-        // Connect WebSocket cho active orders
-        if ((order.status === 'PENDING' || order.status === 'PREPARING' || order.status === 'DELIVERING')
-                && order.id && String(order.id) !== String(_activeOrderId)) {
-            connect(order.id);
-        }
-    };
-
-    // ── Visibility API: disconnect khi tab ẩn, reconnect khi hiện ──────
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            disconnect();
-        } else if (_activeOrderId && currentOrder &&
-                   currentOrder.status !== 'COMPLETED' &&
-                   currentOrder.status !== 'CANCELLED') {
-            connect(_activeOrderId);
-        }
-    });
-
-    // ── Cleanup khi rời trang ───────────────────────────────────────────
-    window.addEventListener('beforeunload', () => {
-        disconnect();
-        if (window.fallbackPolling) clearInterval(window.fallbackPolling);
-    });
-
-})();
-</script>
-
-</main>
 </body>
 </html>

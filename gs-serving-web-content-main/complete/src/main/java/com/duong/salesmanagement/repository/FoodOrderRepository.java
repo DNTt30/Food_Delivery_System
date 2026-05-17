@@ -22,6 +22,7 @@ public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
     List<FoodOrder> findByDriverIsNullAndStatus(OrderStatus status);
     List<FoodOrder> findByDriverAndStatus(DriverProfile driver, OrderStatus status);
     List<FoodOrder> findAllByOrderByOrderTimeDesc();
+    List<FoodOrder> findByCustomer_User_Id(String userId);
 
     List<FoodOrder> findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(
             RestaurantProfile restaurant, LocalDateTime from, LocalDateTime to);

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
+<head>
+    <title>Hồ Sơ Nhà Hàng | Food Portal</title>
+</head>
+<body>
+    <main>
+        <div class="container-fluid px-4 py-4">
+            <!-- Header Section -->
+            <div class="mb-4">
+                <h4 class="fw-bold"><i class="bi bi-person-circle me-2"></i>Hồ Sơ Nhà Hàng</h4>
+                <p class="text-muted small">Quản lý thông tin tài khoản và cấu hình cửa hàng của bạn.</p>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Section: Personal Info -->
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="profileForm">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">HỌ VÀ TÊN CHỦ SỞ HỮU</label>
+                                        <input type="text" id="fullName" class="form-control rounded-3 py-2" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">ĐỊA CHỈ EMAIL</label>
+                                        <input type="email" id="email" class="form-control bg-light rounded-3 py-2" disabled>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">TÊN NHÀ HÀNG</label>
+                                        <input type="text" id="restaurantName" class="form-control rounded-3 py-2">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">ĐỊA CHỈ KINH DOANH</label>
+                                        <input type="text" id="address" class="form-control rounded-3 py-2">
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold small text-muted">BANNER NHÀ HÀNG</label>
+                                        <div class="mb-3 d-flex align-items-center gap-3">
+                                            <div style="width: 150px; height: 100px; border-radius: 12px; overflow: hidden; background: #f8f9fa; border: 1px dashed #ddd;">
+                                                <img id="bannerPreview" class="w-100 h-100 d-none" style="object-fit: cover;">
+                                                <div id="bannerPlaceholder" class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">No Image</div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <input type="file" class="form-control mb-2" accept="image/*" onchange="uploadBanner(this)">
+                                                <input type="hidden" id="bannerUrl">
+                                                <small class="text-muted">Kích thước gợi ý: 1200x400. Định dạng: JPG, PNG.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 pt-3 border-top text-end">
+                                    <button type="submit" class="btn btn-warning fw-bold px-4 rounded-3 text-white">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Section: Security -->
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-shield-lock me-2"></i>Bảo mật tài khoản</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <form id="passwordForm">
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold small text-muted">MẬT KHẨU HIỆN TẠI</label>
+                                        <input type="password" id="oldPassword" class="form-control rounded-3" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">MẬT KHẨU MỚI</label>
+                                        <input type="password" id="newPassword" class="form-control rounded-3" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-muted">XÁC NHẬN MẬT KHẨU</label>
+                                        <input type="password" id="confirmPassword" class="form-control rounded-3" required>
+                                    </div>
+                                </div>
+                                <div class="mt-4 pt-3 border-top text-end">
+                                    <button type="submit" class="btn btn-dark fw-bold px-4 rounded-3">Cập nhật mật khẩu</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 text-center p-4 mb-4">
+                        <div class="mx-auto mb-3" style="width: 100px; height: 100px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-shop fs-1 text-warning"></i>
+                        </div>
+                        <h5 class="fw-bold" id="sidebarRestaurantName">Tên Nhà Hàng</h5>
+                        <p class="text-muted small" id="sidebarEmail">email@example.com</p>
+                        <div class="badge bg-warning text-white rounded-pill px-3 py-2">RESTAURANT PARTNER</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logic Script -->
+        <script th:inline="javascript">
+            const token = localStorage.getItem('jwt_token');
+            if (!token) window.location.href = '/common/auth';
+
+            function showAlert(msg, type) {
+                alert(msg); // Thay bằng Toast nếu dự án có sẵn
+            }
+
+            function previewBanner(url) {
+                const img = document.getElementById('bannerPreview');
+                const placeholder = document.getElementById('bannerPlaceholder');
+                if (url) {
+                    img.src = url;
+                    img.classList.remove('d-none');
+                    placeholder.classList.add('d-none');
+                }
+            }
+
+            async function uploadBanner(input) {
+                if (!input.files?.[0]) return;
+                const formData = new FormData();
+                formData.append('file', input.files[0]);
+                try {
+                    const res = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        document.getElementById('bannerUrl').value = data.url;
+                        previewBanner(data.url);
+                        showAlert('Tải ảnh thành công!', 'success');
+                    }
+                } catch (err) { showAlert('Lỗi khi tải ảnh', 'danger'); }
+            }
+
+            async function loadProfile() {
+                try {
+                    const res = await fetch('/api/profile/me', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        document.getElementById('fullName').value = data.fullName || '';
+                        document.getElementById('email').value = data.email || '';
+                        document.getElementById('restaurantName').value = data.restaurantName || '';
+                        document.getElementById('address').value = data.address || '';
+                        document.getElementById('bannerUrl').value = data.bannerUrl || '';
+                        
+                        document.getElementById('sidebarRestaurantName').textContent = data.restaurantName || data.fullName;
+                        document.getElementById('sidebarEmail').textContent = data.email;
+                        previewBanner(data.bannerUrl);
+                    }
+                } catch (err) { console.error(err); }
+            }
+
+            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    fullName: document.getElementById('fullName').value,
+                    restaurantName: document.getElementById('restaurantName').value,
+                    address: document.getElementById('address').value,
+                    bannerUrl: document.getElementById('bannerUrl').value
+                };
+                try {
+                    const res = await fetch('/api/profile/me', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) showAlert('Cập nhật thành công!', 'success');
+                } catch (err) { showAlert('Cập nhật thất bại', 'danger'); }
+            });
+
+            document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const oldPassword = document.getElementById('oldPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                if (newPassword !== document.getElementById('confirmPassword').value) {
+                    showAlert('Xác nhận mật khẩu không khớp!', 'danger'); return;
+                }
+                try {
+                    const res = await fetch('/api/profile/password', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        body: JSON.stringify({ oldPassword, newPassword })
+                    });
+                    if (res.ok) { showAlert('Đổi mật khẩu thành công!', 'success'); e.target.reset(); }
+                    else { const d = await res.json(); showAlert(d.error || 'Lỗi đổi mật khẩu', 'danger'); }
+                } catch (err) { showAlert('Lỗi kết nối', 'danger'); }
+            });
+
+            loadProfile();
+        </script>
+    </main>
+</body>
+</html>

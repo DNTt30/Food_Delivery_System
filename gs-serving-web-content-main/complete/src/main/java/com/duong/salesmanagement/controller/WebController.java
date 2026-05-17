@@ -30,8 +30,6 @@ public class WebController {
     @GetMapping("/customer/cart")
     public String customerCart() { return "customer/cart"; }
 
-    @GetMapping("/customer/tracking")
-    public String customerTracking() { return "customer/tracking"; }
 
     @GetMapping("/customer/history")
     public String customerHistory() { return "customer/history"; }
@@ -51,6 +49,9 @@ public class WebController {
 
     @GetMapping("/restaurant/reviews")
     public String restaurantReviews() { return "restaurant/reviews"; }
+
+    @GetMapping("/restaurant/profile")
+    public String restaurantProfile() { return "restaurant/profile"; }
 
     // 4. Driver
     @GetMapping("/driver/dashboard")

@@ -1,6 +1,10 @@
-<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
-<head>
+<html th:replace="~{layouts/customer_layout :: layout(~{::profileHead}, ~{::main})}">
+<head th:fragment="profileHead">
     <title>Hồ Sơ Cá Nhân | Food Delivery</title>
+    <!-- Leaflet Map Picker - Đã đưa ra ngoài thẻ title để trình duyệt nạp được -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
     <style>
         :root {
             --profile-accent: #FF4B2B;
@@ -176,7 +180,55 @@
                                 <label class="form-label-premium">ĐỊA CHỈ GIAO HÀNG</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-transparent border-end-0 rounded-start-4"><i class="bi bi-geo-alt text-muted"></i></span>
-                                    <input type="text" id="deliveryAddress" class="form-control input-premium rounded-start-0" placeholder="Địa chỉ mặc định">
+                                    <input type="text" id="deliveryAddress" class="form-control input-premium border-end-0 rounded-0" placeholder="Địa chỉ mặc định">
+                                    <button class="btn btn-outline-primary rounded-end-4 px-3" type="button" onclick="openMapPicker()">
+                                        <i class="bi bi-map-fill"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted mt-1 d-block" style="font-size: 0.75rem;">
+                                    <i class="bi bi-info-circle me-1"></i> Bấm biểu tượng bản đồ để chọn vị trí chính xác.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Picker Modal -->
+                    <div class="modal fade" id="mapPickerModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="fw-bold mb-0">📍 Chọn vị trí giao hàng</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-0 position-relative">
+                                    <!-- Search Bar Overlay -->
+                                    <div class="position-absolute top-0 start-50 translate-middle-x mt-3 w-75" style="z-index: 1000;">
+                                        <div class="input-group shadow-sm">
+                                            <input type="text" id="mapSearchInput" class="form-control border-0 rounded-start-4 py-2" placeholder="Tìm kiếm địa chỉ...">
+                                            <button class="btn btn-white border-0 rounded-end-4 px-3" type="button" onclick="searchAddress()">
+                                                <i class="bi bi-search text-primary"></i>
+                                            </button>
+                                        </div>
+                                        <div id="searchResults" class="list-group shadow-sm mt-1 d-none" style="max-height: 200px; overflow-y: auto; border-radius: 12px;"></div>
+                                    </div>
+
+                                    <!-- Map Container -->
+                                    <div id="picker-map" style="height: 450px; width: 100%;"></div>
+
+                                    <!-- My Location Button -->
+                                    <button class="btn btn-white rounded-circle shadow position-absolute bottom-0 end-0 m-3" 
+                                            style="z-index: 1000; width: 45px; height: 45px; border: 1px solid #ddd;" 
+                                            onclick="getCurrentLocation()" title="Vị trí của tôi">
+                                        <i class="bi bi-crosshair2 text-danger fs-5"></i>
+                                    </button>
+                                </div>
+                                <div class="p-3 bg-light">
+                                    <div class="fw-bold small text-primary mb-1"><i class="bi bi-geo-fill me-1"></i>ĐỊA CHỈ ĐÃ CHỌN:</div>
+                                    <div id="pickedAddress" class="small fw-semibold text-dark">Vui lòng chọn một điểm trên bản đồ...</div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="confirmAddress()">Xác nhận vị trí</button>
                                 </div>
                             </div>
                         </div>
@@ -422,6 +474,112 @@
         });
 
         loadProfile();
+
+        // --- MAP PICKER LOGIC ---
+        let pickerMap;
+        let pickerMarker;
+        let selectedLat, selectedLng;
+
+        function openMapPicker() {
+            const modalElement = document.getElementById('mapPickerModal');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            modalElement.addEventListener('shown.bs.modal', function () {
+                if (!pickerMap) {
+                    pickerMap = L.map('picker-map', { zoomControl: false }).setView([10.762622, 106.660172], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap'
+                    }).addTo(pickerMap);
+                    L.control.zoom({ position: 'bottomleft' }).addTo(pickerMap);
+
+                    pickerMap.on('click', function(e) {
+                        updateMarker(e.latlng.lat, e.latlng.lng);
+                    });
+                } else {
+                    pickerMap.invalidateSize();
+                }
+            }, { once: true });
+        }
+
+        async function updateMarker(lat, lng, address = null) {
+            selectedLat = lat;
+            selectedLng = lng;
+
+            if (pickerMarker) {
+                pickerMarker.setLatLng([lat, lng]);
+            } else {
+                pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMap);
+                pickerMarker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    updateMarker(pos.lat, pos.lng);
+                });
+            }
+            pickerMap.setView([lat, lng], 16);
+
+            if (address) {
+                document.getElementById('pickedAddress').textContent = address;
+            } else {
+                // Reverse Geocoding
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`);
+                    const data = await res.json();
+                    document.getElementById('pickedAddress').textContent = data.display_name || `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                } catch (err) {
+                    document.getElementById('pickedAddress').textContent = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                }
+            }
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    updateMarker(position.coords.latitude, position.coords.longitude);
+                }, () => showAlert('Không thể lấy vị trí hiện tại. Hãy kiểm tra quyền truy cập GPS.', 'warning'));
+            }
+        }
+
+        async function searchAddress() {
+            const query = document.getElementById('mapSearchInput').value;
+            if (!query) return;
+
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=vi`);
+                const results = await res.json();
+                const container = document.getElementById('searchResults');
+                container.innerHTML = '';
+                
+                if (results.length > 0) {
+                    container.classList.remove('d-none');
+                    results.forEach(item => {
+                        const btn = document.createElement('button');
+                        btn.className = 'list-group-item list-group-item-action small py-2';
+                        btn.textContent = item.display_name;
+                        btn.onclick = () => {
+                            updateMarker(parseFloat(item.lat), parseFloat(item.lon), item.display_name);
+                            container.classList.add('d-none');
+                        };
+                        container.appendChild(btn);
+                    });
+                }
+            } catch (err) { console.error("Search error:", err); }
+        }
+
+        // Đóng danh sách tìm kiếm khi click ra ngoài
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#searchResults') && !e.target.closest('#mapSearchInput')) {
+                document.getElementById('searchResults').classList.add('d-none');
+            }
+        });
+
+        function confirmAddress() {
+            const address = document.getElementById('pickedAddress').textContent;
+            if (address && address !== "Vui lòng chọn một điểm trên bản đồ...") {
+                document.getElementById('deliveryAddress').value = address;
+                bootstrap.Modal.getInstance(document.getElementById('mapPickerModal')).hide();
+                showAlert('Đã cập nhật địa chỉ!', 'success');
+            }
+        }
     </script>
 </main>
 </body>

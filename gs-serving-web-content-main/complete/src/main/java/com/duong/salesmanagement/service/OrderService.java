@@ -23,6 +23,9 @@ public class OrderService {
     private final VoucherRepository voucherRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationService notificationService;
+    private final GeocodingService geocodingService;
+    private final RestaurantProfileRepository restaurantProfileRepository;
+    private final ShippingCalculationService shippingCalculationService;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
@@ -31,7 +34,10 @@ public class OrderService {
                         DriverProfileRepository driverProfileRepository,
                         VoucherRepository voucherRepository,
                         SimpMessagingTemplate messagingTemplate,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        GeocodingService geocodingService,
+                        RestaurantProfileRepository restaurantProfileRepository,
+                        ShippingCalculationService shippingCalculationService) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
@@ -40,6 +46,9 @@ public class OrderService {
         this.voucherRepository = voucherRepository;
         this.messagingTemplate = messagingTemplate;
         this.notificationService = notificationService;
+        this.geocodingService = geocodingService;
+        this.restaurantProfileRepository = restaurantProfileRepository;
+        this.shippingCalculationService = shippingCalculationService;
     }
 
     /**
@@ -74,8 +83,41 @@ public class OrderService {
         order.setStatus(OrderStatus.PENDING);
         order.setDeliveryAddress(deliveryAddress);
 
+        // Geolocation Snapshot Logic
+        // 1. Restaurant Location (Cache if needed)
+        if (restaurant.getLatitude() == null || restaurant.getLongitude() == null) {
+            java.util.Map<String, Double> restCoords = geocodingService.getCoordinates(restaurant.getAddress());
+            if (restCoords != null) {
+                restaurant.setLatitude(restCoords.get("lat"));
+                restaurant.setLongitude(restCoords.get("lng"));
+                restaurantProfileRepository.save(restaurant);
+            }
+        }
+        order.setRestaurantAddressSnapshot(restaurant.getAddress());
+        order.setRestaurantLat(restaurant.getLatitude());
+        order.setRestaurantLng(restaurant.getLongitude());
+
+        // 2. Delivery Location Snapshot
+        order.setDeliveryAddressSnapshot(deliveryAddress);
+        java.util.Map<String, Double> deliveryCoords = geocodingService.getCoordinates(deliveryAddress);
+        if (deliveryCoords != null) {
+            order.setDeliveryLat(deliveryCoords.get("lat"));
+            order.setDeliveryLng(deliveryCoords.get("lng"));
+        }
+
+        // 3. Shipping Engine (Distance, Fee, ETA)
+        if (order.getRestaurantLat() != null && order.getDeliveryLat() != null) {
+            double distance = shippingCalculationService.calculateDistance(
+                    order.getRestaurantLat(), order.getRestaurantLng(),
+                    order.getDeliveryLat(), order.getDeliveryLng()
+            );
+            order.setDistance(distance);
+            order.setShippingFee(shippingCalculationService.calculateShippingFee(distance));
+            order.setEstimatedTimeOfArrival(shippingCalculationService.estimateETA(distance));
+        }
+
         FoodOrder savedOrder = foodOrderRepository.save(order);
-        double totalAmount = 0;
+        double totalAmount = savedOrder.getShippingFee() != null ? savedOrder.getShippingFee() : 0;
 
         for (OrderItemRequest req : itemRequests) {
             Long itemId = req.getMenuItemId();
@@ -272,6 +314,45 @@ public class OrderService {
 
     public List<FoodOrder> getDriverHistory(DriverProfile driver) {
         return foodOrderRepository.findByDriverOrderByOrderTimeDesc(driver);
+    }
+
+    /**
+     * Kiểm tra quyền theo dõi đơn hàng (Security Access Control)
+     * Đảm bảo tính riêng tư của dữ liệu GPS và thông tin đơn hàng.
+     */
+    public boolean hasPermissionToTrackOrder(Long orderId, User user) {
+        if (orderId == null || user == null) return false;
+        
+        Optional<FoodOrder> orderOpt = foodOrderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) return false;
+        
+        FoodOrder order = orderOpt.get();
+        
+        // 1. Admin: Toàn quyền
+        if (user.getRole() == Role.ADMIN) return true;
+        
+        // 2. Customer: Phải là người đặt đơn
+        if (user.getRole() == Role.CUSTOMER) {
+            return order.getCustomer().getUser().getId().equals(user.getId());
+        }
+        
+        // 3. Driver: Phải là người được gán cho đơn hàng
+        if (user.getRole() == Role.DRIVER) {
+            return order.getDriver() != null && 
+                   order.getDriver().getUser().getId().equals(user.getId());
+        }
+
+        // 4. Restaurant: Phải là chủ của quán có đơn hàng này
+        if (user.getRole() == Role.RESTAURANT) {
+            return order.getRestaurant().getUser().getId().equals(user.getId());
+        }
+        
+        return false;
+    }
+
+    public List<FoodOrder> getOrdersByUser(User user) {
+        if (user == null) return java.util.Collections.emptyList();
+        return foodOrderRepository.findByCustomer_User_Id(user.getId());
     }
 
     public static class OrderItemRequest {

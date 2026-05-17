@@ -1,0 +1,40 @@
+/* Bản đồ hiển thị góc bo tròn, đổ bóng sang trọng */
+#map-container {
+    height: 60vh;
+    min-height: 450px;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 1; /* Giữ map nằm dưới các Modal/Navbar của Bootstrap */
+    border: 1px solid #e2e8f0;
+}
+
+/* Ẩn bảng hướng dẫn text rườm rà của Leaflet Routing Machine */
+.leaflet-routing-container {
+    display: none !important;
+}
+
+/* Giúp xe máy trượt mượt mà trên bản đồ */
+.driver-marker-icon {
+    transition: transform 1s linear;
+}
+
+/* Thẻ thông tin nổi (Overlay) nằm đè lên bản đồ */
+.map-overlay-card {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 15px 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000; 
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid rgba(255,255,255,0.5);
+}

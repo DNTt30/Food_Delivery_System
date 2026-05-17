@@ -1,0 +1,269 @@
+{
+  "project": "Food Delivery System",
+  "version": "1.0.0",
+  "tech_stack": {
+    "java_version": 17,
+    "spring_boot_version": "3.3.0",
+    "database": "MySQL 8.0 (Aiven)",
+    "template_engine": "Thymeleaf",
+    "realtime": "Spring WebSocket STOMP",
+    "mail": "Gmail SMTP"
+  },
+  "modules": {
+    "auth": {
+      "description": "Stateless JWT Auth, OTP verification via Gmail, registration and password recovery.",
+      "services": [
+        "com.duong.salesmanagement.service.AuthService",
+        "com.duong.salesmanagement.service.EmailService",
+        "com.duong.salesmanagement.security.CustomUserDetailsService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.AuthController"
+      ],
+      "routes": {
+        "POST /api/auth/register": "Register a new user (generates verification OTP)",
+        "POST /api/auth/verify": "Verify user email using 6-digit OTP",
+        "POST /api/auth/login": "Authenticate user, returns JWT",
+        "POST /api/auth/forgot-password": "Send recovery OTP to user's email",
+        "POST /api/auth/reset-password": "Reset password using OTP validation"
+      },
+      "views": [
+        "templates/common/auth.html",
+        "static/register.html",
+        "static/forgot-password.html"
+      ]
+    },
+    "profile": {
+      "description": "Role-specific profile details (Customer, Driver, Restaurant).",
+      "services": [
+        "com.duong.salesmanagement.service.ProfileService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.ProfileApiController"
+      ],
+      "routes": {
+        "GET /api/profile": "Get current user profile (Deducted by authenticated token role)",
+        "PUT /api/profile": "Update profile details",
+        "PUT /api/profile/change-password": "Change password"
+      },
+      "views": [
+        "templates/common/profile.html",
+        "templates/restaurant/profile.html"
+      ]
+    },
+    "order": {
+      "description": "Core checkout, distance/fee Haversine computations, driver matching, status engine, reviews, and voucher applications.",
+      "services": [
+        "com.duong.salesmanagement.service.OrderService",
+        "com.duong.salesmanagement.service.ShippingCalculationService",
+        "com.duong.salesmanagement.service.GeocodingService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.CustomerApiController",
+        "com.duong.salesmanagement.controller.CustomerViewController",
+        "com.duong.salesmanagement.controller.RestaurantApiController",
+        "com.duong.salesmanagement.controller.DriverApiController"
+      ],
+      "routes": {
+        "POST /api/customer/orders": "Checkout cart (Order placement)",
+        "GET /api/customer/orders": "Retrieve current customer orders history",
+        "POST /api/customer/orders/{orderId}/cancel": "Cancel a PENDING order",
+        "POST /api/customer/orders/{orderId}/review": "Submit rating review for COMPLETED order",
+        "GET /api/restaurant/orders": "Fetch restaurant partner orders",
+        "PUT /api/restaurant/orders/{orderId}/status": "Restaurant accepts (PREPARING) or rejects (CANCELLED) order",
+        "GET /api/driver/orders/available": "List PENDING/PREPARING orders seeking driver",
+        "POST /api/driver/orders/{orderId}/accept": "Driver claims order (Status transitions to DELIVERING)",
+        "POST /api/driver/orders/{orderId}/complete": "Driver completes delivery (Status transitions to COMPLETED)"
+      },
+      "views": [
+        "templates/customer/cart.html",
+        "templates/customer/dashboard.html",
+        "templates/customer/detail.html",
+        "templates/customer/orders.html",
+        "templates/restaurant/dashboard.html",
+        "templates/restaurant/menu.html",
+        "templates/restaurant/orders.html",
+        "templates/driver/dashboard.html",
+        "templates/driver/new_orders.html"
+      ]
+    },
+    "tracking": {
+      "description": "Asynchronous coordinate tracking logging and real-time STOMP broadcasts of driver coordinates.",
+      "services": [
+        "com.duong.salesmanagement.service.LocationTrackingService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.DriverLocationController",
+        "com.duong.salesmanagement.controller.CustomerTrackingController"
+      ],
+      "routes": {
+        "POST /api/driver/location": "REST post coordinate update from active driver app",
+        "GET /api/customer/orders/{orderId}/live-location": "REST polling for latest driver coordinate"
+      },
+      "websocket_endpoints": {
+        "SEND /api/driver/location": "Propagates location payload",
+        "SUBSCRIBE /topic/tracking/{orderId}": "Coordinates broadcast to customer (requires access permission)"
+      },
+      "views": [
+        "templates/customer/tracking.html",
+        "templates/driver/delivering.html"
+      ]
+    },
+    "chat": {
+      "description": "Secure order-scoped real-time messaging, with custom visibility matrices and dynamic phone masking.",
+      "services": [
+        "com.duong.salesmanagement.service.ChatService",
+        "com.duong.salesmanagement.service.ContactService",
+        "com.duong.salesmanagement.service.OrderContactService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.ChatApiController",
+        "com.duong.salesmanagement.controller.ChatController",
+        "com.duong.salesmanagement.controller.WebSocketChatController"
+      ],
+      "routes": {
+        "GET /api/chat/contacts/{orderId}": "Fetch authorized contacts list (with masking conditions)",
+        "GET /api/chat/history/{orderId}": "Fetch order chat history",
+        "POST /api/chat/send": "REST fallback chat send"
+      },
+      "websocket_endpoints": {
+        "SEND /app/chat.send": "Sends message payload via STOMP broker (broadcasts to /topic/order.{orderId})",
+        "SUBSCRIBE /topic/order.{orderId}": "Live messages topic (eavesdropping risk: currently lacks interceptor checks)"
+      },
+      "views": [
+        "templates/fragments/chat_widget.html"
+      ]
+    },
+    "notification": {
+      "description": "Context-aware notification alerts with smart deduplication.",
+      "services": [
+        "com.duong.salesmanagement.service.NotificationService"
+      ],
+      "controllers": [
+        "com.duong.salesmanagement.controller.NotificationApiController"
+      ],
+      "routes": {
+        "GET /api/notifications": "Get notifications list (limits to 50 latest records)",
+        "GET /api/notifications/unread-count": "Unread alerts count",
+        "PUT /api/notifications/{id}/read": "Mark notification as read",
+        "PUT /api/notifications/read-all": "Mark all alerts as read"
+      },
+      "views": [
+        "templates/fragments/notification_bell.html"
+      ]
+    }
+  },
+  "shared_utilities": [
+    "com.duong.salesmanagement.util.PhoneMaskUtil"
+  ],
+  "shared_ui_components": [
+    "templates/fragments/navbar_customer.html",
+    "templates/fragments/footer.html",
+    "templates/fragments/chat_widget.html",
+    "templates/fragments/notification_bell.html"
+  ],
+  "shared_frontend_scripts": [
+    "static/js/websocket-manager.js",
+    "static/js/tracking-service.js",
+    "static/js/map-tracking.js"
+  ],
+  "database_entities": {
+    "User": {
+      "table": "users",
+      "pKey": "id (VARCHAR(36))"
+    },
+    "CustomerProfile": {
+      "table": "customer_profiles",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "user": "OneToOne to User (user_id)"
+      }
+    },
+    "RestaurantProfile": {
+      "table": "restaurant_profiles",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "user": "OneToOne to User (user_id)"
+      }
+    },
+    "DriverProfile": {
+      "table": "driver_profiles",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "user": "OneToOne to User (user_id)"
+      }
+    },
+    "FoodOrder": {
+      "table": "food_orders",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "customer": "ManyToOne to CustomerProfile (customer_id)",
+        "restaurant": "ManyToOne to RestaurantProfile (restaurant_id)",
+        "driver": "ManyToOne to DriverProfile (driver_id)"
+      }
+    },
+    "OrderItem": {
+      "table": "order_items",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "order": "ManyToOne to FoodOrder (order_id)",
+        "menuItem": "ManyToOne to MenuItem (menu_item_id)"
+      }
+    },
+    "MenuItem": {
+      "table": "menu_items",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "category": "ManyToOne to Category"
+      }
+    },
+    "ChatMessage": {
+      "table": "chat_messages",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "order": "ManyToOne to FoodOrder (order_id)",
+        "sender": "ManyToOne to User (sender_id)",
+        "receiver": "ManyToOne to User (receiver_id)"
+      }
+    },
+    "OrderTrackingLocation": {
+      "table": "order_tracking_locations",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "order": "ManyToOne to FoodOrder (order_id)"
+      }
+    },
+    "Notification": {
+      "table": "notifications",
+      "pKey": "id (BIGINT auto_increment)",
+      "relations": {
+        "user": "ManyToOne to User (user_id)"
+      }
+    }
+  },
+  "realtime_broker_channels": [
+    "/topic/tracking/{orderId}",
+    "/topic/order.{orderId}",
+    "/topic/order-status.{orderId}"
+  ],
+  "dependency_graph": {
+    "auth": {
+      "dependencies": []
+    },
+    "profile": {
+      "dependencies": ["auth"]
+    },
+    "order": {
+      "dependencies": ["profile"]
+    },
+    "tracking": {
+      "dependencies": ["order"]
+    },
+    "chat": {
+      "dependencies": ["order", "notification"]
+    },
+    "notification": {
+      "dependencies": ["auth"]
+    }
+  }
+}

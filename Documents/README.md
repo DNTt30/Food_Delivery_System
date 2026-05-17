@@ -216,6 +216,34 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 
 ---
 
+## ✅ Tuần 6 – Hệ thống Bộ nhớ Architect & An toàn Thông tin (AI Memory System & Security Hardening)
+
+**Mục tiêu:** Thiết lập hệ thống tài liệu thông minh ("memory system") hỗ trợ lập trình AI, rà soát lỗ hổng bảo mật thời gian thực và dọn dẹp kỹ thuật (technical debt).
+
+### 🔍 Hoạt động đã thực hiện
+
+#### 1. Xây dựng Hệ thống Bộ nhớ AI (AI Memory System)
+*   **[PROJECT_STATE.md](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/PROJECT_STATE.md)**: Bản đồ kiến trúc, tech stack (Spring Boot 3.3.0, Java 17, MySQL), luồng dữ liệu nghiệp vụ (Order, Live Tracking, WebSocket Chat) và tài nguyên tái sử dụng.
+*   **[CONSTRAINTS.md](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/CONSTRAINTS.md)**: Quy chuẩn viết mã nghiêm ngặt, ranh giới phân tách 3 tầng (Controller-Service-Repository), cấm tuyệt đối sử dụng thư viện Lombok, quy định định danh khóa chính User UUID dạng String, và chống trùng lặp code.
+*   **[project-manifest.json](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/project-manifest.json)**: File cấu trúc máy (JSON) lưu trữ toàn bộ API routes, database schemas, WebSocket channels, và đồ thị phụ thuộc giữa các module.
+*   **[RECENT_CHANGES.md](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/RECENT_CHANGES.md)**: Nhật ký cập nhật lịch sử thay đổi mã nguồn.
+*   **Thư mục [modules/](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/modules/)**: Bộ tài liệu chuyên sâu cho 6 module nghiệp vụ lõi (`auth`, `profile`, `order`, `tracking`, `chat`, `notification`).
+
+#### 2. Phân tích Lỗ hổng Bảo mật & Nợ Kỹ thuật
+*   **Phát hiện lỗ hổng rò rỉ STOMP:** Phát hiện lỗ hổng nghiêm trọng thiếu xác thực subscription đối với kênh chat `/topic/order.{orderId}` tại `WebSocketAuthInterceptor`. Đề xuất giải pháp kiểm tra token và quyền tham gia đơn hàng.
+*   **Rà soát rủi ro bên thứ ba:** Phát hiện nguy cơ bị OpenStreetMap chặn IP do thiếu header `User-Agent` khi gọi API Nominatim trong `GeocodingService`.
+*   **Định vị mã nguồn cũ:** Xác định lớp adapter dư thừa `OrderContactService` để đưa vào danh sách loại bỏ trong kỳ bảo trì tiếp theo.
+
+### 📦 Sản phẩm tuần 6
+
+| # | Sản phẩm | Trạng thái |
+| :--- | :--- | :--- |
+| 1 | Bộ nhớ AI Memory System (`*.md`, `*.json`) | ✅ |
+| 2 | Bộ tài liệu chuyên biệt từng module (`modules/`) | ✅ |
+| 3 | Báo cáo phân tích bảo mật & technical debt | ✅ |
+
+---
+
 ## 📌 Các tuần trước
 
 ### Tuần 1–2
@@ -228,7 +256,13 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 - Tạo khung mã nguồn (Skeleton) Spring Boot.
 - Triển khai hệ thống đăng ký & xác thực OTP Email.
 
+### Tuần 5 – Hoàn thiện, Chat Real-time & UUID Migration
+- Hệ thống Chat Real-time (WebSocket STOMP).
+- Quản lý Đơn hàng Kanban (Restaurant).
+- Giao diện Mobile-First (Driver).
+- Database UUID Migration.
+
 ---
 
-*Cập nhật lần cuối: 14/05/2026*
+*Cập nhật lần cuối: 17/05/2026*
 

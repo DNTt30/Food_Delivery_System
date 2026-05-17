@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:replace="~{layouts/customer_layout :: layout(~{::head}, ~{::main})}">
+<head>
+    <title>Đơn hàng của tôi - Premium Delivery</title>
+</head>
+<body>
+
+    <main>
+        <div class="container py-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold">Đơn hàng đang xử lý</h3>
+                <div th:if="${param.error == 'access_denied'}" class="alert alert-danger py-2 px-3 rounded-pill small">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Bạn không có quyền xem đơn hàng này.
+                </div>
+            </div>
+
+            <div class="row g-4" id="orderList">
+                <!-- Render danh sách thực tế từ Database -->
+                <div th:each="order : ${activeOrders}" class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="text-muted small d-block">Mã đơn hàng</span>
+                                    <span class="fw-bold" th:text="'#' + ${order.id}">#ORD-001</span>
+                                </div>
+                                <span class="badge bg-primary rounded-pill px-3 py-2" th:text="${order.status}">TRẠNG THÁI</span>
+                            </div>
+                            
+                            <h5 class="card-title fw-bold mb-1" th:text="${order.restaurant.restaurantName}">Tên nhà hàng</h5>
+                            <p class="text-muted small mb-4">
+                                <i class="bi bi-geo-alt me-1"></i> <span th:text="${order.deliveryAddressSnapshot}">Địa chỉ</span>
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                                <span class="fw-bold text-danger fs-5" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
+                                <a th:href="@{/customer/tracking(orderId=${order.id})}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                     Theo dõi <i class="bi bi-map-fill ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nếu không có đơn hàng nào -->
+                <div th:if="${#lists.isEmpty(activeOrders)}" class="col-12 text-center py-5">
+                    <div class="display-1 text-muted mb-4"><i class="bi bi-bag-x"></i></div>
+                    <h5>Bạn không có đơn hàng nào đang xử lý.</h5>
+                    <a href="/customer/home" class="btn btn-primary rounded-pill mt-3 px-4">Đặt món ngay</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>
