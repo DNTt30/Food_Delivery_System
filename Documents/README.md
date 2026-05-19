@@ -62,22 +62,18 @@
 
 ---
 
-## ✅ Tuần 7 – Cập nhật Tài liệu Toàn diện
+## ✅ Tuần 7 – Sửa lỗi Geocoding, Đồng bộ Tọa độ & Cập nhật Tài liệu
 
 **Hoạt động:**
-- **Cập nhật [README.md root](../README.md):** 
-  - Thêm hướng dẫn cài đặt chi tiết (Clone, Build, Run)
-  - API Endpoints tóm tắt cho 6 loại (Auth, Profile, Order, Chat, Tracking, Notification)
-  - Stack công nghệ (Backend/Frontend/Infrastructure)
-  - Kiến trúc 3-tầng diagram
-  - Contributing guide & Testing instructions
+- **Khắc phục lỗi định vị (Nominatim API):** Bổ sung header `User-Agent` (`FoodDeliveryApp/1.0`) cho RestTemplate của `GeocodingService` để giải quyết triệt để lỗi 403 Forbidden chặn IP từ OpenStreetMap.
+- **Tích hợp Map Picker tự động lưu tọa độ:** Nâng cấp bản đồ chọn vị trí (Leaflet Map) trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, hỗ trợ tự động đồng bộ và lưu tọa độ `latitude`/`longitude` trực tiếp vào Database khi người dùng xác nhận vị trí trên bản đồ.
+- **Cơ chế Snapshots & Fallback thông minh:** Cập nhật `OrderService` khi tạo đơn: tự động geocode địa chỉ giao hàng và địa chỉ quán, chỉ fallback về tọa độ profile nếu địa chỉ trùng khớp, bổ sung cơ chế tự sửa lỗi (self-healing) tọa độ cho các đơn hàng cũ thiếu dữ liệu tracking.
+- **Thanh trạng thái tiến trình giao hàng (Tracking Progress UI Bar):** Thêm thanh tiến trình trực quan động trên trang theo dõi đơn hàng của Khách hàng (`tracking.html`), đồng bộ với các trạng thái đơn hàng thời gian thực.
+- **Cập nhật Tài liệu Toàn diện:** 
+  - Cập nhật [README.md root](../README.md) với đầy đủ API Endpoints, hướng dẫn cài đặt, kiến trúc 3-tầng và stack công nghệ.
+  - Cập nhật tài liệu chuyên biệt từng module trong thư mục `modules/` để phản ánh đúng các thay đổi kỹ thuật của dự án.
 
-- **Cập nhật Documents/README.md:**
-  - Tóm tắt tiến độ theo tuần
-  - Cơ chế OTP, Chat Real-time, UUID Migration
-  - Danh sách sản phẩm & trạng thái
-
-**Sản phẩm:** ✅ README Root (Toàn diện) | ✅ Documents README (Tóm tắt)
+**Sản phẩm:** ✅ Bản vá lỗi Nominatim API 403 | ✅ Map Picker Auto-Save | ✅ Tracking Progress Bar | ✅ README Root & Module Docs
 
 ---
 

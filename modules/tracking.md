@@ -49,6 +49,7 @@ The `tracking` module handles live driver location tracking. It processes GPS co
     *   `COMPLETED` ──> `ARRIVED`
 *   **Asynchronous Database Logger**: `LocationTrackingService.saveTrackingHistory()` carries `@Async` annotation. This delegates database writes to a background worker pool, preventing slow SQL writes from delaying the client's live WebSocket coordinate streams.
 *   **Hibernate Proxy Performance Optimization**: Uses `foodOrderRepository.getReferenceById(orderId)` instead of `findById()` when saving location histories, avoiding redundant SELECT queries.
+*   **Coordinate Snapshots & Self-Healing Logic**: `OrderService` captures restaurant and delivery coordinates at checkout. If coordinates are missing, it initiates synchronous Nominatim API queries to fetch and populate them. For older active orders lacking coordinates, the tracking system applies self-healing logic to fallback to profile-based coordinates individually if addresses match, preventing UI map breaks.
 
 ---
 
@@ -76,5 +77,5 @@ The `tracking` module handles live driver location tracking. It processes GPS co
 
 ## 8. Related Components & Templates
 
-*   `templates/customer/tracking.html`: Leaflet map view tracking driver movements.
+*   `templates/customer/tracking.html`: Leaflet map view tracking driver movements, integrated with an **intuitive progress status bar** showing order status milestones.
 *   `static/js/map-tracking.js` & `tracking-service.js`: Renders active maps, marker coordinates, pins (Customer, Restaurant, Driver), and dynamic direction paths.

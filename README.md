@@ -67,12 +67,12 @@ Food_Delivery_System/
 - ✅ **Xác thực & Đăng ký:** OTP qua Email, Reset mật khẩu
 - ✅ **Tìm kiếm & Đặt hàng:** Search thông minh, filter nhà hàng, giỏ hàng Real-time (LocalStorage)
 - ✅ **Quản lý Đơn hàng:** Xem lịch sử, hủy đơn (trạng thái cho phép)
-- ✅ **Theo dõi Giao hàng:** Tracking Timeline Real-time, tự động cập nhật mỗi 15 giây
+- ✅ **Theo dõi Giao hàng:** Live GPS Tracking trực quan với bản đồ và thanh tiến trình động (Tracking Progress Bar)
 - ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
 
 ### 🏪 Nhà hàng (Restaurant)
-- ✅ **Quản lý Hồ sơ:** Cập nhật thông tin, chọn vị trí trên bản đồ, upload banner
+- ✅ **Quản lý Hồ sơ:** Cập nhật thông tin, bản đồ chọn vị trí (Leaflet Map Picker) tự động đồng bộ tọa độ, upload banner
 - ✅ **Quản lý Thực đơn:** CRUD món ăn, upload hình ảnh chi tiết, set giá
 - ✅ **Quản lý Đơn hàng:** Tiếp nhận, chế biến, bàn giao cho Tài xế
 - ✅ **Dashboard:** Thống kê doanh thu trực quan (Chart.js), xem đơn theo ngày/tháng

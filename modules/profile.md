@@ -75,7 +75,9 @@ Profiles utilize `@OneToOne(cascade = CascadeType.ALL)` links. Deleting or modif
 ## 6. Known Bugs & Code Limitations
 
 *   **Lack of Phone Validation**: Profile creation and modification do not perform format validations (e.g. checks for 10-digit formats). This creates risks of broken formatting in SMS or chat contexts.
-*   **Address Geocode Sync**: Creating or updating a restaurant address inside `RestaurantProfile` does not trigger automatic geocoding. The coordinates remain out-of-sync until a delivery distance estimation forces a geocode check in `OrderService`.
+*   **[RESOLVED] Address Geocode Sync**: Previously, updating addresses left coordinates out of sync. This is now resolved:
+    1. The Profile page (`profile.html` for Customers & Restaurants) incorporates a Leaflet Map Picker that auto-saves exact `latitude` and `longitude` coordinates directly to the database upon location confirmation.
+    2. During checkout, if coordinates are missing, `OrderService.createOrder()` automatically queries Nominatim API and persists the resolved coordinates back to the respective Profile repository.
 
 ---
 

@@ -67,7 +67,7 @@ graph TD
 
 *   **Synchronous Nominatim Calls**: Geocoding queries are performed synchronously inside `createOrder()`. If Nominatim's server is slow, the entire checkout process lags, blocking database connection pool resources.
 *   **Voucher Expiration Vulnerability**: The voucher validation checks dates using `LocalDate.now()` but does not account for time zones, which can cause inconsistent validation results near midnight.
-*   **Nominatim User-Agent Blocking Risk**: Nominatim requires a user-agent header. Since the RestTemplate calls do not include it, the server is at risk of being blocked by OpenStreetMap.
+*   **[RESOLVED] Nominatim User-Agent Blocking Risk**: Nominatim requires a user-agent header. This is resolved by adding a custom `User-Agent` header (`FoodDeliveryApp/1.0`) to the HTTP request in `GeocodingService.java` to prevent 403 Forbidden blocking errors.
 
 ---
 

@@ -1,10 +1,10 @@
 # 🎓 BÁO CÁO TỔNG KẾT DỰ ÁN
 ## Hệ thống Quản lý Giao đồ ăn Trực tuyến — Food Delivery System
 
-> **Ngày báo cáo:** 14/05/2026  
+> **Ngày báo cáo:** 20/05/2026  
 > **Người thực hiện:** Dương Ngọc Tú  
-> **Trạng thái:** Hoàn thiện 100% + Tối ưu hóa bảo mật & UI/UX  
-> **Công nghệ lõi:** Spring Boot 3.3 · Spring Security · WebSocket · MySQL · UUID · JWT
+> **Trạng thái:** Hoàn thiện 100% + Khắc phục lỗi Geocoding & Bản đồ + Cập nhật tài liệu  
+> **Công nghệ lõi:** Spring Boot 3.3 · Spring Security · WebSocket · MySQL · UUID · JWT · Leaflet Map
 
 ---
 
@@ -23,10 +23,11 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 | Nhóm chức năng | Use Case | Trạng thái | Ghi chú |
 | :--- | :--- | :--- | :--- |
 | **Xác thực** | Đăng ký, Đăng nhập, OTP, Quên mật khẩu | ✅ 100% | UUID Secure + JWT |
-| **Customer** | Tìm kiếm, Giỏ hàng, Đặt đơn, Tracking, Đánh giá | ✅ 100% | Auto-refresh Timeline |
-| **Restaurant**| Quản lý Menu, Kanban Orders, Doanh thu | ✅ 100% | Chart.js integration |
-| **Driver** | Nhận đơn, Quy trình giao hàng, Thu nhập | ✅ 100% | Mobile-optimized |
+| **Customer** | Tìm kiếm, Giỏ hàng, Đặt đơn, Tracking, Đánh giá | ✅ 100% | Auto-refresh Timeline & Progress UI Bar |
+| **Restaurant**| Quản lý Menu, Kanban Orders, Doanh thu | ✅ 100% | Chart.js & Map Coordinates Picker |
+| **Driver** | Nhận đơn, Quy trình giao hàng, Thu nhập | ✅ 100% | Mobile-optimized & Live GPS Updating |
 | **Admin** | Quản trị User/Đối tác, Voucher, Thống kê | ✅ 100% | Full Control Dashboard |
+| **Geocoding & Map**| Sửa lỗi định vị Nominatim API, Snapshots & Fallback | ✅ 100% | Tích hợp User-Agent & Map Auto-save |
 
 ---
 
@@ -46,6 +47,12 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 - **Tài xế:** Giao diện thẻ dọc, tích hợp nút gọi/chat ngữ cảnh và thanh trạng thái Online/Offline.
 - **Admin:** Thống kê doanh thu thực tế và quản lý đối tác chuyên nghiệp.
 
+### 🗺️ Tối ưu hóa Hệ thống Bản đồ & Tracking (Mới - Tuần 7)
+- **Nominatim Geocoding Hardening**: Tích hợp `User-Agent` hợp lệ khi gọi API OpenStreetMap (Nominatim), giải quyết triệt để lỗi 403 Forbidden.
+- **Map Location Auto-Save**: Tích hợp Leaflet Map Picker trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, tự động lấy tọa độ và cập nhật tức thì vào database khi xác nhận vị trí.
+- **Thanh trạng thái tiến trình giao hàng (Tracking Progress UI)**: Thêm thanh tiến trình trực quan động trên trang theo dõi đơn hàng của Khách hàng, tương ứng với các cột mốc trạng thái từ Chuẩn bị, Đang giao đến Hoàn thành.
+- **Cơ chế Snapshots & Fallback thông minh**: `OrderService` tự động geocode địa chỉ giao hàng và địa chỉ nhà hàng khi đặt đơn nếu thiếu tọa độ, đồng thời tự sửa lỗi (self-healing) cho các đơn hàng cũ.
+
 ---
 
 ## 4. GIẢI QUYẾT CÁC VẤN ĐỀ KỸ THUẬT
@@ -57,6 +64,8 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 | 3 | Lỗi SQL khi khởi động | Đồng bộ lại schema giữa JPA Entity và MySQL (Aiven Cloud). |
 | 4 | Trải nghiệm Dashboard | Triển khai Kanban Board và Pagination phía Server để tối ưu hiệu năng. |
 | 5 | Rò rỉ thông tin liên lạc | Sử dụng `PhoneMaskUtil` để ẩn số điện thoại sau khi giao hàng thành công. |
+| 6 | Lỗi 403 Forbidden Nominatim API | Bổ sung header `User-Agent` (`FoodDeliveryApp/1.0`) cho RestTemplate trong `GeocodingService`. |
+| 7 | Thiếu tọa độ / Sai khoảng cách | Thiết lập cơ chế Fallback thông minh khi đặt hàng và tự động lưu tọa độ trực tiếp qua Map Picker. |
 
 ---
 
