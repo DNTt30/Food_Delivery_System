@@ -35,6 +35,7 @@ public class RestaurantApiController {
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
     private final OrderService orderService;
+    private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
 
     public RestaurantApiController(UserRepository userRepository,
                                    RestaurantProfileRepository restaurantProfileRepository,
@@ -42,7 +43,8 @@ public class RestaurantApiController {
                                    FoodOrderRepository foodOrderRepository,
                                    VoucherRepository voucherRepository,
                                    ReviewRepository reviewRepository,
-                                   OrderService orderService) {
+                                   OrderService orderService,
+                                   com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -50,6 +52,7 @@ public class RestaurantApiController {
         this.voucherRepository = voucherRepository;
         this.reviewRepository = reviewRepository;
         this.orderService = orderService;
+        this.trackingLocationRepository = trackingLocationRepository;
     }
 
     // ================================================================
@@ -350,6 +353,16 @@ public class RestaurantApiController {
             driverPhone = o.getDriver().getPhoneNumber();
         }
 
+        // Lấy trackingPhase mới nhất để hiển thị cho Restaurant
+        String trackingPhase = null;
+        if (o.getStatus() == com.duong.salesmanagement.model.OrderStatus.DELIVERING
+                || o.getStatus() == com.duong.salesmanagement.model.OrderStatus.COMPLETED) {
+            var latest = trackingLocationRepository.findFirstByOrderIdOrderByTimestampDesc(o.getId());
+            if (latest != null && latest.getTrackingPhase() != null) {
+                trackingPhase = latest.getTrackingPhase().name();
+            }
+        }
+
         return new OrderDTO(
                 o.getId(),
                 customerName,
@@ -360,7 +373,8 @@ public class RestaurantApiController {
                 o.getDeliveryAddress(),
                 o.getOrderTime() != null ? o.getOrderTime().toString() : null,
                 driverName,
-                driverPhone
+                driverPhone,
+                trackingPhase
         );
     }
 
@@ -526,15 +540,17 @@ public class RestaurantApiController {
         public String orderTime;
         public String driverName;
         public String driverPhone;
+        public String trackingPhase; // Phase mới nhất từ GPS log
 
         public OrderDTO(Long id, String customerName, String customerPhone,
                         List<OrderItemDTO> items, String status, Double totalAmount,
                         String deliveryAddress, String orderTime,
-                        String driverName, String driverPhone) {
+                        String driverName, String driverPhone, String trackingPhase) {
             this.id = id; this.customerName = customerName; this.customerPhone = customerPhone;
             this.items = items; this.status = status; this.totalAmount = totalAmount;
             this.deliveryAddress = deliveryAddress; this.orderTime = orderTime;
             this.driverName = driverName; this.driverPhone = driverPhone;
+            this.trackingPhase = trackingPhase;
         }
     }
 

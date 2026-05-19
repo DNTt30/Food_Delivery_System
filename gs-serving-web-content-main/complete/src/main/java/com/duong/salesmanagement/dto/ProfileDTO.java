@@ -19,6 +19,9 @@ public class ProfileDTO {
     private String restaurantName;
     private String address;
     private String bannerUrl;
+    private Double latitude;     // Tọa độ nhà hàng (bản đồ)
+    private Double longitude;
+    private String phone;        // Số điện thoại kinh doanh
 
     // Getters and Setters
     public String getUsername() { return username; }
@@ -50,4 +53,13 @@ public class ProfileDTO {
 
     public String getBannerUrl() { return bannerUrl; }
     public void setBannerUrl(String bannerUrl) { this.bannerUrl = bannerUrl; }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

@@ -50,6 +50,8 @@ public class ProfileService {
                     });
             dto.setPhoneNumber(profile.getPhoneNumber());
             dto.setDeliveryAddress(profile.getDeliveryAddress());
+            dto.setLatitude(profile.getLatitude());
+            dto.setLongitude(profile.getLongitude());
         } else if (user.getRole() == Role.DRIVER) {
             DriverProfile profile = driverProfileRepository.findByUser(user)
                     .orElseGet(() -> {
@@ -69,7 +71,9 @@ public class ProfileService {
             dto.setRestaurantName(profile.getRestaurantName());
             dto.setAddress(profile.getAddress());
             dto.setBannerUrl(profile.getBannerUrl());
-            // optionally we could include isOpen, but we omitted from ProfileDTO for now
+            dto.setLatitude(profile.getLatitude());
+            dto.setLongitude(profile.getLongitude());
+            // RestaurantProfile chưa có phone riêng — bỏ qua, frontend nhận null
         }
 
         return dto;
@@ -94,6 +98,8 @@ public class ProfileService {
                     });
             if (dto.getPhoneNumber() != null) profile.setPhoneNumber(dto.getPhoneNumber());
             if (dto.getDeliveryAddress() != null) profile.setDeliveryAddress(dto.getDeliveryAddress());
+            if (dto.getLatitude() != null) profile.setLatitude(dto.getLatitude());
+            if (dto.getLongitude() != null) profile.setLongitude(dto.getLongitude());
             customerProfileRepository.save(profile);
         } else if (user.getRole() == Role.DRIVER) {
             DriverProfile profile = driverProfileRepository.findByUser(user)
@@ -113,8 +119,11 @@ public class ProfileService {
                         return p;
                     });
             if (dto.getRestaurantName() != null) profile.setRestaurantName(dto.getRestaurantName());
-            if (dto.getAddress() != null) profile.setAddress(dto.getAddress());
-            if (dto.getBannerUrl() != null) profile.setBannerUrl(dto.getBannerUrl());
+            if (dto.getAddress()        != null) profile.setAddress(dto.getAddress());
+            if (dto.getBannerUrl()      != null) profile.setBannerUrl(dto.getBannerUrl());
+            // Lưu tọa độ từ map picker
+            if (dto.getLatitude()  != null) profile.setLatitude(dto.getLatitude());
+            if (dto.getLongitude() != null) profile.setLongitude(dto.getLongitude());
             restaurantProfileRepository.save(profile);
         }
     }

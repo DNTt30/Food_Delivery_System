@@ -204,8 +204,8 @@
                                     <!-- Search Bar Overlay -->
                                     <div class="position-absolute top-0 start-50 translate-middle-x mt-3 w-75" style="z-index: 1000;">
                                         <div class="input-group shadow-sm">
-                                            <input type="text" id="mapSearchInput" class="form-control border-0 rounded-start-4 py-2" placeholder="Tìm kiếm địa chỉ...">
-                                            <button class="btn btn-white border-0 rounded-end-4 px-3" type="button" onclick="searchAddress()">
+                                            <input type="text" id="mapSearchInput" class="form-control border-0 rounded-start-4 py-2" placeholder="Tìm kiếm địa chỉ..." onkeydown="if(event.key==='Enter') { event.preventDefault(); searchAddress(); }">
+                                            <button type="button" class="btn btn-white border-0 rounded-end-4 px-3" onclick="searchAddress()">
                                                 <i class="bi bi-search text-primary"></i>
                                             </button>
                                         </div>
@@ -216,7 +216,7 @@
                                     <div id="picker-map" style="height: 450px; width: 100%;"></div>
 
                                     <!-- My Location Button -->
-                                    <button class="btn btn-white rounded-circle shadow position-absolute bottom-0 end-0 m-3" 
+                                    <button type="button" class="btn btn-white rounded-circle shadow position-absolute bottom-0 end-0 m-3" 
                                             style="z-index: 1000; width: 45px; height: 45px; border: 1px solid #ddd;" 
                                             onclick="getCurrentLocation()" title="Vị trí của tôi">
                                         <i class="bi bi-crosshair2 text-danger fs-5"></i>
@@ -415,16 +415,17 @@
                         document.getElementById('fieldCustomer').style.display = 'block';
                         document.getElementById('phoneNumber').value = data.phoneNumber || '';
                         document.getElementById('deliveryAddress').value = data.deliveryAddress || '';
+                        // Lưu lại toạ độ để dùng khi mở map
+                        if (data.latitude && data.longitude) {
+                            window.customerLat = data.latitude;
+                            window.customerLng = data.longitude;
+                        }
                     } else if (role === 'DRIVER') {
-                        document.getElementById('fieldDriver').style.display = 'block';
-                        document.getElementById('driverPhone').value = data.phoneNumber || '';
-                        document.getElementById('licensePlate').value = data.licensePlate || '';
+                        // Redirect driver to their app UI instead of this customer-styled page
+                        window.location.href = '/driver/dashboard';
                     } else if (role === 'RESTAURANT') {
-                        document.getElementById('fieldRestaurant').style.display = 'block';
-                        document.getElementById('restaurantName').value = data.restaurantName || '';
-                        document.getElementById('address').value = data.address || '';
-                        document.getElementById('bannerUrl').value = data.bannerUrl || '';
-                        previewBanner(data.bannerUrl);
+                        // Redirect restaurant to their dashboard profile page
+                        window.location.href = '/restaurant/profile';
                     }
                 }
             } catch (err) { showAlert('Lỗi kết nối', 'danger'); }
@@ -437,6 +438,10 @@
             if (role === 'CUSTOMER') {
                 payload.phoneNumber = document.getElementById('phoneNumber').value;
                 payload.deliveryAddress = document.getElementById('deliveryAddress').value;
+                if (window.customerLat && window.customerLng) {
+                    payload.latitude = window.customerLat;
+                    payload.longitude = window.customerLng;
+                }
             } else if (role === 'DRIVER') {
                 payload.phoneNumber = document.getElementById('driverPhone').value;
                 payload.licensePlate = document.getElementById('licensePlate').value;
@@ -487,7 +492,10 @@
             
             modalElement.addEventListener('shown.bs.modal', function () {
                 if (!pickerMap) {
-                    pickerMap = L.map('picker-map', { zoomControl: false }).setView([10.762622, 106.660172], 15);
+                    const lat = window.customerLat || 10.762622;
+                    const lng = window.customerLng || 106.660172;
+                    
+                    pickerMap = L.map('picker-map', { zoomControl: false }).setView([lat, lng], 15);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap'
                     }).addTo(pickerMap);
@@ -496,8 +504,16 @@
                     pickerMap.on('click', function(e) {
                         updateMarker(e.latlng.lat, e.latlng.lng);
                     });
+                    
+                    if (window.customerLat && window.customerLng) {
+                        updateMarker(window.customerLat, window.customerLng, document.getElementById('deliveryAddress').value);
+                    }
                 } else {
                     pickerMap.invalidateSize();
+                    if (window.customerLat && window.customerLng) {
+                        pickerMap.setView([window.customerLat, window.customerLng], 15);
+                        updateMarker(window.customerLat, window.customerLng, document.getElementById('deliveryAddress').value);
+                    }
                 }
             }, { once: true });
         }
@@ -543,6 +559,11 @@
             const query = document.getElementById('mapSearchInput').value;
             if (!query) return;
 
+            const btn = document.querySelector('#mapSearchInput').nextElementSibling;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span>';
+            btn.disabled = true;
+
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1&accept-language=vi`);
                 const results = await res.json();
@@ -561,8 +582,16 @@
                         };
                         container.appendChild(btn);
                     });
+                } else {
+                    showAlert('Không tìm thấy địa chỉ nào phù hợp!', 'warning');
                 }
-            } catch (err) { console.error("Search error:", err); }
+            } catch (err) { 
+                console.error("Search error:", err); 
+                showAlert('Lỗi tìm kiếm!', 'danger');
+            } finally {
+                btn.innerHTML = originalIcon;
+                btn.disabled = false;
+            }
         }
 
         // Đóng danh sách tìm kiếm khi click ra ngoài
@@ -576,8 +605,14 @@
             const address = document.getElementById('pickedAddress').textContent;
             if (address && address !== "Vui lòng chọn một điểm trên bản đồ...") {
                 document.getElementById('deliveryAddress').value = address;
+                window.customerLat = selectedLat;
+                window.customerLng = selectedLng;
                 bootstrap.Modal.getInstance(document.getElementById('mapPickerModal')).hide();
-                showAlert('Đã cập nhật địa chỉ!', 'success');
+                // Tự động lưu để tránh người dùng quên bấm nút
+                document.getElementById('profileForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                showAlert('Đã cập nhật vị trí bản đồ thành công!', 'success');
+            } else {
+                showAlert('Vui lòng chọn 1 điểm trên bản đồ!', 'warning');
             }
         }
     </script>

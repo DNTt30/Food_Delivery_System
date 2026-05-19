@@ -49,6 +49,10 @@
     
     .history-table th { background: #f8fafc; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
     .history-table td { font-size: 0.9rem; vertical-align: middle; }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(34,197,94,.3); }
+        50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+    }
 </style>
 
 
@@ -191,6 +195,16 @@ let historySize = 10;
 function fmtVND(n){return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n||0);}
 function fmtTime(dt){if(!dt)return '';const d=Array.isArray(dt)?new Date(dt[0],dt[1]-1,dt[2],dt[3]||0,dt[4]||0):new Date(dt);return d.toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit'});}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function formatTrackingPhase(phase) {
+    const map = {
+        'DRIVER_ACCEPTED':       '🛵 Tài xế vừa nhận đơn',
+        'GOING_TO_RESTAURANT':   '🏍️ Đang đến lấy hàng',
+        'WAITING_AT_RESTAURANT': '⏳ Đang chờ lấy tại quán',
+        'DELIVERING':            '📦 Đang giao đến khách',
+        'ARRIVED':               '✅ Đã đến nơi'
+    };
+    return map[phase] || null;
+}
 
 async function loadOrders(){
     if(currentTab !== 'PROCESSING') return;
@@ -280,7 +294,18 @@ function renderCol(elId, orders, type) {
                 </div>
             `;
         } else if (o.status === 'DELIVERING') {
+            const phaseLabel = o.trackingPhase ? formatTrackingPhase(o.trackingPhase) : null;
+            const phaseBadge = phaseLabel
+                ? `<div class="mb-2 px-2 py-1 rounded-2 d-flex align-items-center gap-2"
+                        style="background:#f0fdf4;border:1px solid #86efac;">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;
+                              box-shadow:0 0 0 3px rgba(34,197,94,.25);display:inline-block;
+                              animation:pulse 1.5s infinite;"></span>
+                        <span class="small fw-bold text-success">${phaseLabel}</span>
+                   </div>`
+                : '';
              actions = `
+                ${phaseBadge}
                 <div class="mb-2 p-2 rounded bg-info bg-opacity-10 border border-info border-opacity-20">
                     <div class="small fw-bold text-info"><i class="bi bi-truck me-1"></i> Đang giao: ${esc(o.driverName)}</div>
                 </div>

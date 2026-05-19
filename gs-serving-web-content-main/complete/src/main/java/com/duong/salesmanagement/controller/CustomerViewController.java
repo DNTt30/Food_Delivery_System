@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/customer")
@@ -68,6 +67,22 @@ public class CustomerViewController {
             // 2. Kiểm tra quyền (Nếu có user thì check, nếu không có user thì cho qua để test)
             if (user != null && !orderService.hasPermissionToTrackOrder(orderId, user)) {
                 return "redirect:/customer/orders?error=access_denied";
+            }
+            
+            // 3. Self-healing logic for old orders that were created without coordinates
+            boolean updated = false;
+            if (order.getRestaurantLat() == null && order.getRestaurant().getLatitude() != null) {
+                order.setRestaurantLat(order.getRestaurant().getLatitude());
+                order.setRestaurantLng(order.getRestaurant().getLongitude());
+                updated = true;
+            }
+            if (order.getDeliveryLat() == null && order.getCustomer().getLatitude() != null) {
+                order.setDeliveryLat(order.getCustomer().getLatitude());
+                order.setDeliveryLng(order.getCustomer().getLongitude());
+                updated = true;
+            }
+            if (updated) {
+                foodOrderRepository.save(order);
             }
             
             model.addAttribute("order", order);

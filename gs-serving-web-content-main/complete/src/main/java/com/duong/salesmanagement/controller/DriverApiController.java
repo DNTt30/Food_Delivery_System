@@ -92,6 +92,23 @@ public class DriverApiController {
         }
     }
 
+    // UC-16: Driver xác nhận đã lấy hàng tại nhà hàng → chuyển sang DELIVERING
+    @PutMapping("/orders/{id}/picked-up")
+    public ResponseEntity<?> pickedUp(Authentication authentication, @PathVariable Long id) {
+        DriverProfile driver = getAuthenticatedDriver(authentication);
+        if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            orderService.markAsPickedUp(id, driver);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Đã lấy hàng! Bắt đầu giao đến khách.",
+                    "orderId", id
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // UC-16: Hoàn thành giao hàng
     @PutMapping("/orders/{id}/complete")
     public ResponseEntity<?> completeDelivery(Authentication authentication, @PathVariable Long id) {
@@ -147,7 +164,7 @@ public class DriverApiController {
                 o.getOrderItems().stream()
                         .map(oi -> oi.getQuantity() + "x " + oi.getMenuItem().getName())
                         .collect(Collectors.toList());
-        return new DriverOrderDTO(
+        DriverOrderDTO dto = new DriverOrderDTO(
                 o.getId(),
                 o.getRestaurant().getRestaurantName(),
                 o.getRestaurant().getAddress(),
@@ -158,6 +175,17 @@ public class DriverApiController {
                 o.getCustomer().getUser().getFullName(),
                 itemNames
         );
+        // Tọa độ nhà hàng (để Driver map vẽ route chặng 1)
+        dto.restaurantLat = o.getRestaurantLat();
+        dto.restaurantLng = o.getRestaurantLng();
+        // Tọa độ giao hàng đến khách (để Driver map vẽ route chặng 2)
+        dto.deliveryLat = o.getDeliveryLat();
+        dto.deliveryLng = o.getDeliveryLng();
+        // Số điện thoại
+        dto.customerPhone = o.getCustomer().getPhoneNumber();
+        // RestaurantProfile chưa có field phoneNumber — để null (bổ sung sau nếu cần)
+        dto.restaurantPhone = null;
+        return dto;
     }
 
     public static class DriverOrderDTO {
@@ -170,6 +198,14 @@ public class DriverApiController {
         public String orderTime;
         public String customerName;
         public List<String> items;
+        // Tọa độ để vẽ map
+        public Double restaurantLat;
+        public Double restaurantLng;
+        public Double deliveryLat;
+        public Double deliveryLng;
+        // Số điện thoại
+        public String customerPhone;
+        public String restaurantPhone;
 
         public DriverOrderDTO(Long id, String restaurantName, String restaurantAddress,
                               String deliveryAddress, String status, Double totalAmount,

@@ -1,22 +1,75 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" 
+<html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'restaurant', ~{::main})}">
 <head>
     <title>Hồ Sơ Nhà Hàng | Food Portal</title>
 </head>
 <body>
     <main>
+        <!-- Leaflet — phải trong <main> vì dashboard_layout chỉ inject <title> tag -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        <style>
+            #map-picker-wrap {
+                border-radius: 14px; overflow: hidden;
+                border: 2px solid #e2e8f0; position: relative;
+                margin-top: 10px; transition: border-color .2s;
+            }
+            #map-picker-wrap.focused { border-color: #f59e0b; }
+            #map-picker { height: 280px; width: 100%; background: #f1f5f9; }
+            .map-hint {
+                position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+                background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+                border: 1px solid #e2e8f0; border-radius: 20px;
+                padding: 5px 14px; font-size: .73rem; font-weight: 600; color: #334155;
+                z-index: 999; pointer-events: none; white-space: nowrap;
+            }
+            .map-coords {
+                position: absolute; bottom: 10px; left: 10px; z-index: 999;
+                background: rgba(255,255,255,.9); border: 1px solid #e2e8f0;
+                border-radius: 8px; padding: 4px 10px;
+                font-size: .7rem; color: #64748b; display: none;
+            }
+            .btn-locate {
+                position: absolute; top: 10px; right: 10px; z-index: 999;
+                background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+                padding: 6px 12px; font-size: .78rem; font-weight: 600;
+                color: #334155; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+            }
+            .btn-locate:hover { background: #f8fafc; }
+            .addr-row { display: flex; gap: 8px; }
+            .addr-row input { flex:1; }
+            .btn-find {
+                padding: 0 16px; background: #f59e0b; border: none;
+                border-radius: 10px; color: #fff; font-weight: 600;
+                font-size: .82rem; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            }
+            .btn-find:hover { background: #d97706; }
+            .prof-toast {
+                position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                padding: 12px 20px; border-radius: 12px;
+                font-size: .85rem; font-weight: 600; color: #fff;
+                box-shadow: 0 8px 24px rgba(0,0,0,.2);
+                animation: su .3s ease;
+            }
+            .prof-toast.success { background: #16a34a; }
+            .prof-toast.danger  { background: #dc2626; }
+            .prof-toast.info    { background: #1e293b; }
+            @keyframes su { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        </style>
+
         <div class="container-fluid px-4 py-4">
-            <!-- Header Section -->
             <div class="mb-4">
                 <h4 class="fw-bold"><i class="bi bi-person-circle me-2"></i>Hồ Sơ Nhà Hàng</h4>
                 <p class="text-muted small">Quản lý thông tin tài khoản và cấu hình cửa hàng của bạn.</p>
             </div>
 
-            <!-- Profile Content -->
             <div class="row">
+                <!-- ═══ LEFT ═══ -->
                 <div class="col-lg-8">
-                    <!-- Section: Personal Info -->
+
+                    <!-- Thông tin cơ bản -->
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</h6>
@@ -32,21 +85,51 @@
                                         <label class="form-label fw-bold small text-muted">ĐỊA CHỈ EMAIL</label>
                                         <input type="email" id="email" class="form-control bg-light rounded-3 py-2" disabled>
                                     </div>
-                                    
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold small text-muted">TÊN NHÀ HÀNG</label>
                                         <input type="text" id="restaurantName" class="form-control rounded-3 py-2">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label fw-bold small text-muted">ĐỊA CHỈ KINH DOANH</label>
-                                        <input type="text" id="address" class="form-control rounded-3 py-2">
+                                        <label class="form-label fw-bold small text-muted">SỐ ĐIỆN THOẠI</label>
+                                        <input type="tel" id="phone" class="form-control rounded-3 py-2" placeholder="0912 345 678">
                                     </div>
 
+                                    <!-- ── Địa chỉ + Map Picker ── -->
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold small text-muted">
+                                            <i class="bi bi-geo-alt-fill text-warning me-1"></i>ĐỊA CHỈ KINH DOANH
+                                        </label>
+                                        <div class="addr-row mb-1">
+                                            <input type="text" id="address" class="form-control rounded-3 py-2"
+                                                   placeholder="Nhập địa chỉ rồi bấm Tìm — hoặc click trực tiếp lên bản đồ"
+                                                   onkeydown="if(event.key==='Enter'){event.preventDefault();searchAddr();}">
+                                            <button type="button" class="btn-find" onclick="searchAddr()">
+                                                <i class="bi bi-search me-1"></i>Tìm
+                                            </button>
+                                        </div>
+                                        <small class="text-muted d-block mb-1">
+                                            Kéo ghim <strong>🏪</strong> hoặc click bản đồ để đặt vị trí chính xác.
+                                        </small>
+
+                                        <div id="map-picker-wrap">
+                                            <div class="map-hint">🏪 Click bản đồ hoặc kéo ghim để chọn vị trí</div>
+                                            <div id="map-picker"></div>
+                                            <button type="button" class="btn-locate" onclick="useGPS()">
+                                                <i class="bi bi-crosshair me-1"></i>Vị trí hiện tại
+                                            </button>
+                                            <div class="map-coords" id="mapCoords"></div>
+                                        </div>
+
+                                        <input type="hidden" id="latitude">
+                                        <input type="hidden" id="longitude">
+                                    </div>
+
+                                    <!-- Banner -->
                                     <div class="col-12">
                                         <label class="form-label fw-bold small text-muted">BANNER NHÀ HÀNG</label>
                                         <div class="mb-3 d-flex align-items-center gap-3">
-                                            <div style="width: 150px; height: 100px; border-radius: 12px; overflow: hidden; background: #f8f9fa; border: 1px dashed #ddd;">
-                                                <img id="bannerPreview" class="w-100 h-100 d-none" style="object-fit: cover;">
+                                            <div style="width:150px;height:100px;border-radius:12px;overflow:hidden;background:#f8f9fa;border:1px dashed #ddd;">
+                                                <img id="bannerPreview" class="w-100 h-100 d-none" style="object-fit:cover;">
                                                 <div id="bannerPlaceholder" class="w-100 h-100 d-flex align-items-center justify-content-center text-muted small">No Image</div>
                                             </div>
                                             <div class="flex-grow-1">
@@ -59,13 +142,15 @@
                                 </div>
 
                                 <div class="mt-4 pt-3 border-top text-end">
-                                    <button type="submit" class="btn btn-warning fw-bold px-4 rounded-3 text-white">Lưu thay đổi</button>
+                                    <button type="submit" class="btn btn-warning fw-bold px-4 rounded-3 text-white">
+                                        <i class="bi bi-check-lg me-1"></i>Lưu thay đổi
+                                    </button>
                                 </div>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Section: Security -->
+                    <!-- Bảo mật -->
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold"><i class="bi bi-shield-lock me-2"></i>Bảo mật tài khoản</h6>
@@ -94,111 +179,261 @@
                     </div>
                 </div>
 
+                <!-- ═══ RIGHT sidebar ═══ -->
                 <div class="col-lg-4">
-                    <div class="card border-0 shadow-sm rounded-4 text-center p-4 mb-4">
-                        <div class="mx-auto mb-3" style="width: 100px; height: 100px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <!-- Profile card -->
+                    <div class="card border-0 shadow-sm rounded-4 text-center p-4 mb-3">
+                        <div class="mx-auto mb-3" style="width:100px;height:100px;background:#fff8e1;border-radius:50%;display:flex;align-items:center;justify-content:center;">
                             <i class="bi bi-shop fs-1 text-warning"></i>
                         </div>
-                        <h5 class="fw-bold" id="sidebarRestaurantName">Tên Nhà Hàng</h5>
-                        <p class="text-muted small" id="sidebarEmail">email@example.com</p>
+                        <h5 class="fw-bold" id="sidebarName">Tên Nhà Hàng</h5>
+                        <p class="text-muted small mb-2" id="sidebarEmail">email@example.com</p>
                         <div class="badge bg-warning text-white rounded-pill px-3 py-2">RESTAURANT PARTNER</div>
+                    </div>
+
+                    <!-- Mini map -->
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-header bg-white py-2 px-3 border-bottom d-flex align-items-center gap-2">
+                            <i class="bi bi-map text-warning"></i>
+                            <small class="fw-bold text-muted">Vị trí cửa hàng trên bản đồ</small>
+                        </div>
+                        <div id="map-mini" style="height:200px;background:#f1f5f9;"></div>
+                        <div class="card-footer bg-white border-0 py-2 px-3">
+                            <p class="small text-muted mb-0" id="addressLabel" style="font-size:.75rem;line-height:1.4;">
+                                <i class="bi bi-geo-alt text-warning me-1"></i>Chưa cài địa chỉ
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Logic Script -->
         <script th:inline="javascript">
             const token = localStorage.getItem('jwt_token');
             if (!token) window.location.href = '/common/auth';
 
-            function showAlert(msg, type) {
-                alert(msg); // Thay bằng Toast nếu dự án có sẵn
+            let pMap = null, pMarker = null;   // picker map
+            let mMap = null, mMarker = null;   // mini map
+
+            const RESTAURANT_ICON = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/3170/3170733.png',
+                iconSize:[40,40], iconAnchor:[20,40], popupAnchor:[0,-42]
+            });
+
+            // ── Toast ──────────────────────────────────────────────
+            function toast(msg, type='info') {
+                const el = document.createElement('div');
+                el.className = `prof-toast ${type}`;
+                el.textContent = msg;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 3000);
             }
 
-            function previewBanner(url) {
-                const img = document.getElementById('bannerPreview');
-                const placeholder = document.getElementById('bannerPlaceholder');
-                if (url) {
-                    img.src = url;
-                    img.classList.remove('d-none');
-                    placeholder.classList.add('d-none');
+            // ── Picker Map ─────────────────────────────────────────
+            function initPicker(lat, lng) {
+                if (pMap) { pMap.remove(); pMap = null; pMarker = null; }
+                document.getElementById('map-picker').innerHTML = '';
+
+                const center = (lat && lng) ? [lat, lng] : [21.0285, 105.8542];
+                const zoom   = (lat && lng) ? 15 : 12;
+
+                pMap = L.map('map-picker').setView(center, zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap', maxZoom: 19
+                }).addTo(pMap);
+
+                if (lat && lng) placePin(lat, lng, false);
+
+                pMap.on('click', e => { placePin(e.latlng.lat, e.latlng.lng, true); });
+                setTimeout(() => pMap.invalidateSize(), 200);
+                document.getElementById('map-picker-wrap').classList.add('focused');
+            }
+
+            function placePin(lat, lng, doReverse) {
+                if (!pMarker) {
+                    pMarker = L.marker([lat,lng], { icon: RESTAURANT_ICON, draggable: true }).addTo(pMap);
+                    pMarker.on('dragend', ev => {
+                        const ll = ev.target.getLatLng();
+                        saveLatLng(ll.lat, ll.lng);
+                        reverseGeocode(ll.lat, ll.lng);
+                        syncMini(ll.lat, ll.lng);
+                    });
+                } else {
+                    pMarker.setLatLng([lat,lng]);
                 }
+                pMap.panTo([lat,lng]);
+                saveLatLng(lat, lng);
+                syncMini(lat, lng);
+                if (doReverse) reverseGeocode(lat, lng);
+
+                const badge = document.getElementById('mapCoords');
+                badge.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                badge.style.display = 'block';
             }
 
+            function saveLatLng(lat, lng) {
+                document.getElementById('latitude').value  = lat;
+                document.getElementById('longitude').value = lng;
+            }
+
+            // ── Mini Map ───────────────────────────────────────────
+            function initMini(lat, lng) {
+                if (!lat || !lng) return;
+                if (mMap) { mMap.remove(); mMap = null; mMarker = null; }
+                document.getElementById('map-mini').innerHTML = '';
+                mMap = L.map('map-mini', { zoomControl:false, dragging:false, touchZoom:false, scrollWheelZoom:false })
+                    .setView([lat,lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap', maxZoom: 19
+                }).addTo(mMap);
+                mMarker = L.marker([lat,lng], { icon: RESTAURANT_ICON }).addTo(mMap);
+                setTimeout(() => mMap.invalidateSize(), 200);
+            }
+
+            function syncMini(lat, lng) {
+                if (!mMap) { initMini(lat, lng); return; }
+                if (!mMarker) mMarker = L.marker([lat,lng], { icon: RESTAURANT_ICON }).addTo(mMap);
+                else mMarker.setLatLng([lat,lng]);
+                mMap.setView([lat,lng], 15);
+            }
+
+            // ── Geocoding ──────────────────────────────────────────
+            async function searchAddr() {
+                const q = document.getElementById('address').value.trim();
+                if (!q) { toast('Nhập địa chỉ trước', 'info'); return; }
+                const btn = document.querySelector('.btn-find');
+                btn.textContent = '🔍...'; btn.disabled = true;
+                try {
+                    const res  = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers:{'Accept-Language':'vi'} });
+                    const data = await res.json();
+                    if (data && data[0]) {
+                        const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+                        placePin(lat, lng, false);
+                        pMap.setView([lat,lng], 16);
+                        document.getElementById('addressLabel').innerHTML =
+                            `<i class="bi bi-geo-alt text-warning me-1"></i>${data[0].display_name.split(',').slice(0,3).join(',')}`;
+                        toast('✅ Đã tìm thấy vị trí!', 'success');
+                    } else { toast('Không tìm thấy địa chỉ', 'danger'); }
+                } catch { toast('Lỗi geocoding', 'danger'); }
+                finally { btn.innerHTML = '<i class="bi bi-search me-1"></i>Tìm'; btn.disabled = false; }
+            }
+
+            async function reverseGeocode(lat, lng) {
+                try {
+                    const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers:{'Accept-Language':'vi'} });
+                    const data = await res.json();
+                    if (data && data.display_name) {
+                        const short = data.display_name.split(',').slice(0,4).join(',');
+                        document.getElementById('address').value = short;
+                        document.getElementById('addressLabel').innerHTML =
+                            `<i class="bi bi-geo-alt text-warning me-1"></i>${short}`;
+                    }
+                } catch {}
+            }
+
+            function useGPS() {
+                if (!navigator.geolocation) { toast('GPS không hỗ trợ', 'info'); return; }
+                toast('📡 Đang lấy vị trí...', 'info');
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    placePin(lat, lng, true);
+                    pMap.setView([lat,lng], 16);
+                    toast('✅ Đã cập nhật vị trí!', 'success');
+                }, err => toast('GPS lỗi: ' + err.message, 'danger'), { enableHighAccuracy:true, timeout:10000 });
+            }
+
+            // ── Banner ─────────────────────────────────────────────
+            function previewBanner(url) {
+                if (!url) return;
+                document.getElementById('bannerPreview').src = url;
+                document.getElementById('bannerPreview').classList.remove('d-none');
+                document.getElementById('bannerPlaceholder').classList.add('d-none');
+            }
             async function uploadBanner(input) {
                 if (!input.files?.[0]) return;
-                const formData = new FormData();
-                formData.append('file', input.files[0]);
+                const fd = new FormData(); fd.append('file', input.files[0]);
                 try {
-                    const res = await fetch('/api/upload/image', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + token },
-                        body: formData
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        document.getElementById('bannerUrl').value = data.url;
-                        previewBanner(data.url);
-                        showAlert('Tải ảnh thành công!', 'success');
-                    }
-                } catch (err) { showAlert('Lỗi khi tải ảnh', 'danger'); }
+                    const res = await fetch('/api/upload/image', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:fd });
+                    const d   = await res.json();
+                    if (res.ok) { document.getElementById('bannerUrl').value = d.url; previewBanner(d.url); toast('Tải ảnh thành công!','success'); }
+                } catch { toast('Lỗi tải ảnh','danger'); }
             }
 
+            // ── Load Profile ───────────────────────────────────────
             async function loadProfile() {
                 try {
-                    const res = await fetch('/api/profile/me', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
+                    const res  = await fetch('/api/profile/me', { headers:{'Authorization':'Bearer '+token} });
                     const data = await res.json();
-                    if (res.ok) {
-                        document.getElementById('fullName').value = data.fullName || '';
-                        document.getElementById('email').value = data.email || '';
-                        document.getElementById('restaurantName').value = data.restaurantName || '';
-                        document.getElementById('address').value = data.address || '';
-                        document.getElementById('bannerUrl').value = data.bannerUrl || '';
-                        
-                        document.getElementById('sidebarRestaurantName').textContent = data.restaurantName || data.fullName;
-                        document.getElementById('sidebarEmail').textContent = data.email;
-                        previewBanner(data.bannerUrl);
+                    if (!res.ok) return;
+
+                    document.getElementById('fullName').value       = data.fullName       || '';
+                    document.getElementById('email').value          = data.email          || '';
+                    document.getElementById('restaurantName').value = data.restaurantName || '';
+                    document.getElementById('address').value        = data.address        || '';
+                    document.getElementById('phone').value          = data.phone          || '';
+                    document.getElementById('bannerUrl').value      = data.bannerUrl      || '';
+                    document.getElementById('sidebarName').textContent  = data.restaurantName || data.fullName;
+                    document.getElementById('sidebarEmail').textContent = data.email;
+                    previewBanner(data.bannerUrl);
+
+                    const lat = parseFloat(data.latitude);
+                    const lng = parseFloat(data.longitude);
+                    const ok  = !isNaN(lat) && !isNaN(lng);
+
+                    initPicker(ok ? lat : null, ok ? lng : null);
+                    if (ok) {
+                        saveLatLng(lat, lng);
+                        initMini(lat, lng);
+                        document.getElementById('addressLabel').innerHTML =
+                            `<i class="bi bi-geo-alt text-warning me-1"></i>${data.address || 'Đã có tọa độ'}`;
                     }
-                } catch (err) { console.error(err); }
+                } catch(e) { console.error(e); }
             }
 
-            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            // ── Save Profile ───────────────────────────────────────
+            document.getElementById('profileForm').addEventListener('submit', async e => {
                 e.preventDefault();
                 const payload = {
-                    fullName: document.getElementById('fullName').value,
+                    fullName:       document.getElementById('fullName').value,
                     restaurantName: document.getElementById('restaurantName').value,
-                    address: document.getElementById('address').value,
-                    bannerUrl: document.getElementById('bannerUrl').value
+                    address:        document.getElementById('address').value,
+                    phone:          document.getElementById('phone').value,
+                    bannerUrl:      document.getElementById('bannerUrl').value,
+                    latitude:       document.getElementById('latitude').value  || null,
+                    longitude:      document.getElementById('longitude').value || null
                 };
                 try {
                     const res = await fetch('/api/profile/me', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                        method:'PUT',
+                        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                         body: JSON.stringify(payload)
                     });
-                    if (res.ok) showAlert('Cập nhật thành công!', 'success');
-                } catch (err) { showAlert('Cập nhật thất bại', 'danger'); }
+                    if (res.ok) {
+                        toast('✅ Cập nhật thành công!','success');
+                        const la = parseFloat(payload.latitude), lo = parseFloat(payload.longitude);
+                        if (!isNaN(la) && !isNaN(lo)) syncMini(la, lo);
+                    } else {
+                        const d = await res.json().catch(()=>({}));
+                        toast(d.error || 'Cập nhật thất bại','danger');
+                    }
+                } catch { toast('Lỗi kết nối','danger'); }
             });
 
-            document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            // ── Password ───────────────────────────────────────────
+            document.getElementById('passwordForm').addEventListener('submit', async e => {
                 e.preventDefault();
-                const oldPassword = document.getElementById('oldPassword').value;
-                const newPassword = document.getElementById('newPassword').value;
-                if (newPassword !== document.getElementById('confirmPassword').value) {
-                    showAlert('Xác nhận mật khẩu không khớp!', 'danger'); return;
-                }
+                const oldPw = document.getElementById('oldPassword').value;
+                const newPw = document.getElementById('newPassword').value;
+                if (newPw !== document.getElementById('confirmPassword').value) { toast('Mật khẩu không khớp!','danger'); return; }
                 try {
                     const res = await fetch('/api/profile/password', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                        body: JSON.stringify({ oldPassword, newPassword })
+                        method:'PUT',
+                        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                        body: JSON.stringify({ oldPassword:oldPw, newPassword:newPw })
                     });
-                    if (res.ok) { showAlert('Đổi mật khẩu thành công!', 'success'); e.target.reset(); }
-                    else { const d = await res.json(); showAlert(d.error || 'Lỗi đổi mật khẩu', 'danger'); }
-                } catch (err) { showAlert('Lỗi kết nối', 'danger'); }
+                    if (res.ok) { toast('✅ Đổi mật khẩu thành công!','success'); e.target.reset(); }
+                    else { const d = await res.json(); toast(d.error||'Lỗi đổi mật khẩu','danger'); }
+                } catch { toast('Lỗi kết nối','danger'); }
             });
 
             loadProfile();

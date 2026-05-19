@@ -84,25 +84,40 @@ public class OrderService {
         order.setDeliveryAddress(deliveryAddress);
 
         // Geolocation Snapshot Logic
-        // 1. Restaurant Location (Cache if needed)
-        if (restaurant.getLatitude() == null || restaurant.getLongitude() == null) {
+        // 1. Restaurant Location
+        if (restaurant.getLatitude() != null && restaurant.getLongitude() != null) {
+            order.setRestaurantLat(restaurant.getLatitude());
+            order.setRestaurantLng(restaurant.getLongitude());
+        } else {
             java.util.Map<String, Double> restCoords = geocodingService.getCoordinates(restaurant.getAddress());
             if (restCoords != null) {
                 restaurant.setLatitude(restCoords.get("lat"));
                 restaurant.setLongitude(restCoords.get("lng"));
                 restaurantProfileRepository.save(restaurant);
+                order.setRestaurantLat(restCoords.get("lat"));
+                order.setRestaurantLng(restCoords.get("lng"));
             }
         }
         order.setRestaurantAddressSnapshot(restaurant.getAddress());
-        order.setRestaurantLat(restaurant.getLatitude());
-        order.setRestaurantLng(restaurant.getLongitude());
 
         // 2. Delivery Location Snapshot
         order.setDeliveryAddressSnapshot(deliveryAddress);
-        java.util.Map<String, Double> deliveryCoords = geocodingService.getCoordinates(deliveryAddress);
-        if (deliveryCoords != null) {
-            order.setDeliveryLat(deliveryCoords.get("lat"));
-            order.setDeliveryLng(deliveryCoords.get("lng"));
+        
+        boolean isProfileAddress = customer.getDeliveryAddress() != null && 
+                                   customer.getDeliveryAddress().trim().equalsIgnoreCase(deliveryAddress.trim());
+                                   
+        if (isProfileAddress && customer.getLatitude() != null && customer.getLongitude() != null) {
+            order.setDeliveryLat(customer.getLatitude());
+            order.setDeliveryLng(customer.getLongitude());
+        } else {
+            java.util.Map<String, Double> deliveryCoords = geocodingService.getCoordinates(deliveryAddress);
+            if (deliveryCoords != null) {
+                order.setDeliveryLat(deliveryCoords.get("lat"));
+                order.setDeliveryLng(deliveryCoords.get("lng"));
+            } else if (customer.getLatitude() != null && customer.getLongitude() != null) {
+                order.setDeliveryLat(customer.getLatitude());
+                order.setDeliveryLng(customer.getLongitude());
+            }
         }
 
         // 3. Shipping Engine (Distance, Fee, ETA)
@@ -251,9 +266,10 @@ public class OrderService {
         if (order.getStatus() != OrderStatus.PREPARING)
             throw new RuntimeException("Đơn hàng chưa sẵn sàng để lấy");
         if (order.getDriver() != null)
-            throw new RuntimeException("Đơn hàng đã được nhận bởi tài xế khác");
+            throw new RuntimeException("Đơn hàng đã được nhận bửi tài xế khác");
         order.setDriver(driver);
-        order.setStatus(OrderStatus.DELIVERING);
+        // Chặng 1: Driver đang đến nhà hàng — giữ nguyên status PREPARING
+        // (sẽ chuyển sang DELIVERING khi Driver bấm "Đã lấy hàng")
         driver.setAvailable(false);
         driverProfileRepository.save(driver);
         FoodOrder saved = foodOrderRepository.save(order);
@@ -267,6 +283,23 @@ public class OrderService {
                 saved.getId(), driverName);
 
         return saved;
+    }
+
+    /**
+     * Driver xác nhận đã lấy hàng tại nhà hàng → bắt đầu giao đến khách.
+     * Chuyển OrderStatus: PREPARING → DELIVERING
+     */
+    @Transactional
+    public void markAsPickedUp(Long orderId, DriverProfile driver) {
+        FoodOrder order = foodOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        if (order.getDriver() == null || !order.getDriver().getId().equals(driver.getId()))
+            throw new RuntimeException("Không có quyền cập nhật đơn hàng này");
+        if (order.getStatus() != OrderStatus.PREPARING)
+            throw new RuntimeException("Đơn hàng không ở trạng thái chờ lấy hàng");
+        order.setStatus(OrderStatus.DELIVERING);
+        foodOrderRepository.save(order);
+        broadcastOrderStatus(order); // 🔔 Real-time WebSocket
     }
 
     @Transactional
@@ -309,7 +342,12 @@ public class OrderService {
     }
 
     public List<FoodOrder> getDriverActiveDeliveries(DriverProfile driver) {
-        return foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.DELIVERING);
+        // Trả cả PREPARING (chặng 1: đến nhà hàng) và DELIVERING (chặng 2: giao đến khách)
+        List<FoodOrder> preparing = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.PREPARING);
+        List<FoodOrder> delivering = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.DELIVERING);
+        List<FoodOrder> combined = new java.util.ArrayList<>(preparing);
+        combined.addAll(delivering);
+        return combined;
     }
 
     public List<FoodOrder> getDriverHistory(DriverProfile driver) {

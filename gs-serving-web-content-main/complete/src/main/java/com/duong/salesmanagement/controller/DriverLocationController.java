@@ -5,8 +5,8 @@ import com.duong.salesmanagement.dto.TrackingResponseDTO;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.TrackingPhase;
 import com.duong.salesmanagement.model.User;
-import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.service.LocationTrackingService;
+import com.duong.salesmanagement.service.OrderService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,14 +27,14 @@ public class DriverLocationController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationTrackingService locationTrackingService;
-    private final FoodOrderRepository foodOrderRepository;
+    private final OrderService orderService;
 
     public DriverLocationController(SimpMessagingTemplate messagingTemplate,
                                     LocationTrackingService locationTrackingService,
-                                    FoodOrderRepository foodOrderRepository) {
+                                    OrderService orderService) {
         this.messagingTemplate = messagingTemplate;
         this.locationTrackingService = locationTrackingService;
-        this.foodOrderRepository = foodOrderRepository;
+        this.orderService = orderService;
     }
 
     @PostMapping("/location")
@@ -50,7 +50,7 @@ public class DriverLocationController {
         }
 
         final Long orderId = request.getOrderId();
-        Optional<FoodOrder> orderOpt = foodOrderRepository.findById(orderId);
+        Optional<FoodOrder> orderOpt = orderService.getOrderById(orderId);
         if (orderOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng");
         }

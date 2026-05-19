@@ -16,6 +16,10 @@ public class CustomerProfile {
 
     private String phoneNumber;
     private String deliveryAddress;
+    
+    // Thêm toạ độ cho Customer
+    private Double latitude;
+    private Double longitude;
 
     public CustomerProfile() {}
 
@@ -33,4 +37,10 @@ public class CustomerProfile {
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public String getDeliveryAddress() { return deliveryAddress; }
     public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
+    
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 }

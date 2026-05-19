@@ -39,9 +39,18 @@ public class GeocodingService {
 
             // Nominatim requires a User-Agent to avoid being blocked
             logger.info("Geocoding address: {}", address);
-            String response = restTemplate.getForObject(url, String.class);
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("User-Agent", "FoodDeliveryApp/1.0");
+            org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
 
-            JsonNode root = objectMapper.readTree(response);
+            org.springframework.http.ResponseEntity<String> response = restTemplate.exchange(
+                    url, 
+                    org.springframework.http.HttpMethod.GET, 
+                    entity, 
+                    String.class
+            );
+
+            JsonNode root = objectMapper.readTree(response.getBody());
             if (root.isArray() && !root.isEmpty()) {
                 JsonNode firstResult = root.get(0);
                 Map<String, Double> coords = new HashMap<>();

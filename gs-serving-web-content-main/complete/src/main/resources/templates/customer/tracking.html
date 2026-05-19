@@ -35,6 +35,48 @@
                             </div>
                         </div>
                         
+                        <!-- Progress Tracking Bar -->
+                        <div class="px-5 pt-3 pb-5 bg-white border-bottom">
+                            <div class="position-relative mt-4 mb-2">
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         th:style="'width: ' + (${order.status.name() == 'PENDING'} ? '0%' : (${order.status.name() == 'PREPARING'} ? '33%' : (${order.status.name() == 'DELIVERING'} ? '66%' : '100%')))">
+                                    </div>
+                                </div>
+                                <button type="button" class="position-absolute top-0 start-0 translate-middle btn btn-sm rounded-pill text-white shadow-sm" 
+                                        th:classappend="${order.status.name() == 'PENDING' || order.status.name() == 'PREPARING' || order.status.name() == 'DELIVERING' || order.status.name() == 'COMPLETED'} ? 'btn-primary' : 'btn-secondary'"
+                                        style="width: 2.5rem; height: 2.5rem; border: 2px solid white;">
+                                    <i class="bi bi-clock-history"></i>
+                                </button>
+                                <div class="position-absolute top-100 start-0 translate-middle mt-2 small fw-bold"
+                                     th:classappend="${order.status.name() == 'PENDING'} ? 'text-primary' : 'text-muted'" style="white-space: nowrap;">Chờ xác nhận</div>
+                                
+                                <button type="button" class="position-absolute top-0 translate-middle btn btn-sm rounded-pill text-white shadow-sm" 
+                                        th:classappend="${order.status.name() == 'PREPARING' || order.status.name() == 'DELIVERING' || order.status.name() == 'COMPLETED'} ? 'btn-primary' : 'bg-light text-muted'"
+                                        style="width: 2.5rem; height: 2.5rem; border: 2px solid white; left: 33%;">
+                                    <i class="bi bi-shop"></i>
+                                </button>
+                                <div class="position-absolute top-100 translate-middle mt-2 small fw-bold"
+                                     th:classappend="${order.status.name() == 'PREPARING'} ? 'text-primary' : 'text-muted'" style="left: 33%; white-space: nowrap;">Chuẩn bị</div>
+
+                                <button type="button" class="position-absolute top-0 translate-middle btn btn-sm rounded-pill text-white shadow-sm" 
+                                        th:classappend="${order.status.name() == 'DELIVERING' || order.status.name() == 'COMPLETED'} ? 'btn-primary' : 'bg-light text-muted'"
+                                        style="width: 2.5rem; height: 2.5rem; border: 2px solid white; left: 66%;">
+                                    <i class="bi bi-bicycle"></i>
+                                </button>
+                                <div class="position-absolute top-100 translate-middle mt-2 small fw-bold"
+                                     th:classappend="${order.status.name() == 'DELIVERING'} ? 'text-primary' : 'text-muted'" style="left: 66%; white-space: nowrap;">Đang giao</div>
+
+                                <button type="button" class="position-absolute top-0 start-100 translate-middle btn btn-sm rounded-pill text-white shadow-sm" 
+                                        th:classappend="${order.status.name() == 'COMPLETED'} ? 'btn-success' : 'bg-light text-muted'"
+                                        style="width: 2.5rem; height: 2.5rem; border: 2px solid white;">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <div class="position-absolute top-100 start-100 translate-middle mt-2 small fw-bold"
+                                     th:classappend="${order.status.name() == 'COMPLETED'} ? 'text-success' : 'text-muted'" style="white-space: nowrap;">Hoàn tất</div>
+                            </div>
+                        </div>
+                        
                         <div class="card-body p-0 position-relative">
                             <div id="map-container" style="height: 550px;">
                                 <div id="tracking-map" style="width: 100%; height: 100%;">
@@ -90,11 +132,15 @@
                 const mapId = 'tracking-map';
                 const container = document.getElementById(mapId);
 
-                // NẾU LÀ ĐƠN HÀNG CŨ (CHƯA CÓ TỌA ĐỘ) -> DÙNG TỌA ĐỘ GIẢ (ĐH PHENIKAA) ĐỂ TEST BẢN ĐỒ
-                if (isNaN(rLat) || isNaN(cLat)) {
-                    console.warn("⚠️ Đơn hàng này chưa có tọa độ thật. Đang dùng tọa độ ảo để test.");
-                    rLat = 20.962622; rLng = 105.740172;
-                    cLat = 20.968500; cLng = 105.745050;
+                // Fallback nếu thiếu tọa độ
+                if (isNaN(rLat)) {
+                    console.warn("⚠️ Thiếu tọa độ nhà hàng. Dùng tọa độ dự phòng.");
+                    rLat = 10.772500; rLng = 106.669500; // The Coffee House Sư Vạn Hạnh
+                }
+                if (isNaN(cLat)) {
+                    console.warn("⚠️ Thiếu tọa độ khách hàng. Dùng tọa độ dự phòng.");
+                    // Default fallback near the restaurant
+                    cLat = rLat - 0.01; cLng = rLng + 0.01;
                 }
 
                 try {
