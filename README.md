@@ -374,13 +374,7 @@ src/main/java/com/duong/salesmanagement/
 
 ---
 
-## 📞 Liên hệ & Support
 
-- **GitHub Issues:** [Báo cáo bug](https://github.com/DNTt30/Food_Delivery_System/issues)
-- **Email:** contact@example.com
-- **Giấy phép:** [MIT License](LICENSE)
-
----
 
 *Cập nhật: 21/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
 
