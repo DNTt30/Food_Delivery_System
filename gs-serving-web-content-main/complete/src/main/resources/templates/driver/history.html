@@ -99,7 +99,7 @@
                 }
 
                 listEl.innerHTML = historyOrders.map(o => {
-                    const commission = o.totalAmount * 0.1; // Assuming 10% commission
+                    const commission = o.shippingFee || 15000;
                     const isCompleted = o.status === 'COMPLETED';
                     const itemsStr = o.items && o.items.length > 0 ? o.items.join(', ') : 'Không có thông tin món';
                     
