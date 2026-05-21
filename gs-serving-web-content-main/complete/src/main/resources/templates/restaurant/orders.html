@@ -335,7 +335,10 @@ function renderCol(elId, orders, type) {
             <div class="item-chip-list">
                 <div class="section-divider">Món ăn</div>
                 <div class="mb-2">${itemsList}</div>
-                <div class="fw-bold text-danger text-end fs-6 border-top pt-2 mt-2">${fmtVND(o.totalAmount)}</div>
+                <div class="fw-bold text-danger text-end fs-6 border-top pt-2 mt-2">
+                    ${o.shippingFee ? `<small class="text-muted fw-normal d-block mb-1" style="font-size:0.75rem">Bao gồm ${fmtVND(o.shippingFee)} phí ship</small>` : ''}
+                    ${fmtVND(o.totalAmount)}
+                </div>
             </div>
             
             <div class="actions-area">${actions}</div>
@@ -499,7 +502,10 @@ async function showTracking(orderId){
             <p class="section-divider">🍽 Món ăn</p>
             <table class="table table-sm mb-0"><thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Giá</th><th class="text-end">T.Tiền</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
-            <tfoot><tr><td colspan="3" class="text-end fw-bold">Tổng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr></tfoot></table>
+            <tfoot>
+                ${o.shippingFee ? `<tr><td colspan="3" class="text-end text-muted small">Phí giao hàng</td><td class="text-end text-muted small">${fmtVND(o.shippingFee)}</td></tr>` : ''}
+                <tr><td colspan="3" class="text-end fw-bold">Tổng cộng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr>
+            </tfoot></table>
           </div>
           ${o.status==='PENDING'?`<div class="col-12 d-flex gap-2 justify-content-end border-top pt-3">
             <button class="btn btn-success rounded-pill px-4" onclick="updateStatus(${o.id},'PREPARING')"><i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu</button>
