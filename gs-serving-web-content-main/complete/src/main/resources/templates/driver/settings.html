@@ -85,9 +85,13 @@
 
 <div class="profile-card">
     <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
-    <div class="profile-info">
+    <div class="profile-info" style="flex: 1;">
         <h6 id="driverName">Đang tải...</h6>
         <p>Tài xế Food Delivery</p>
+    </div>
+    <div class="text-end">
+        <div class="small text-muted mb-1" style="font-size: 0.75rem;">Tổng thu nhập</div>
+        <div class="fw-bold text-success fs-5" id="totalEarnings">0đ</div>
     </div>
 </div>
 
@@ -139,6 +143,9 @@
                 const data = await res.json();
                 document.getElementById('driverName').textContent = data.driverName || 'Tài xế';
                 document.getElementById('availabilitySwitch').checked = data.isAvailable;
+                if (document.getElementById('totalEarnings')) {
+                    document.getElementById('totalEarnings').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.totalEarnings || 0);
+                }
             }
         } catch (e) {
             console.error(e);
