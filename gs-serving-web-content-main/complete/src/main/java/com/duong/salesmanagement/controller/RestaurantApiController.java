@@ -98,7 +98,11 @@ public class RestaurantApiController {
         long completedToday  = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
         double revenueToday  = todayOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                .mapToDouble(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0)
+                .mapToDouble(o -> {
+                    double total = o.getTotalAmount() != null ? o.getTotalAmount() : 0;
+                    double shipping = o.getShippingFee() != null ? o.getShippingFee() : 0;
+                    return Math.max(0, total - shipping);
+                })
                 .sum();
 
         long menuCount = menuItemRepository.findByRestaurant(restaurant).stream()
@@ -116,7 +120,11 @@ public class RestaurantApiController {
                     .findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(restaurant, from, to);
             double dayRevenue = dayOrders.stream()
                     .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                    .mapToDouble(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0)
+                    .mapToDouble(o -> {
+                        double total = o.getTotalAmount() != null ? o.getTotalAmount() : 0;
+                        double shipping = o.getShippingFee() != null ? o.getShippingFee() : 0;
+                        return Math.max(0, total - shipping);
+                    })
                     .sum();
             long dayCount = dayOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
             Map<String, Object> point = new LinkedHashMap<>();

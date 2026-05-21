@@ -323,8 +323,8 @@ public class OrderService {
         // 🔔 Notify Customer: đơn hoàn thành
         notificationService.notifyOrderCompleted(
                 order.getCustomer().getUser(), order.getId());
-        // 🔔 Notify Driver: thu nhập
-        double earnings = (order.getTotalAmount() != null ? order.getTotalAmount() : 0) * 0.1;
+        // 🔔 Notify Driver: thu nhập (100% phí ship)
+        double earnings = order.getShippingFee() != null ? order.getShippingFee() : 0;
         notificationService.notifyDeliveryCompletedForDriver(
                 driver.getUser(), order.getId(), earnings);
     }

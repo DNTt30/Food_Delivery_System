@@ -51,7 +51,7 @@ public class DriverApiController {
         long available = orderService.getAvailableOrdersForDriver().size();
         double totalEarnings = all.stream()
                 .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                .mapToDouble(o -> o.getTotalAmount() * 0.1) // 10% commission
+                .mapToDouble(o -> o.getShippingFee() != null ? o.getShippingFee() : 0) // 100% shipping fee
                 .sum();
 
         return ResponseEntity.ok(Map.of(

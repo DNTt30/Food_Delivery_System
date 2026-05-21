@@ -174,29 +174,22 @@ public class AdminApiController {
         List<Map<String, Object>> reviewDTOs = reviews.stream().map(r -> {
             Map<String, Object> map = new java.util.LinkedHashMap<>();
             map.put("id", r.getId());
-            map.put("rating", r.getRating() != null ? r.getRating() : 5);
+            map.put("rating", r.getRating());
             map.put("comment", r.getComment());
-            map.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : "");
-            
-            String customerName = "Khách hàng";
-            if (r.getOrder() != null && r.getOrder().getCustomer() != null && r.getOrder().getCustomer().getUser() != null) {
-                customerName = r.getOrder().getCustomer().getUser().getFullName();
-            }
-            map.put("customerName", customerName);
+            map.put("createdAt", r.getCreatedAt().toString());
+            map.put("customerName", r.getOrder().getCustomer().getUser().getFullName());
             return map;
         }).collect(Collectors.toList());
 
         Map<String, Object> result = new java.util.LinkedHashMap<>();
         result.put("restaurant", new RestaurantAdminDTO(
                 restaurant.getId(), restaurant.getRestaurantName(), restaurant.getAddress(),
-                restaurant.getUser() != null ? restaurant.getUser().getUsername() : "—",
-                restaurant.getUser() != null ? restaurant.getUser().getEmail() : "—",
-                restaurant.getBannerUrl(), restaurant.isOpen(), 
-                restaurant.getUser() != null && restaurant.getUser().isEnabled(),
+                restaurant.getUser().getUsername(), restaurant.getUser().getEmail(),
+                restaurant.getBannerUrl(), restaurant.isOpen(), restaurant.getUser().isEnabled(),
                 restaurant.getAverageRating()
         ));
         result.put("reviews", reviewDTOs);
-        result.put("phone", null); // TODO: Add phone to User or RestaurantProfile if needed
+        result.put("phone", null);
         result.put("latitude", restaurant.getLatitude());
         result.put("longitude", restaurant.getLongitude());
 
@@ -207,7 +200,7 @@ public class AdminApiController {
     @GetMapping("/vouchers")
     public ResponseEntity<?> getAllVouchers(Authentication authentication) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        return ResponseEntity.ok(voucherRepository.findByRestaurantIsNull().stream()
+        return ResponseEntity.ok(voucherRepository.findAll().stream()
                 .map(this::mapVoucher).collect(Collectors.toList()));
     }
 
@@ -225,7 +218,6 @@ public class AdminApiController {
         if (req.expiryDate != null && !req.expiryDate.isBlank())
             v.setExpirationDate(LocalDate.parse(req.expiryDate));
         v.setActive(req.active);
-        v.setRestaurant(null); // Explicitly null for global vouchers
         voucherRepository.save(v);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo voucher thành công"));
     }
@@ -236,7 +228,7 @@ public class AdminApiController {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null || v.getRestaurant() != null) return ResponseEntity.notFound().build();
+        if (v == null) return ResponseEntity.notFound().build();
 
         if (req.code != null && !req.code.isBlank()) v.setCode(req.code.toUpperCase());
         v.setDiscountValue(req.discountValue);
@@ -251,10 +243,10 @@ public class AdminApiController {
     @DeleteMapping("/vouchers/{id}")
     public ResponseEntity<?> deleteVoucher(Authentication authentication, @PathVariable Long id) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null || v.getRestaurant() != null) return ResponseEntity.notFound().build();
-        voucherRepository.delete(v);
-        return ResponseEntity.ok(Map.of("message", "Xóa voucher thành công"));
+
+        if (!voucherRepository.existsById(id)) return ResponseEntity.notFound().build();
+        voucherRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Đã xóa voucher"));
     }
 
     private Map<String, Object> mapVoucher(Voucher v) {
