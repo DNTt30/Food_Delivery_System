@@ -104,7 +104,7 @@
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted small">Phí giao hàng</span>
-                        <span class="small text-success fw-semibold">Miễn phí</span>
+                        <span id="shippingFeeDisp" class="small fw-semibold">Chưa tính</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3" id="discountRow" style="display:none!important;">
                         <span class="text-muted small">Giảm giá</span>
@@ -146,6 +146,40 @@
     function saveCart(c) { localStorage.setItem(CART_KEY, JSON.stringify(c)); }
     function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
 
+    let currentVoucherCode = null;
+    let shippingFee = 15000; // Base fee
+
+    async function calculateShipping() {
+        const address = document.getElementById('deliveryAddress').value.trim();
+        if (!address) {
+            shippingFee = 15000;
+            renderCart();
+            return;
+        }
+        
+        try {
+            const res = await fetch('/api/customer/orders/estimate-shipping', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ restaurantId: parseInt(restaurantId), deliveryAddress: address })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                shippingFee = data.shippingFee || 15000;
+            } else {
+                shippingFee = 15000;
+            }
+        } catch(e) {
+            shippingFee = 15000;
+        }
+        renderCart();
+    }
+
+    // Bind event to calculate on blur
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('deliveryAddress').addEventListener('blur', calculateShipping);
+    });
+
     function renderCart() {
         const cart = getCart();
         if (!cart.length) {
@@ -179,9 +213,18 @@
             </div>`);
         });
 
-        const total = Math.max(0, subtotal - discountAmount);
+        const total = Math.max(0, subtotal - discountAmount + shippingFee);
         document.getElementById('subtotal').textContent = formatVND(subtotal);
         document.getElementById('totalAmt').textContent = formatVND(total);
+        
+        const shipDisp = document.getElementById('shippingFeeDisp');
+        if (shippingFee === 0) {
+            shipDisp.textContent = 'Miễn phí';
+            shipDisp.className = 'small fw-semibold text-success';
+        } else {
+            shipDisp.textContent = formatVND(shippingFee);
+            shipDisp.className = 'small fw-semibold';
+        }
 
         if (discountAmount > 0) {
             document.getElementById('discountRow').style.removeProperty('display');

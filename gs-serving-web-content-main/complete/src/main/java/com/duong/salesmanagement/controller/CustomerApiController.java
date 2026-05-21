@@ -25,6 +25,8 @@ public class CustomerApiController {
     private final CustomerProfileRepository customerProfileRepository;
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
+    private final com.duong.salesmanagement.service.ShippingCalculationService shippingCalculationService;
+    private final com.duong.salesmanagement.service.GeocodingService geocodingService;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
@@ -32,7 +34,9 @@ public class CustomerApiController {
                                  UserRepository userRepository,
                                  CustomerProfileRepository customerProfileRepository,
                                  VoucherRepository voucherRepository,
-                                 ReviewRepository reviewRepository) {
+                                 ReviewRepository reviewRepository,
+                                 com.duong.salesmanagement.service.ShippingCalculationService shippingCalculationService,
+                                 com.duong.salesmanagement.service.GeocodingService geocodingService) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
@@ -40,6 +44,8 @@ public class CustomerApiController {
         this.customerProfileRepository = customerProfileRepository;
         this.voucherRepository = voucherRepository;
         this.reviewRepository = reviewRepository;
+        this.shippingCalculationService = shippingCalculationService;
+        this.geocodingService = geocodingService;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -168,6 +174,32 @@ public class CustomerApiController {
             "discountType", voucher.getDiscountType().name(),
             "discountValue", voucher.getDiscountValue()
         ));
+    }
+
+    @PostMapping("/orders/estimate-shipping")
+    public ResponseEntity<?> estimateShipping(@RequestBody Map<String, Object> body) {
+        Long restaurantId;
+        try {
+            restaurantId = Long.valueOf(body.get("restaurantId").toString());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid restaurantId"));
+        }
+        String address = (String) body.get("deliveryAddress");
+        
+        RestaurantProfile rest = restaurantProfileRepository.findById(restaurantId).orElse(null);
+        if (rest == null) return ResponseEntity.badRequest().build();
+        
+        double fee = 15000.0; // default base fee
+        if (rest.getLatitude() != null && rest.getLongitude() != null && address != null && !address.isBlank()) {
+            Map<String, Double> coords = geocodingService.getCoordinates(address);
+            if (coords != null) {
+                double dist = shippingCalculationService.calculateDistance(
+                    rest.getLatitude(), rest.getLongitude(), coords.get("lat"), coords.get("lng")
+                );
+                fee = shippingCalculationService.calculateShippingFee(dist);
+            }
+        }
+        return ResponseEntity.ok(Map.of("shippingFee", fee));
     }
 
     // UC-10: Lịch sử & theo dõi đơn hàng
