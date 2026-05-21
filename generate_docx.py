@@ -105,13 +105,13 @@ doc.add_paragraph()
 ct = doc.add_table(rows=7, cols=2)
 ct.style = 'Table Grid'
 cover_data = [
-    ('Nhom:', 'TEAM 12 - He thong Dat do an Truc tuyen'),
-    ('Thanh vien:', 'Thanh vien 1 (MSSV1)'),
+    ('Nhom:', 'TEAM 14 - He thong Dat do an Truc tuyen'),
+    ('Thanh vien:', 'Duong Ngoc Tu (MSSV)'),
     ('', 'Thanh vien 2 (MSSV2)'),
     ('', 'Thanh vien 3 (MSSV3)'),
     ('Tuan:', 'Tuan 3 - Thiet ke Lop & Code Skeleton'),
-    ('GitHub:', 'https://github.com/<USERNAME>/PTTKPM25_26_NXX_Nhom12'),
-    ('Phien ban:', '1.0 - Thang 4/2026'),
+    ('GitHub:', 'https://github.com/DNTt30/Food_Delivery_System'),
+    ('Phien ban:', '1.0 - Thang 5/2026'),
 ]
 for ri,(k,v) in enumerate(cover_data):
     row = ct.rows[ri]
@@ -136,7 +136,8 @@ nt.style = 'Table Grid'
 tbl_header(nt, ['Danh tu tim duoc', 'Phan loai', 'Ket luan'])
 
 # Lớp thực tế theo code: User, CustomerProfile, RestaurantProfile, DriverProfile,
-# Category, MenuItem, FoodOrder, OrderItem, Payment, Review, Voucher
+# Category, MenuItem, FoodOrder, OrderItem, Payment, Review, Voucher, ChatMessage,
+# Notification, OrderTrackingLocation
 noun_data = [
     ('Nguoi dung',           'Lop doi tuong', '-> User (Entity)  --  lop co so, co truong role'),
     ('Khach hang',           'Lop doi tuong', '-> CustomerProfile (Entity)  --  @OneToOne voi User'),
@@ -149,10 +150,12 @@ noun_data = [
     ('Giao dich thanh toan', 'Lop doi tuong', '-> Payment (Entity)'),
     ('Danh gia',             'Lop doi tuong', '-> Review (Entity)'),
     ('Ma khuyen mai',        'Lop doi tuong', '-> Voucher (Entity)'),
+    ('Tin nhan chat',        'Lop doi tuong', '-> ChatMessage (Entity)  --  luu tin nhan chat real-time'),
+    ('Thong bao',            'Lop doi tuong', '-> Notification (Entity)  --  luu thong bao he thong/chuong'),
+    ('Vi tri tracking',      'Lop doi tuong', '-> OrderTrackingLocation (Entity)  --  luu toa do tracking driver'),
     ('Mat khau / Token',     'Thuoc tinh',    '-> Thuoc tinh trong User, khong tao lop rieng'),
     ('Tong tien / Gia',      'Thuoc tinh',    '-> Thuoc tinh Double trong FoodOrder / MenuItem'),
     ('He thong thanh toan',  'Actor phu',     '-> PaymentService interface, khong phai Entity'),
-    ('Thong bao he thong',   'Actor phu',     '-> NotificationService interface, khong phai Entity'),
 ]
 for i, rd in enumerate(noun_data):
     fill_row(nt.add_row(), rd, alt='F2F2F2' if i%2 else None)
@@ -216,6 +219,18 @@ class_data = [
      '<<entity>>',
      'vouchers',
      '- id: Long\n- code: String (unique, not null)\n- discountValue: Double\n- discountType: DiscountType  [@Enumerated]\n- expirationDate: LocalDate\n- isActive: boolean\n---\n+ isActive(): boolean'),
+    ('ChatMessage',
+     '<<entity>>',
+     'chat_messages',
+     '- id: Long\n- order: FoodOrder  [@ManyToOne, LAZY]\n- sender: User  [@ManyToOne, LAZY]\n- receiver: User  [@ManyToOne, LAZY]\n- content: String (not null)\n- createdAt: LocalDateTime\n---\n(getter / setter)'),
+    ('Notification',
+     '<<entity>>',
+     'notifications',
+     '- id: Long\n- user: User  [@ManyToOne, LAZY]\n- title: String\n- message: String\n- type: NotificationType  [@Enumerated]\n- relatedOrderId: Long\n- isRead: boolean\n- createdAt: LocalDateTime\n---\n(getter / setter)'),
+    ('OrderTrackingLocation',
+     '<<entity>>',
+     'order_tracking_locations',
+     '- id: Long\n- order: FoodOrder  [@ManyToOne, LAZY]\n- latitude: Double\n- longitude: Double\n- trackingPhase: TrackingPhase  [@Enumerated]\n- timestamp: LocalDateTime\n---\n(getter / setter)'),
 ]
 for i, rd in enumerate(class_data):
     fill_row(cl.add_row(), rd, alt='EBF3FB' if i%2 else None)
@@ -229,10 +244,14 @@ et.style = 'Table Grid'
 tbl_header(et, ['Ten Enum (file .java)', 'Cac gia tri', 'Su dung trong lop nao'])
 enum_data = [
     ('Role',          'CUSTOMER, RESTAURANT, DRIVER, ADMIN',       'User.role'),
-    ('OrderStatus',   'PENDING, CONFIRMED, PREPARING, DELIVERING,\nDELIVERED, CANCELLED', 'FoodOrder.status'),
-    ('PaymentMethod', 'CASH, VNPAY, MOMO',                         'Payment.paymentMethod'),
+    ('OrderStatus',   'PENDING, PREPARING, DELIVERING,\nCOMPLETED, CANCELLED', 'FoodOrder.status'),
+    ('PaymentMethod', 'CASH_ON_DELIVERY, CREDIT_CARD,\nMOMO_E_WALLET, ZALOPAY', 'Payment.paymentMethod'),
     ('PaymentStatus', 'PENDING, COMPLETED, FAILED, REFUNDED',      'Payment.paymentStatus'),
     ('DiscountType',  'PERCENTAGE, FIXED_AMOUNT',                  'Voucher.discountType'),
+    ('ChatMessageType', 'TEXT, SYSTEM, JOINED',                     'Tieu dung noi bo / DTO'),
+    ('ChatType',      'RESTAURANT, DRIVER',                        'Tieu dung trong WebSocket'),
+    ('NotificationType', 'ORDER_CREATED, ORDER_ACCEPTED, ORDER_PREPARING, DRIVER_ASSIGNED, ORDER_DELIVERING, ORDER_COMPLETED, ORDER_CANCELLED, PAYMENT_SUCCESS, PAYMENT_FAILED, NEW_REVIEW, NEW_MESSAGE, NEW_PROMOTION, SYSTEM_ALERT', 'Notification.type'),
+    ('TrackingPhase', 'DRIVER_ACCEPTED, GOING_TO_RESTAURANT, WAITING_AT_RESTAURANT, DELIVERING, ARRIVED', 'OrderTrackingLocation.trackingPhase'),
 ]
 for i, rd in enumerate(enum_data):
     fill_row(et.add_row(), rd, alt='FFF2CC' if i%2 else None)
@@ -327,12 +346,43 @@ rel_data = [
      'Dependency (uses)',
      '1 : 1',
      '@Enumerated(EnumType.STRING)\nUser.role'),
+    # ChatMessage relationships
+    ('ChatMessage', 'FoodOrder',
+     'Association (1 chieu)',
+     '0..* : 1',
+     '@ManyToOne(fetch=LAZY)\n@JoinColumn(order_id, not null)'),
+    ('ChatMessage', 'User',
+     'Association (1 chieu - sender)',
+     '0..* : 1',
+     '@ManyToOne(fetch=LAZY)\n@JoinColumn(sender_id, not null)'),
+    ('ChatMessage', 'User',
+     'Association (1 chieu - receiver)',
+     '0..* : 1',
+     '@ManyToOne(fetch=LAZY)\n@JoinColumn(receiver_id, not null)'),
+    # Notification relationships
+    ('Notification', 'User',
+     'Association (1 chieu)',
+     '0..* : 1',
+     '@ManyToOne(fetch=LAZY)\n@JoinColumn(user_id, not null)'),
+    ('Notification', 'NotificationType',
+     'Dependency (uses)',
+     '1 : 1',
+     '@Enumerated(EnumType.STRING)\nNotification.type'),
+    # OrderTrackingLocation relationships
+    ('OrderTrackingLocation', 'FoodOrder',
+     'Association (1 chieu)',
+     '0..* : 1',
+     '@ManyToOne(fetch=LAZY)\n@JoinColumn(order_id, not null)'),
+    ('OrderTrackingLocation', 'TrackingPhase',
+     'Dependency (uses)',
+     '1 : 1',
+     '@Enumerated(EnumType.STRING)\nOrderTrackingLocation.trackingPhase'),
 ]
 for i, rd in enumerate(rel_data):
     fill_row(rt.add_row(), rd, alt='E8EAF6' if i%2 else None)
 
 doc.add_paragraph()
-para(doc, 'Tong so: 18 quan he (3 composition, 9 association, 6 dependency voi enum)', italic=True)
+para(doc, 'Tong so: 25 quan he (4 composition, 14 association, 7 dependency voi enum)', italic=True)
 doc.add_paragraph()
 
 # =========================================================
@@ -375,15 +425,23 @@ tree = (
     "        Payment.java\n"
     "        Review.java\n"
     "        Voucher.java\n"
+    "        ChatMessage.java\n"
+    "        Notification.java\n"
+    "        OrderTrackingLocation.java\n"
     "        Role.java              (enum)\n"
     "        OrderStatus.java       (enum)\n"
     "        PaymentMethod.java     (enum)\n"
     "        PaymentStatus.java     (enum)\n"
     "        DiscountType.java      (enum)\n"
+    "        ChatMessageType.java   (enum)\n"
+    "        ChatType.java          (enum)\n"
+    "        NotificationType.java  (enum)\n"
+    "        TrackingPhase.java     (enum)\n"
     "      repository/\n"
     "      service/\n"
     "      controller/\n"
     "      config/\n"
+    "      security/\n"
     "    resources/\n"
     "      application.properties\n"
     "  test/"
@@ -413,11 +471,18 @@ files = [
     ('model/Payment.java',                '@Entity, bang payments: id, order(@OneToOne), paymentMethod, paymentStatus, amount, transactionDate'),
     ('model/Review.java',                 '@Entity, bang reviews: id, order(@OneToOne), rating, comment, createdAt'),
     ('model/Voucher.java',                '@Entity, bang vouchers: id, code(unique), discountValue, discountType(DiscountType), expirationDate, isActive'),
+    ('model/ChatMessage.java',            '@Entity, bang chat_messages: id, order(@ManyToOne), sender/receiver(@ManyToOne), content, createdAt'),
+    ('model/Notification.java',           '@Entity, bang notifications: id, user(@ManyToOne), title, message, type(NotificationType), relatedOrderId, read, createdAt'),
+    ('model/OrderTrackingLocation.java',  '@Entity, bang order_tracking_locations: id, order(@ManyToOne), latitude, longitude, trackingPhase(TrackingPhase), timestamp'),
     ('model/Role.java',                   'enum: CUSTOMER, RESTAURANT, DRIVER, ADMIN'),
-    ('model/OrderStatus.java',            'enum: PENDING, CONFIRMED, PREPARING, DELIVERING, DELIVERED, CANCELLED'),
-    ('model/PaymentMethod.java',          'enum: CASH, VNPAY, MOMO'),
+    ('model/OrderStatus.java',            'enum: PENDING, PREPARING, DELIVERING, COMPLETED, CANCELLED'),
+    ('model/PaymentMethod.java',          'enum: CASH_ON_DELIVERY, CREDIT_CARD, MOMO_E_WALLET, ZALOPAY'),
     ('model/PaymentStatus.java',          'enum: PENDING, COMPLETED, FAILED, REFUNDED'),
     ('model/DiscountType.java',           'enum: PERCENTAGE, FIXED_AMOUNT'),
+    ('model/ChatMessageType.java',        'enum: TEXT, SYSTEM, JOINED'),
+    ('model/ChatType.java',               'enum: RESTAURANT, DRIVER'),
+    ('model/NotificationType.java',       'enum: ORDER_CREATED, ORDER_ACCEPTED, etc. (loai thong bao)'),
+    ('model/TrackingPhase.java',          'enum: DRIVER_ACCEPTED, GOING_TO_RESTAURANT, etc. (pha tracking)'),
 ]
 for i, rd in enumerate(files):
     fill_row(ft.add_row(), rd, alt='F9F9F9' if i%2 else None)
@@ -435,7 +500,7 @@ gt.style = 'Table Grid'
 tbl_header(gt, ['#', 'Lenh terminal'])
 git_data = [
     ('1', 'cd gs-serving-web-content-main/complete\ngit init\ngit remote add origin https://github.com/<USERNAME>/PTTKPM25_26_NXX_Nhom12.git'),
-    ('2', 'git add .\ngit commit -m "feat(Tuan3): Add 11 entity classes, 5 enums, JPA relationships"'),
+    ('2', 'git add .\ngit commit -m "feat(Tuan3): Add 14 entity classes, 9 enums, JPA relationships"'),
     ('3', 'git push -u origin main'),
 ]
 for i, rd in enumerate(git_data):
@@ -470,19 +535,23 @@ cht = doc.add_table(rows=1, cols=4)
 cht.style = 'Table Grid'
 tbl_header(cht, ['#', 'San pham', 'Trang thai', 'File / Vi tri'])
 checklist = [
-    ('1', 'Bang Noun Extraction (11 Entity + 5 Enum)',      'Hoan thanh', 'Muc 1'),
-    ('2', 'Bang tong hop 11 lop + thuoc tinh day du',       'Hoan thanh', 'Muc 2.1'),
-    ('3', 'Bang 5 lop Enum',                                'Hoan thanh', 'Muc 2.2'),
-    ('4', 'Bang 18 quan he voi JPA annotation',             'Hoan thanh', 'Muc 2.3'),
+    ('1', 'Bang Noun Extraction (14 Entity + 9 Enum)',      'Hoan thanh', 'Muc 1'),
+    ('2', 'Bang tong hop 14 lop + thuoc tinh day du',       'Hoan thanh', 'Muc 2.1'),
+    ('3', 'Bang 9 lop Enum',                                'Hoan thanh', 'Muc 2.2'),
+    ('4', 'Bang 25 quan he voi JPA annotation',             'Hoan thanh', 'Muc 2.3'),
     ('5', 'Cay thu muc du an thuc te',                      'Hoan thanh', 'Muc 3.2'),
-    ('6', 'Bang 18 file code skeleton voi mo ta',           'Hoan thanh', 'Muc 3.3'),
-    ('7', 'Class Diagram Draw.io (11 lop + 5 enum)',        'Can ve lai', 'ClassDiagram_Team12.drawio'),
-    ('8', 'GitHub push code',                               'Can thuc hien', 'Xem Muc 4'),
-    ('9', 'Bien ban hop nhom Tuan 3',                       'Can bo sung', 'BienBanHop_Tuan3_Team12.docx'),
+    ('6', 'Bang 25 file code skeleton voi mo ta',           'Hoan thanh', 'Muc 3.3'),
+    ('7', 'Class Diagram Draw.io (14 lop + 9 enum)',        'Hoan thanh', 'ClassDiagram_Team14_Tuan3.drawio'),
+    ('8', 'GitHub push code',                               'Hoan thanh', 'Xem Muc 4'),
+    ('9', 'Bien ban hop nhom Tuan 3',                       'Hoan thanh', 'BienBanHop_Tuan3_Team14.docx'),
 ]
 for i, rd in enumerate(checklist):
     fill_row(cht.add_row(), rd, alt='FEF9E7' if i%2 else None)
 
-out = r'd:\PTTKPM_12\files\ClassDiagram_Tuan3_Team12_Fixed.docx'
+out = r'd:\PTTKPM_12\files\ClassDiagram_Tuan3_Team14_Fixed.docx'
 doc.save(out)
+# Save backup in the project's Documents directory
+import os
+os.makedirs('Documents', exist_ok=True)
+doc.save(os.path.join('Documents', 'ClassDiagram_Tuan3_Team14.docx'))
 print('Done! Saved: ' + out)

@@ -265,7 +265,7 @@ function renderCards(orders) {
             ${o.restaurantPhone
                 ? `<a href="tel:${o.restaurantPhone}" class="btn-call"><i class="bi bi-telephone"></i>Gọi quán</a>`
                 : `<span class="btn-call" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Gọi quán</span>`}
-            <button class="btn-nav" onclick="navTo(${o.restaurantLat||0},${o.restaurantLng||0})">
+            <button class="btn-nav" onclick="navTo(${rLat},${rLng})">
                 <i class="bi bi-map"></i>Chỉ đường
             </button>
             <button class="btn-chat" onclick="chat(${o.id},'RESTAURANT','Nhà hàng')" title="Chat quán">
@@ -285,7 +285,7 @@ function renderCards(orders) {
             ${o.customerPhone
                 ? `<a href="tel:${o.customerPhone}" class="btn-call"><i class="bi bi-telephone"></i>Gọi khách</a>`
                 : `<span class="btn-call" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Gọi khách</span>`}
-            <button class="btn-nav" onclick="navTo(${o.deliveryLat||0},${o.deliveryLng||0})">
+            <button class="btn-nav" onclick="navTo(${cLat},${cLng})">
                 <i class="bi bi-map"></i>Chỉ đường
             </button>
             <button class="btn-chat" onclick="chat(${o.id},'CUSTOMER','Khách hàng')" title="Chat khách">
@@ -300,6 +300,8 @@ function renderCards(orders) {
 }
 
 // ── Leaflet Map ────────────────────────────────────────────────────
+let currentRoutePhase = null;
+
 function initMap(o) {
     const rLat = o.restaurantLat || 20.9626;
     const rLng = o.restaurantLng || 105.7402;
@@ -311,11 +313,14 @@ function initMap(o) {
     // Destroy old map
     if (driverMap) { driverMap.remove(); driverMap = null; driverMarker = null; routingCtrl = null; }
     document.getElementById('driver-map').innerHTML = '';
+    currentRoutePhase = null;
 
     // Khởi tạo sau 1 tick để DOM sẵn sàng kích thước
     setTimeout(() => {
+        const centerLat = (rLat + cLat) / 2;
+        const centerLng = (rLng + cLng) / 2;
         driverMap = L.map('driver-map', { zoomControl: false })
-            .setView([(rLat+cLat)/2, (rLng+cLng)/2], 14);
+            .setView([centerLat, centerLng], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap', maxZoom: 19
@@ -326,11 +331,9 @@ function initMap(o) {
         L.marker([cLat, cLng], { icon: makeIcon('https://cdn-icons-png.flaticon.com/512/2944/2944364.png') })
             .addTo(driverMap).bindPopup(`<b>📍 ${esc(o.deliveryAddress)}</b>`);
 
-        driverMap.fitBounds([[rLat,rLng],[cLat,cLng]], { padding:[30,30] });
-
-        // Vẽ route ban đầu
-        if (o.status === 'PREPARING') drawRoute(rLat, rLng, rLat, rLng, '#f59e0b');
-        else if (o.status === 'DELIVERING') drawRoute(rLat, rLng, cLat, cLng, '#3b82f6');
+        const p1 = [rLat, rLng];
+        const p2 = [cLat, cLng];
+        driverMap.fitBounds([p1, p2], { padding:[30,30] });
 
         // Fix map size sau khi hiện
         driverMap.invalidateSize();
@@ -344,7 +347,7 @@ function drawRoute(fromLat, fromLng, toLat, toLng, color) {
         waypoints: [L.latLng(fromLat, fromLng), L.latLng(toLat, toLng)],
         lineOptions: { styles: [{ color, weight: 5, opacity: 0.85 }] },
         createMarker: () => null,
-        fitSelectedRoutes: false, show: false, addWaypoints: false
+        fitSelectedRoutes: true, show: false, addWaypoints: false
     }).addTo(driverMap);
 }
 
@@ -353,6 +356,42 @@ function focusDriver() {
 }
 
 // ── GPS ────────────────────────────────────────────────────────────
+function updateDriverPosition(lat, lng, accuracy, orderId) {
+    if (accuracy) setGPS('active', `GPS hoạt động ±${Math.round(accuracy)}m`);
+    
+    // Lưu tọa độ vào cache để lúc F5 trang hiện ra liền
+    localStorage.setItem('driver_last_lat', lat);
+    localStorage.setItem('driver_last_lng', lng);
+
+    if (driverMap) {
+        if (!driverMarker) {
+            driverMarker = L.marker([lat,lng], {
+                icon: makeIcon('https://cdn-icons-png.flaticon.com/512/3209/3209800.png'),
+                zIndexOffset: 1000
+            }).addTo(driverMap).bindPopup('🛵 Vị trí của bạn');
+        } else {
+            driverMarker.setLatLng([lat,lng]);
+        }
+        if (currentOrder) {
+            if (currentOrder.status === 'PREPARING' && currentRoutePhase !== 'PREPARING') {
+                drawRoute(lat, lng, currentOrder.restaurantLat||20.9626, currentOrder.restaurantLng||105.7402, '#f59e0b');
+                currentRoutePhase = 'PREPARING';
+            } else if (currentOrder.status === 'DELIVERING' && currentRoutePhase !== 'DELIVERING') {
+                drawRoute(lat, lng, currentOrder.deliveryLat||20.9685, currentOrder.deliveryLng||105.7451, '#3b82f6');
+                currentRoutePhase = 'DELIVERING';
+            }
+        }
+    }
+
+    if (orderId) {
+        fetch('/api/driver/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ orderId, latitude: lat, longitude: lng })
+        }).catch(() => {});
+    }
+}
+
 function startGPS(orderId) {
     if (!navigator.geolocation) {
         setGPS('error', 'GPS không được hỗ trợ'); return;
@@ -360,38 +399,24 @@ function startGPS(orderId) {
     stopGPS();
     setGPS('loading', 'Đang kết nối GPS...');
 
+    // 1. Vẽ ngay tọa độ cũ từ lần trước (nếu có) để tránh màn hình trắng khi F5
+    const cachedLat = localStorage.getItem('driver_last_lat');
+    const cachedLng = localStorage.getItem('driver_last_lng');
+    if (cachedLat && cachedLng) {
+        updateDriverPosition(parseFloat(cachedLat), parseFloat(cachedLng), null, null); // Không gọi API
+    }
+
+    // 2. Yêu cầu tọa độ hiện tại ngay lập tức (thường trả về nhanh hơn watch)
+    navigator.geolocation.getCurrentPosition(pos => {
+        updateDriverPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, orderId);
+    }, () => {}, { enableHighAccuracy: false, maximumAge: 10000, timeout: 10000 });
+
+    // 3. Bắt đầu lắng nghe sự di chuyển
     gpsWatchId = navigator.geolocation.watchPosition(pos => {
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        setGPS('active', `GPS hoạt động ±${Math.round(accuracy)}m`);
-
-        if (driverMap) {
-            if (!driverMarker) {
-                driverMarker = L.marker([lat,lng], {
-                    icon: makeIcon('https://cdn-icons-png.flaticon.com/512/3209/3209800.png'),
-                    zIndexOffset: 1000
-                }).addTo(driverMap).bindPopup('🛵 Vị trí của bạn');
-            } else {
-                driverMarker.setLatLng([lat,lng]);
-            }
-            if (currentOrder) {
-                if (currentOrder.status === 'PREPARING') {
-                    drawRoute(lat, lng, currentOrder.restaurantLat||20.9626, currentOrder.restaurantLng||105.7402, '#f59e0b');
-                } else if (currentOrder.status === 'DELIVERING') {
-                    drawRoute(lat, lng, currentOrder.deliveryLat||20.9685, currentOrder.deliveryLng||105.7451, '#3b82f6');
-                }
-            }
-        }
-
-        // Gửi GPS lên server → broadcast WebSocket cho Customer
-        fetch('/api/driver/location', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ orderId, latitude: lat, longitude: lng })
-        }).catch(() => {});
-
+        updateDriverPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, orderId);
     }, err => {
         setGPS('error', `GPS lỗi: ${err.message}`);
-    }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 12000 });
+    }, { enableHighAccuracy: false, maximumAge: 10000, timeout: 30000 });
 }
 
 function stopGPS() {
@@ -480,7 +505,27 @@ async function confirmComplete() {
 // ── Helpers ────────────────────────────────────────────────────────
 function navTo(lat, lng) {
     if (!lat || !lng) { toast('Không có tọa độ', 'warning'); return; }
-    window.open(`https://maps.google.com?q=${lat},${lng}&navigate=yes`, '_blank');
+    if (!driverMap) return;
+    
+    // Cuộn mượt mà lên bản đồ ở trên cùng
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    if (driverMarker) {
+        // Lấy vị trí hiện tại của tài xế
+        const myLat = driverMarker.getLatLng().lat;
+        const myLng = driverMarker.getLatLng().lng;
+        
+        // Vẽ đường đi
+        drawRoute(myLat, myLng, lat, lng, '#3b82f6');
+        
+        // Zoom bản đồ vừa vặn với tuyến đường
+        const p1 = [myLat, myLng];
+        const p2 = [lat, lng];
+        driverMap.fitBounds([p1, p2], { padding: [30, 30] });
+    } else {
+        // Nếu chưa có định vị tài xế, chỉ trỏ camera về điểm đó
+        driverMap.flyTo([lat, lng], 16, { animate: true });
+    }
 }
 function chat(orderId, role, label) {
     if (typeof window.openShopeeChat === 'function') window.openShopeeChat(orderId, role, label);

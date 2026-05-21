@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-20T00:00:00.000Z" agent="Mozilla/5.0" etag="FHD" version="24.0.0" type="device">
+  <diagram name="Function Hierarchy Diagram" id="fhd">
+    <mxGraphModel dx="1200" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="2200" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="Hình 3.1. Sơ đồ Phân cấp Chức năng (FHD)" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontStyle=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="40" y="10" width="720" height="25" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="subtitle" value="Phân rã chức năng: Trả lời câu hỏi 'Hệ thống có những chức năng gì?'" style="text;html=1;strokeColor=none;fillColor=none;fontSize=10;align=center;fontColor=#666;" parent="1" vertex="1">
+          <mxGeometry x="40" y="35" width="720" height="20" as="geometry" />
+        </mxCell>
+        
+        <!-- LEVEL 1: ROOT -->
+        <mxCell id="root" value="FoodDash System&#xa;(Cấp 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;fontSize=11;fontStyle=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="320" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        
+        <!-- LEVEL 2: MODULES -->
+        <mxCell id="mod1" value="1. QuanLyXacThuc" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="20" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="root" target="mod1" style="strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="mod2" value="2. NghiepVuKhachHang" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor:#1565c0;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="170" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="root" target="mod2" style="strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="mod3" value="3. NghiepVuNhaHang" style="rounded=1;whiteSpace=wrap;html=1;fillColor:#bbdefb;strokeColor:#1565c0;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="320" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="root" target="mod3" style="strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="mod4" value="4. NghiepVuTaixe" style="rounded=1;whiteSpace=wrap;html=1;fillColor:#bbdefb;strokeColor:#1565c0;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="470" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="root" target="mod4" style="strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="mod5" value="5. QuanTriHeThong" style="rounded=1;whiteSpace=wrap;html=1;fillColor:#bbdefb;strokeColor:#1565c0;fontSize=10;" parent="1" vertex="1">
+          <mxGeometry x="620" y="200" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="root" target="mod5" style="strokeWidth=2;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- LEVEL 3: FUNCTIONS -->
+        <mxCell id="f1" value="UC-01: Đăng ký &amp; OTP" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="10" y="320" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef1" edge="1" parent="1" source="mod1" target="f1" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f2" value="UC-02: Đăng nhập" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="10" y="375" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef2" edge="1" parent="1" source="mod1" target="f2" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f3" value="UC-03: Quản lý hồ sơ" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="10" y="430" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef3" edge="1" parent="1" source="mod1" target="f3" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f4" value="UC-04: Quên mật khẩu" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="10" y="485" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef4" edge="1" parent="1" source="mod1" target="f4" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f5" value="UC-05: Tìm nhà hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="320" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef5" edge="1" parent="1" source="mod2" target="f5" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f6" value="UC-06: Xem thực đơn" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="375" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef6" edge="1" parent="1" source="mod2" target="f6" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f7" value="UC-07: Quản lý giỏ hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor:#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="430" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef7" edge="1" parent="1" source="mod2" target="f7" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f8" value="UC-08: Đặt đơn hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffccbc;strokeColor:#d84315;fontSize=9;fontStyle=1;" parent="1" vertex="1"><mxGeometry x="160" y="485" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef8" edge="1" parent="1" source="mod2" target="f8" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f9" value="UC-09: Thanh toán" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="540" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef9" edge="1" parent="1" source="mod2" target="f9" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f10" value="UC-10: Theo dõi đơn" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="595" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef10" edge="1" parent="1" source="mod2" target="f10" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f11" value="UC-11: Hủy đơn hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="650" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef11" edge="1" parent="1" source="mod2" target="f11" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f12" value="UC-12: Đánh giá đơn" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="160" y="705" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef12" edge="1" parent="1" source="mod2" target="f12" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f13" value="UC-13: Quản lý danh mục" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="310" y="320" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef13" edge="1" parent="1" source="mod3" target="f13" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f14" value="UC-14: Quản lý thực đơn" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="310" y="375" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef14" edge="1" parent="1" source="mod3" target="f14" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f15" value="UC-15: Xử lý đơn hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="310" y="430" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef15" edge="1" parent="1" source="mod3" target="f15" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f16" value="UC-16: Nhận giao hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="460" y="320" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef16" edge="1" parent="1" source="mod4" target="f16" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f17" value="UC-17: Quản lý người dùng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="610" y="320" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef17" edge="1" parent="1" source="mod5" target="f17" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f18" value="UC-18: Duyệt nhà hàng" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="610" y="375" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef18" edge="1" parent="1" source="mod5" target="f18" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f19" value="UC-19: Báo cáo doanhthu" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="610" y="430" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef19" edge="1" parent="1" source="mod5" target="f19" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <mxCell id="f20" value="UC-20: Quản lý voucher" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor:#f57f17;fontSize=9;" parent="1" vertex="1"><mxGeometry x="610" y="485" width="100" height="35" as="geometry" /></mxCell>
+        <mxCell id="ef20" edge="1" parent="1" source="mod5" target="f20" style="strokeWidth=1;"><mxGeometry relative="1" as="geometry" /></mxCell>
+        
+        <!-- NOTES -->
+        <mxCell id="note" value="✓ FHD chỉ trả lời: 'Hệ thống có những chức năng gì?'&#xa;✓ Không liên quan đến kỹ thuật (Controller, Service, Repository)&#xa;✓ UC-08 (Đặt đơn hàng) là ví dụ chính cho mục 3.2 Structure Chart" style="text;html=1;strokeColor=#333;fillColor=#f0f0f0;fontSize=9;align=left;verticalAlign=top;spacing=1;spacingTop=3;spacingLeft=5;" parent="1" vertex="1">
+          <mxGeometry x="40" y="800" width="720" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

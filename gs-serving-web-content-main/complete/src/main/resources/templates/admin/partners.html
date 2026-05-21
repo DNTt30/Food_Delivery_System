@@ -9,7 +9,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-danger"></i>Quản lý Đối tác</h4>
         <small class="text-muted">Quản lý người dùng và nhà hàng trong hệ thống</small>
     </div>
     <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadAll()">
@@ -18,9 +17,15 @@
 </div>
 
 <!-- Tabs -->
-<div class="d-flex gap-2 mb-4">
-    <button class="btn btn-danger btn-sm rounded-pill px-4 tab-btn active" data-tab="users" onclick="switchTab('users', this)">
-        <i class="bi bi-people me-1"></i>Người dùng
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button class="btn btn-danger btn-sm rounded-pill px-4 tab-btn active" data-tab="users-all" onclick="switchTab('users-all', this)">
+        <i class="bi bi-people me-1"></i>Tất cả
+    </button>
+    <button class="btn btn-outline-secondary btn-sm rounded-pill px-4 tab-btn" data-tab="users-customer" onclick="switchTab('users-customer', this)">
+        <i class="bi bi-person me-1"></i>Khách hàng
+    </button>
+    <button class="btn btn-outline-secondary btn-sm rounded-pill px-4 tab-btn" data-tab="users-driver" onclick="switchTab('users-driver', this)">
+        <i class="bi bi-bicycle me-1"></i>Tài xế
     </button>
     <button class="btn btn-outline-secondary btn-sm rounded-pill px-4 tab-btn" data-tab="restaurants" onclick="switchTab('restaurants', this)">
         <i class="bi bi-shop me-1"></i>Nhà hàng
@@ -35,10 +40,12 @@
 
 <!-- Users Panel -->
 <div id="usersPanel" class="d-none">
-    <!-- Search -->
-    <div class="input-group mb-3" style="max-width:320px;">
-        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" id="userSearch" class="form-control border-start-0" placeholder="Tìm người dùng..." oninput="filterUsers(this.value)">
+    <!-- Filter -->
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+        <div class="input-group" style="max-width:320px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="userSearch" class="form-control border-start-0" placeholder="Tìm người dùng..." oninput="filterUsers()">
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle rounded-4 overflow-hidden shadow-sm">
@@ -95,6 +102,42 @@
     </div>
 </div>
 
+<!-- Rest Details Modal -->
+<div class="modal fade" id="restDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Chi tiết nhà hàng</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="restDetailsLoading" class="text-center py-4"><div class="spinner-border text-danger"></div></div>
+                <div id="restDetailsContent" class="d-none">
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                            <img id="rdBanner" src="" class="img-fluid rounded-3 mb-2" style="max-height:120px;object-fit:cover;width:100%;">
+                            <h5 class="fw-bold mb-1" id="rdName">Tên nhà hàng</h5>
+                            <span class="badge bg-warning text-dark" id="rdRating"><i class="bi bi-star-fill"></i> 0</span>
+                        </div>
+                        <div class="col-md-8">
+                            <table class="table table-sm table-borderless small">
+                                <tr><td class="text-muted" width="100">Chủ sở hữu:</td><td id="rdOwner" class="fw-semibold"></td></tr>
+                                <tr><td class="text-muted">Email:</td><td id="rdEmail"></td></tr>
+                                <tr><td class="text-muted">SĐT:</td><td id="rdPhone"></td></tr>
+                                <tr><td class="text-muted">Địa chỉ:</td><td id="rdAddress"></td></tr>
+                                <tr><td class="text-muted">Tọa độ:</td><td id="rdCoords"></td></tr>
+                                <tr><td class="text-muted">Trạng thái:</td><td id="rdStatus"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold border-bottom pb-2"><i class="bi bi-star me-2"></i>Đánh giá từ khách hàng</h6>
+                    <div id="rdReviews" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .tab-btn.active { background: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
 .rest-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
@@ -104,15 +147,60 @@
 <script>
     const token = localStorage.getItem('jwt_token');
     let allUsers = [], allRestaurants = [];
-    let currentTab = 'users';
+    let currentTab = 'users-all';
     let restFilter = 'all';
-    let confirmModal, confirmAction;
+    let confirmModal, confirmAction, restDetailsModal;
 
     document.addEventListener('DOMContentLoaded', () => {
         confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        restDetailsModal = new bootstrap.Modal(document.getElementById('restDetailsModal'));
         document.getElementById('confirmBtn').onclick = () => { confirmModal.hide(); confirmAction && confirmAction(); };
         loadAll();
     });
+
+    async function showRestDetails(id) {
+        restDetailsModal.show();
+        document.getElementById('restDetailsLoading').classList.remove('d-none');
+        document.getElementById('restDetailsContent').classList.add('d-none');
+        try {
+            const res = await fetch(`/api/admin/restaurants/${id}/details`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Failed');
+            const data = await res.json();
+            
+            const r = data.restaurant;
+            document.getElementById('rdBanner').src = r.bannerUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=100&fit=crop';
+            document.getElementById('rdName').textContent = r.restaurantName;
+            document.getElementById('rdRating').innerHTML = `<i class="bi bi-star-fill"></i> ${r.averageRating ? r.averageRating.toFixed(1) : 'Chưa có'}`;
+            document.getElementById('rdOwner').textContent = r.ownerUsername;
+            document.getElementById('rdEmail').textContent = r.ownerEmail || '—';
+            document.getElementById('rdPhone').textContent = data.phone || '—';
+            document.getElementById('rdAddress').textContent = r.address || '—';
+            document.getElementById('rdCoords').textContent = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : 'Chưa cập nhật';
+            document.getElementById('rdStatus').innerHTML = r.open ? '<span class="badge bg-success">Đang mở</span>' : '<span class="badge bg-danger">Đóng cửa</span>';
+
+            const revHtml = data.reviews.length ? data.reviews.map(rv => `
+                <div class="border-bottom py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="small">${rv.customerName || 'Khách hàng'}</strong>
+                        <span class="text-warning small">${'⭐'.repeat(rv.rating)}</span>
+                    </div>
+                    <p class="mb-1 small text-muted">${rv.comment || ''}</p>
+                    <small class="text-secondary" style="font-size:0.7rem;">${rv.createdAt ? new Date(rv.createdAt).toLocaleString('vi-VN') : ''}</small>
+                </div>
+            `).join('') : '<p class="text-muted small text-center py-3">Chưa có đánh giá nào.</p>';
+            
+            document.getElementById('rdReviews').innerHTML = revHtml;
+
+            document.getElementById('restDetailsLoading').classList.add('d-none');
+            document.getElementById('restDetailsContent').classList.remove('d-none');
+        } catch(e) {
+            document.getElementById('restDetailsLoading').innerHTML = '<div class="text-danger py-3">Lỗi tải dữ liệu. Vui lòng thử lại.</div>';
+        }
+    }
+
+    let currentRoleFilter = 'all';
 
     function switchTab(tab, btn) {
         currentTab = tab;
@@ -122,8 +210,20 @@
         });
         btn.classList.add('active');
         btn.className = btn.className.replace('btn-outline-secondary', 'btn-danger');
-        document.getElementById('usersPanel').classList.toggle('d-none', tab !== 'users');
-        document.getElementById('restaurantsPanel').classList.toggle('d-none', tab !== 'restaurants');
+
+        if (tab === 'restaurants') {
+            document.getElementById('usersPanel').classList.add('d-none');
+            document.getElementById('restaurantsPanel').classList.remove('d-none');
+        } else {
+            document.getElementById('restaurantsPanel').classList.add('d-none');
+            document.getElementById('usersPanel').classList.remove('d-none');
+            
+            if (tab === 'users-driver') currentRoleFilter = 'DRIVER';
+            else if (tab === 'users-customer') currentRoleFilter = 'CUSTOMER';
+            else currentRoleFilter = 'all';
+            
+            filterUsers();
+        }
     }
 
     async function loadAll() {
@@ -139,10 +239,15 @@
             allUsers = uRes.ok ? await uRes.json() : [];
             allRestaurants = rRes.ok ? await rRes.json() : [];
             document.getElementById('loading').classList.add('d-none');
-            document.getElementById('usersPanel').classList.toggle('d-none', currentTab !== 'users');
-            document.getElementById('restaurantsPanel').classList.toggle('d-none', currentTab !== 'restaurants');
-            renderUsers(allUsers);
-            renderRestaurants(allRestaurants);
+            
+            // Re-apply tab visibility
+            if (currentTab === 'restaurants') {
+                document.getElementById('restaurantsPanel').classList.remove('d-none');
+                renderRestaurants(allRestaurants);
+            } else {
+                document.getElementById('usersPanel').classList.remove('d-none');
+                filterUsers();
+            }
         } catch {
             document.getElementById('loading').innerHTML =
                 '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
@@ -150,19 +255,23 @@
     }
 
     // ─── USERS ─────────────────────────────────────────
-    function filterUsers(q) {
-        const filtered = q
-            ? allUsers.filter(u => u.username.toLowerCase().includes(q.toLowerCase()) ||
-                (u.email && u.email.toLowerCase().includes(q.toLowerCase())))
-            : allUsers;
-        renderUsers(filtered);
+    function filterUsers() {
+        const q = document.getElementById('userSearch').value.toLowerCase();
+        let items = allUsers;
+        if (q) {
+            items = items.filter(u => u.username.toLowerCase().includes(q) || (u.email && u.email.toLowerCase().includes(q)));
+        }
+        if (currentRoleFilter !== 'all') {
+            items = items.filter(u => u.role === currentRoleFilter);
+        }
+        renderUsers(items);
     }
 
     const ROLE_BADGES = {
-        ROLE_CUSTOMER: '<span class="badge bg-primary-subtle text-primary border border-primary">Khách hàng</span>',
-        ROLE_RESTAURANT: '<span class="badge bg-warning-subtle text-warning border border-warning">Nhà hàng</span>',
-        ROLE_DRIVER: '<span class="badge bg-success-subtle text-success border border-success">Tài xế</span>',
-        ROLE_ADMIN: '<span class="badge bg-danger-subtle text-danger border border-danger">Admin</span>'
+        CUSTOMER: '<span class="badge bg-primary-subtle text-primary border border-primary">Khách hàng</span>',
+        RESTAURANT: '<span class="badge bg-warning-subtle text-warning border border-warning">Nhà hàng</span>',
+        DRIVER: '<span class="badge bg-success-subtle text-success border border-success">Tài xế</span>',
+        ADMIN: '<span class="badge bg-danger-subtle text-danger border border-danger">Admin</span>'
     };
 
     function renderUsers(users) {
@@ -278,6 +387,9 @@
                                 <button class="btn btn-sm ${r.open ? 'btn-outline-warning' : 'btn-outline-success'} rounded-pill px-2"
                                         onclick="toggleRestaurant(${r.id}, ${r.open}, '${r.restaurantName.replace(/'/g,"&#39;")}')">
                                     ${r.open ? '<i class="bi bi-lock"></i>' : '<i class="bi bi-unlock"></i>'}
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-2 fw-semibold" onclick="showRestDetails(${r.id})" title="Xem chi tiết & Đánh giá">
+                                    <i class="bi bi-info-circle me-1"></i>Chi tiết
                                 </button>
                             </div>
                             ${r.averageRating ? `<span class="text-warning small fw-semibold"><i class="bi bi-star-fill"></i> ${r.averageRating.toFixed(1)}</span>` : ''}

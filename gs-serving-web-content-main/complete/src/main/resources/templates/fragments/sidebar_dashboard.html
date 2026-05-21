@@ -514,7 +514,7 @@
         </a>
         <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
             <li><a class="dropdown-item"
-                    th:href="${role == 'restaurant' ? '/restaurant/profile' : '/common/profile'}"><i
+                    th:href="${role == 'restaurant' ? '/restaurant/profile' : (role == 'admin' ? '/admin/profile' : '/common/profile')}"><i
                         class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
             <li>
                 <hr class="dropdown-divider">

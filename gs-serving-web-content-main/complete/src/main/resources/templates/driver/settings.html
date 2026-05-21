@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Cài đặt - Driver</title>
+</head>
+<body>
+<main>
+<style>
+.page-header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.page-header h5 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.settings-group {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    text-decoration: none;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.settings-item:last-child {
+    border-bottom: none;
+}
+.settings-item:active {
+    background: #f8fafc;
+}
+.settings-item i.bi-chevron-right {
+    color: #94a3b8;
+}
+.settings-item .icon {
+    width: 32px;
+    display: inline-block;
+    color: #3b82f6;
+    font-size: 1.1rem;
+}
+.profile-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.profile-avatar {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #1e40af;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-weight: bold;
+}
+.profile-info h6 {
+    margin: 0 0 5px 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.profile-info p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+.form-check-input:checked {
+    background-color: #22c55e;
+    border-color: #22c55e;
+}
+</style>
+
+<div class="page-header">
+    <h5>⚙️ Cài đặt</h5>
+</div>
+
+<div class="profile-card">
+    <div class="profile-avatar"><i class="bi bi-person-fill"></i></div>
+    <div class="profile-info">
+        <h6 id="driverName">Đang tải...</h6>
+        <p>Tài xế Food Delivery</p>
+    </div>
+</div>
+
+<div class="settings-group">
+    <div class="settings-item">
+        <div>
+            <span class="icon"><i class="bi bi-power text-success"></i></span>
+            Trạng thái hoạt động
+        </div>
+        <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="availabilitySwitch" style="width: 2.5em; height: 1.25em;">
+        </div>
+    </div>
+    <a href="/driver/history" class="settings-item">
+        <div>
+            <span class="icon"><i class="bi bi-clock-history"></i></span>
+            Lịch sử giao hàng
+        </div>
+        <i class="bi bi-chevron-right"></i>
+    </a>
+    <a href="/driver/profile" class="settings-item">
+        <div>
+            <span class="icon"><i class="bi bi-person-lines-fill text-warning"></i></span>
+            Hồ sơ cá nhân
+        </div>
+        <i class="bi bi-chevron-right"></i>
+    </a>
+</div>
+
+<div class="settings-group">
+    <a href="javascript:void(0)" onclick="logout()" class="settings-item text-danger">
+        <div>
+            <span class="icon text-danger"><i class="bi bi-box-arrow-right"></i></span>
+            Đăng xuất
+        </div>
+    </a>
+</div>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    async function loadDriverInfo() {
+        try {
+            const res = await fetch('/api/driver/dashboard', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('driverName').textContent = data.driverName || 'Tài xế';
+                document.getElementById('availabilitySwitch').checked = data.isAvailable;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    document.getElementById('availabilitySwitch').addEventListener('change', async function() {
+        this.disabled = true;
+        try {
+            const res = await fetch('/api/driver/availability', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                this.checked = data.isAvailable;
+                toast(data.message, 'success');
+            } else {
+                this.checked = !this.checked; // revert
+                toast('Lỗi cập nhật trạng thái', 'danger');
+            }
+        } catch {
+            this.checked = !this.checked;
+            toast('Lỗi kết nối', 'danger');
+        }
+        this.disabled = false;
+    });
+
+    function logout() {
+        localStorage.removeItem('jwt_token');
+        window.location.href = '/common/auth';
+    }
+
+    function toast(msg, type) {
+        const t = document.createElement('div');
+        t.className = `position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+        t.style.cssText = 'z-index:9999;border-radius:12px;min-width:220px;';
+        t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+    }
+
+    loadDriverInfo();
+</script>
+
+</main>
+</body>
+</html>

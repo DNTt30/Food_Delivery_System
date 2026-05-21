@@ -22,15 +22,18 @@ public class AdminApiController {
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final VoucherRepository voucherRepository;
     private final FoodOrderRepository foodOrderRepository;
+    private final ReviewRepository reviewRepository;
 
     public AdminApiController(UserRepository userRepository,
                               RestaurantProfileRepository restaurantProfileRepository,
                               VoucherRepository voucherRepository,
-                              FoodOrderRepository foodOrderRepository) {
+                              FoodOrderRepository foodOrderRepository,
+                              ReviewRepository reviewRepository) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.voucherRepository = voucherRepository;
         this.foodOrderRepository = foodOrderRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     private boolean isAdmin(Authentication authentication) {
@@ -158,6 +161,46 @@ public class AdminApiController {
         userRepository.save(owner);
         restaurantProfileRepository.save(restaurant);
         return ResponseEntity.ok(Map.of("message", "Nhà hàng đã được duyệt và kích hoạt"));
+    }
+
+    @GetMapping("/restaurants/{id}/details")
+    public ResponseEntity<?> getRestaurantDetails(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
+        if (restaurant == null) return ResponseEntity.notFound().build();
+
+        List<Review> reviews = reviewRepository.findByRestaurant(restaurant);
+        List<Map<String, Object>> reviewDTOs = reviews.stream().map(r -> {
+            Map<String, Object> map = new java.util.LinkedHashMap<>();
+            map.put("id", r.getId());
+            map.put("rating", r.getRating() != null ? r.getRating() : 5);
+            map.put("comment", r.getComment());
+            map.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : "");
+            
+            String customerName = "Khách hàng";
+            if (r.getOrder() != null && r.getOrder().getCustomer() != null && r.getOrder().getCustomer().getUser() != null) {
+                customerName = r.getOrder().getCustomer().getUser().getFullName();
+            }
+            map.put("customerName", customerName);
+            return map;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("restaurant", new RestaurantAdminDTO(
+                restaurant.getId(), restaurant.getRestaurantName(), restaurant.getAddress(),
+                restaurant.getUser() != null ? restaurant.getUser().getUsername() : "—",
+                restaurant.getUser() != null ? restaurant.getUser().getEmail() : "—",
+                restaurant.getBannerUrl(), restaurant.isOpen(), 
+                restaurant.getUser() != null && restaurant.getUser().isEnabled(),
+                restaurant.getAverageRating()
+        ));
+        result.put("reviews", reviewDTOs);
+        result.put("phone", null); // TODO: Add phone to User or RestaurantProfile if needed
+        result.put("latitude", restaurant.getLatitude());
+        result.put("longitude", restaurant.getLongitude());
+
+        return ResponseEntity.ok(result);
     }
 
     // UC-20: Quản lý mã khuyến mãi

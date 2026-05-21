@@ -22,7 +22,7 @@ Nền tảng giao đồ ăn toàn diện kết nối **Khách hàng**, **Nhà h�
 
 ```bash
 # Clone
-git clone https://github.com/your-repo/Food_Delivery_System.git
+git clone https://github.com/DNTt30/Food_Delivery_System.git
 cd Food_Delivery_System/gs-serving-web-content-main/complete
 
 # Build & Run
@@ -248,118 +248,37 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 │  ├─ Spring Data JPA Repositories                       │
 │  ├─ Custom @Query methods                              │
 │  └─ Native SQL queries                                 │
-└────────────────┬────────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│  Database Layer                                         │
-│  └─ MySQL 8.0 (Aiven Cloud)                           │
-│     ├─ Users (Login, roles, credentials)              │
-│     ├─ Food Orders (Order lifecycle)                  │
-│     ├─ Menu Items (Restaurant food catalog)           │
-│     ├─ Chat Messages (User communication)             │
-│     ├─ Tracking Locations (Driver GPS)                │
-│     └─ Vouchers, Notifications, etc.                  │
-└─────────────────────────────────────────────────────────┘
-```
+└────────────────┬─────────────## 👨‍💻 Đội ngũ Phát triển
+
+| Thành viên | MSSV | Vai trò |
+| :--- | :--- | :--- |
+| **Dương Ngọc Tú** | 22010052 | Fullstack Developer / Team Lead |
+| **Đinh Thị Như Quỳnh** | 23010844 | Frontend Developer / Documentation |
+| **Ngô Minh Quân** | 23017112 | Backend Developer / Database |
 
 ---
 
-## 🧪 Testing
+## 📚 Tài liệu & Liên kết
 
-### Unit Tests
-```bash
-# Chạy tất cả tests
-./mvnw test
-
-# Chạy test một class cụ thể
-./mvnw test -Dtest=OrderServiceTest
-
-# Chạy test với coverage
-./mvnw test jacoco:report
-```
-
-### Test Coverage
-- ✅ AuthService, JwtUtil, SecurityConfig
-- ✅ OrderService, ShippingCalculationService
-- ✅ ChatService (validation, access control)
-- ✅ Repository queries
-
----
-
-## 🔍 Debugging & Development
-
-### Hot Reload
-```bash
-# DevTools sẽ tự động reload khi file thay đổi
-./mvnw spring-boot:run
-```
-
-### Database Console
-Truy cập H2 Console (nếu cấu hình):
-```
-http://localhost:8080/h2-console
-```
-
-### Logs
-Tìm logs tại: `logs/application.log` (nếu cấu hình)
-
----
-
-## 📝 Cách Contribute
-
-1. **Fork dự án**
-2. **Tạo branch feature:** `git checkout -b feature/your-feature`
-3. **Commit changes:** `git commit -m 'Add your feature'`
-4. **Push to branch:** `git push origin feature/your-feature`
-5. **Mở Pull Request**
-
-### Code Style
-- Sử dụng Google Java Style Guide
-- Viết JavaDoc cho public methods
-- Tuân theo naming convention (camelCase)
-- Tối đa 120 ký tự một dòng
-
----
-
-## 📋 Danh sách Module
-
-Xem chi tiết từng module tại thư mục `modules/`:
-
-- [Authentication Module](modules/auth.md)
-- [Profile Module](modules/profile.md)
-- [Order & Tracking Module](modules/order.md)
-- [Tracking Module](modules/tracking.md)
-- [Chat Module](modules/chat.md)
-- [Notification Module](modules/notification.md)
-
----
-
-## 📚 Tài liệu
-
-- [Project State & Architecture](PROJECT_STATE.md)
-- [Recent Changes Log](RECENT_CHANGES.md)
-- [Changelog](CHANGELOG.md)
-- [Class Diagram](ClassDiagram_Updated.drawio)
-- [Use Case Diagram](UseCaseDiagram_Updated.drawio)
-
----
-
-## 🎨 Thiết kế & Tài liệu UX
-
-- [UI/UX Designs](Design/)
-- [Technical Documents](Documents/)
-
----
-
-## 🐛 Report Issues
-
-Tìm thấy bug? [Tạo issue mới](https://github.com/your-repo/Food_Delivery_System/issues)
+| Tài liệu | Nội dung |
+| :--- | :--- |
+| [Documents/README.md](Documents/README.md) | Nhật ký phát triển (Tuần 1-7) |
+| [PROJECT_STATE.md](PROJECT_STATE.md) | Bản đồ kiến trúc & tech stack |
+| [CONSTRAINTS.md](CONSTRAINTS.md) | Quy chuẩn viết mã |
+| [RECENT_CHANGES.md](RECENT_CHANGES.md) | Nhật ký thay đổi code |
+| [modules/](modules/) | Tài liệu 6 module chuyên sâu |
+| [CHANGELOG.md](CHANGELOG.md) | Lịch sử phiên bản |
 
 ---
 
 ## 📞 Liên hệ & Support
 
-- **Team:** Development Team
+- **GitHub Issues:** [Báo cáo bug](https://github.com/DNTt30/Food_Delivery_System/issues)
+- **Giấy phép:** [MIT License](LICENSE)
+
+---
+
+*Cập nhật: 21/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*** Development Team
 - **Email:** [contact@example.com]
 - **Issues:** GitHub Issues
 - **Documentation:** [Project Wiki]
@@ -457,12 +376,12 @@ src/main/java/com/duong/salesmanagement/
 
 ## 📞 Liên hệ & Support
 
-- **GitHub Issues:** [Báo cáo bug](https://github.com/your-repo/Food_Delivery_System/issues)
+- **GitHub Issues:** [Báo cáo bug](https://github.com/DNTt30/Food_Delivery_System/issues)
 - **Email:** contact@example.com
 - **Giấy phép:** [MIT License](LICENSE)
 
 ---
 
-*Cập nhật: 20/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
+*Cập nhật: 21/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
 
 

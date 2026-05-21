@@ -5,101 +5,140 @@
 </head>
 <body>
 <main>
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">🕒 Lịch sử đơn hàng</h5>
-        <button class="btn btn-sm btn-light border rounded-pill" onclick="loadHistory()">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
-    </div>
+<style>
+.page-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+}
+.page-header h5 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.back-btn {
+    background: none; border: none; font-size: 1.2rem;
+    color: #334155; padding: 0; cursor: pointer;
+}
+.history-card {
+    background: #fff; border-radius: 14px;
+    border: 1px solid #e2e8f0; padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.history-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+}
+.history-date { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+.status-badge {
+    font-size: 0.7rem; font-weight: 700; padding: 4px 8px;
+    border-radius: 6px; text-transform: uppercase;
+}
+.status-COMPLETED { background: #dcfce7; color: #166534; }
+.status-CANCELLED { background: #fee2e2; color: #991b1b; }
+.history-body {
+    display: flex; justify-content: space-between; align-items: flex-end;
+}
+.history-info p { margin: 0; font-size: 0.85rem; color: #334155; }
+.history-info .shop-name { font-weight: 700; margin-bottom: 2px; font-size: 0.95rem; }
+.history-info .items { font-size: 0.8rem; color: #64748b; margin-top: 4px; display: block;}
+.history-earnings {
+    text-align: right;
+}
+.history-earnings .amount {
+    font-size: 1.1rem; font-weight: 800; color: #22c55e;
+}
+.history-earnings .label {
+    font-size: 0.7rem; color: #64748b;
+}
+.empty-history { text-align: center; padding: 40px 0; }
+.empty-history i { font-size: 3rem; color: #cbd5e1; }
+.empty-history h6 { margin-top: 15px; font-weight: 600; color: #64748b; }
+</style>
 
-    <!-- Loading -->
-    <div id="loading" class="text-center py-5">
-        <div class="spinner-border text-secondary spinner-border-sm" role="status"></div>
-    </div>
+<div class="page-header">
+    <a href="/driver/settings" class="back-btn"><i class="bi bi-arrow-left"></i></a>
+    <h5>Lịch sử giao hàng</h5>
+</div>
 
-    <!-- Empty State -->
-    <div id="emptyState" class="text-center py-5 d-none">
-        <div style="font-size: 3.5rem">📜</div>
-        <h6 class="fw-bold mt-2">Chưa có lịch sử giao hàng</h6>
-        <p class="text-muted small">Các đơn hàng bạn đã giao xong sẽ xuất hiện ở đây.</p>
-    </div>
+<div id="loading" class="text-center py-4">
+    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+</div>
 
-    <!-- History List -->
-    <div id="historyList"></div>
+<div id="historyList"></div>
 
-    <script th:inline="javascript">
-        const token = localStorage.getItem('jwt_token');
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
 
-        function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
-        function formatDate(dt) {
-            if (!dt) return '';
-            // Handle array from Spring [y, m, d, h, m]
-            if (Array.isArray(dt)) {
-                return `${dt[2]}/${dt[1]} ${dt[3]}:${dt[4].toString().padStart(2,'0')}`;
-            }
-            return new Date(dt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
 
-        async function loadHistory() {
-            document.getElementById('loading').classList.remove('d-none');
-            document.getElementById('emptyState').classList.add('d-none');
-            document.getElementById('historyList').innerHTML = '';
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const d = new Date(dateString);
+        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
 
-            try {
-                const res = await fetch('/api/driver/history', { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
-                });
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/driver/history', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            document.getElementById('loading').style.display = 'none';
+            if (res.ok) {
                 const orders = await res.json();
-                document.getElementById('loading').classList.add('d-none');
+                // Filter only completed or cancelled
+                const historyOrders = orders.filter(o => o.status === 'COMPLETED' || o.status === 'CANCELLED');
+                // Sort by ID descending (newest first)
+                historyOrders.sort((a, b) => b.id - a.id);
 
-                if (!orders || orders.length === 0) {
-                    document.getElementById('emptyState').classList.remove('d-none');
+                const listEl = document.getElementById('historyList');
+                if (historyOrders.length === 0) {
+                    listEl.innerHTML = `
+                        <div class="empty-history">
+                            <i class="bi bi-receipt"></i>
+                            <h6>Chưa có chuyến giao nào</h6>
+                        </div>`;
                     return;
                 }
 
-                renderHistory(orders);
-            } catch {
-                document.getElementById('loading').classList.add('d-none');
-                document.getElementById('historyList').innerHTML = '<div class="alert alert-danger">Lỗi kết nối</div>';
-            }
-        }
-
-        function renderHistory(orders) {
-            const list = document.getElementById('historyList');
-            // Sort by ID descending (newest first)
-            orders.sort((a,b) => b.id - a.id);
-            
-            list.innerHTML = orders.map(o => {
-                const isCompleted = o.status === 'COMPLETED';
-                const income = isCompleted ? (o.totalAmount * 0.1) : 0;
-                const statusBadge = isCompleted 
-                    ? '<span class="badge bg-success-subtle text-success border border-success">Hoàn thành</span>'
-                    : '<span class="badge bg-danger-subtle text-danger border border-danger">Đã hủy</span>';
-
-                return `
-                <div class="mobile-card shadow-sm mb-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <div class="fw-bold text-dark">Đơn #${o.id}</div>
-                            <div class="small text-muted">${formatDate(o.orderTime)}</div>
+                listEl.innerHTML = historyOrders.map(o => {
+                    const commission = o.totalAmount * 0.1; // Assuming 10% commission
+                    const isCompleted = o.status === 'COMPLETED';
+                    const itemsStr = o.items && o.items.length > 0 ? o.items.join(', ') : 'Không có thông tin món';
+                    
+                    return `
+                        <div class="history-card">
+                            <div class="history-header">
+                                <div class="history-date">#${o.id} • ${formatDate(o.orderTime)}</div>
+                                <div class="status-badge status-${o.status}">
+                                    ${isCompleted ? 'Hoàn thành' : 'Đã hủy'}
+                                </div>
+                            </div>
+                            <div class="history-body">
+                                <div class="history-info" style="flex: 1; padding-right: 10px;">
+                                    <div class="shop-name"><i class="bi bi-shop text-warning me-1"></i>${o.restaurantName}</div>
+                                    <p><i class="bi bi-person-check text-primary me-1"></i>${o.customerName}</p>
+                                    <span class="items"><i class="bi bi-box-seam me-1"></i>${itemsStr}</span>
+                                </div>
+                                <div class="history-earnings">
+                                    <div class="label">Thu nhập</div>
+                                    <div class="amount ${!isCompleted ? 'text-muted text-decoration-line-through' : ''}">
+                                        +${formatVND(commission)}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        ${statusBadge}
-                    </div>
-                    
-                    <div class="small text-muted mb-2"><i class="bi bi-shop me-1"></i>${o.restaurantName}</div>
-                    <div class="small text-muted mb-3"><i class="bi bi-geo-alt me-1"></i>${o.deliveryAddress}</div>
-                    
-                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                        <div class="small fw-semibold">Tổng: ${formatVND(o.totalAmount)}</div>
-                        ${isCompleted ? `<div class="text-success fw-bold">Thu nhập: +${formatVND(income)}</div>` : ''}
-                    </div>
-                </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } else {
+                throw new Error('Lỗi load data');
+            }
+        } catch (e) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('historyList').innerHTML = `<div class="alert alert-danger">Lỗi kết nối. Vui lòng thử lại sau.</div>`;
         }
+    }
 
-        loadHistory();
-    </script>
+    loadHistory();
+</script>
+
 </main>
 </body>
 </html>

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@SuppressWarnings("null")
 public class GeocodingService {
     private static final Logger logger = LoggerFactory.getLogger(GeocodingService.class);
     private final RestTemplate restTemplate;

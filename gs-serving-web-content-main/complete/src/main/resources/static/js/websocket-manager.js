@@ -34,5 +34,13 @@ const WebSocketManager = (function() {
         }
     }
 
-    return { connect, disconnect };
+    function subscribe(topic, callback) {
+        if (stompClient && stompClient.connected) {
+            stompClient.subscribe(topic, function (message) {
+                if (callback) callback(JSON.parse(message.body));
+            });
+        }
+    }
+
+    return { connect, disconnect, subscribe, getClient: () => stompClient };
 })();

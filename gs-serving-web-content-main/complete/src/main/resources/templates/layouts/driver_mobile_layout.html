@@ -155,9 +155,9 @@
             <i class="bi bi-geo-alt"></i>
             <span>Đang giao</span>
         </a>
-        <a href="/driver/history" class="bottom-nav-item" id="nav-history">
-            <i class="bi bi-clock-history"></i>
-            <span>Lịch sử</span>
+        <a href="/driver/settings" class="bottom-nav-item" id="nav-settings">
+            <i class="bi bi-gear"></i>
+            <span>Cài đặt</span>
         </a>
     </nav>
 
@@ -214,7 +214,7 @@
             if (path.includes('dashboard')) document.getElementById('nav-home').classList.add('active');
             else if (path.includes('new_orders')) document.getElementById('nav-orders').classList.add('active');
             else if (path.includes('delivering')) document.getElementById('nav-active').classList.add('active');
-            else if (path.includes('history')) document.getElementById('nav-history').classList.add('active');
+            else if (path.includes('history') || path.includes('settings')) document.getElementById('nav-settings').classList.add('active');
         });
     </script>
     <div th:replace="~{fragments/scripts :: scripts}"></div>

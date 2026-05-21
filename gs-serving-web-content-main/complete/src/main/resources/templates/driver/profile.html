@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Hồ sơ cá nhân - Driver</title>
+</head>
+<body>
+<main>
+<style>
+.page-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+}
+.page-header h5 { font-size: 1.15rem; font-weight: 700; margin: 0; }
+.back-btn {
+    background: none; border: none; font-size: 1.2rem;
+    color: #334155; padding: 0; cursor: pointer; text-decoration: none;
+}
+.profile-card {
+    background: #fff; border-radius: 14px;
+    border: 1px solid #e2e8f0; padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.form-label-mobile {
+    font-size: 0.8rem; font-weight: 700; color: #475569;
+    margin-bottom: 6px; display: block;
+}
+.form-control-mobile {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 10px; padding: 12px 14px;
+    font-size: 0.95rem; width: 100%; margin-bottom: 15px;
+}
+.form-control-mobile:focus {
+    outline: none; border-color: #3b82f6; background: #fff;
+}
+.form-control-mobile:disabled {
+    background: #e2e8f0; color: #64748b;
+}
+.btn-save {
+    background: #3b82f6; color: #fff; border: none;
+    padding: 14px; border-radius: 12px; font-weight: 700;
+    width: 100%; font-size: 1rem; margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(59,130,246,0.3);
+}
+.btn-save:active { transform: scale(0.98); }
+.section-title {
+    font-size: 1rem; font-weight: 700; margin-bottom: 15px;
+    display: flex; align-items: center; gap: 8px;
+    color: #1e293b;
+}
+</style>
+
+<div class="page-header">
+    <a href="/driver/settings" class="back-btn"><i class="bi bi-arrow-left"></i></a>
+    <h5>Hồ sơ cá nhân</h5>
+</div>
+
+<div id="loading" class="text-center py-4">
+    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+</div>
+
+<div id="profileContent" class="d-none">
+    <!-- Cập nhật thông tin -->
+    <div class="profile-card">
+        <div class="section-title"><i class="bi bi-person-vcard text-primary"></i> Thông tin cơ bản</div>
+        <form id="profileForm">
+            <label class="form-label-mobile">ĐỊA CHỈ EMAIL</label>
+            <input type="email" id="email" class="form-control-mobile" disabled>
+
+            <label class="form-label-mobile">HỌ VÀ TÊN</label>
+            <input type="text" id="fullName" class="form-control-mobile" required>
+
+            <label class="form-label-mobile">SỐ ĐIỆN THOẠI</label>
+            <input type="text" id="driverPhone" class="form-control-mobile" placeholder="Nhập số điện thoại">
+
+            <label class="form-label-mobile">BIỂN SỐ XE</label>
+            <input type="text" id="licensePlate" class="form-control-mobile" placeholder="VD: 29X-12345">
+
+            <button type="submit" class="btn-save">Cập nhật hồ sơ</button>
+        </form>
+    </div>
+
+    <!-- Đổi mật khẩu -->
+    <div class="profile-card">
+        <div class="section-title"><i class="bi bi-shield-lock text-success"></i> Đổi mật khẩu</div>
+        <form id="passwordForm">
+            <label class="form-label-mobile">MẬT KHẨU HIỆN TẠI</label>
+            <input type="password" id="oldPassword" class="form-control-mobile" required>
+
+            <label class="form-label-mobile">MẬT KHẨU MỚI</label>
+            <input type="password" id="newPassword" class="form-control-mobile" required>
+
+            <label class="form-label-mobile">XÁC NHẬN MẬT KHẨU</label>
+            <input type="password" id="confirmPassword" class="form-control-mobile" required>
+
+            <button type="submit" class="btn-save" style="background: #10b981; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">Đổi mật khẩu</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    function toast(msg, type) {
+        const t = document.createElement('div');
+        t.className = `position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+        t.style.cssText = 'z-index:9999;border-radius:12px;min-width:220px;';
+        t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+    }
+
+    async function loadProfile() {
+        try {
+            const res = await fetch('/api/profile/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            document.getElementById('loading').classList.add('d-none');
+            
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('profileContent').classList.remove('d-none');
+                
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('fullName').value = data.fullName || '';
+                document.getElementById('driverPhone').value = data.phoneNumber || '';
+                document.getElementById('licensePlate').value = data.licensePlate || '';
+            } else {
+                toast('Không thể tải thông tin', 'danger');
+            }
+        } catch (err) {
+            toast('Lỗi kết nối', 'danger');
+        }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            fullName: document.getElementById('fullName').value,
+            phoneNumber: document.getElementById('driverPhone').value,
+            licensePlate: document.getElementById('licensePlate').value
+        };
+        
+        try {
+            const res = await fetch('/api/profile/me', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) { 
+                toast('Cập nhật hồ sơ thành công!', 'success'); 
+            } else {
+                toast('Cập nhật thất bại', 'danger');
+            }
+        } catch (err) { 
+            toast('Lỗi kết nối', 'danger'); 
+        }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        
+        if (newPassword !== document.getElementById('confirmPassword').value) {
+            toast('Mật khẩu xác nhận không khớp', 'danger'); return;
+        }
+        
+        try {
+            const res = await fetch('/api/profile/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ oldPassword, newPassword })
+            });
+            if (res.ok) { 
+                toast('Đổi mật khẩu thành công!', 'success'); 
+                e.target.reset(); 
+            } else { 
+                const d = await res.json(); 
+                toast(d.error || 'Lỗi đổi mật khẩu', 'danger'); 
+            }
+        } catch (err) { 
+            toast('Lỗi kết nối', 'danger'); 
+        }
+    });
+
+    loadProfile();
+</script>
+</main>
+</body>
+</html>

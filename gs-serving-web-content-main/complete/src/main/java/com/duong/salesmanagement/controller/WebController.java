@@ -66,8 +66,14 @@ public class WebController {
     @GetMapping("/driver/active_order")
     public String driverActiveOrder() { return "driver/delivering"; }
 
+    @GetMapping("/driver/settings")
+    public String driverSettings() { return "driver/settings"; }
+
     @GetMapping("/driver/history")
-    public String driverHistory() { return "driver/delivering"; }
+    public String driverHistory() { return "driver/history"; }
+
+    @GetMapping("/driver/profile")
+    public String driverProfile() { return "driver/profile"; }
 
     // 5. Admin
     @GetMapping("/admin/dashboard")
@@ -84,4 +90,7 @@ public class WebController {
 
     @GetMapping("/admin/restaurants")
     public String adminRestaurants() { return "admin/partners"; }
+
+    @GetMapping("/admin/profile")
+    public String adminProfile() { return "admin/profile"; }
 }

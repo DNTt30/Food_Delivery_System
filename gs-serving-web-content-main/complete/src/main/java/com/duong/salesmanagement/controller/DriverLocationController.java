@@ -4,7 +4,6 @@ import com.duong.salesmanagement.dto.LocationUpdateDTO;
 import com.duong.salesmanagement.dto.TrackingResponseDTO;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.TrackingPhase;
-import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.service.LocationTrackingService;
 import com.duong.salesmanagement.service.OrderService;
 
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -28,21 +26,32 @@ public class DriverLocationController {
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationTrackingService locationTrackingService;
     private final OrderService orderService;
+    private final com.duong.salesmanagement.repository.UserRepository userRepository;
 
     public DriverLocationController(SimpMessagingTemplate messagingTemplate,
                                     LocationTrackingService locationTrackingService,
-                                    OrderService orderService) {
+                                    OrderService orderService,
+                                    com.duong.salesmanagement.repository.UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;
         this.locationTrackingService = locationTrackingService;
         this.orderService = orderService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/location")
     public ResponseEntity<?> updateLocation(@RequestBody LocationUpdateDTO request,
-                                            @AuthenticationPrincipal User driverUser) {
+                                            org.springframework.security.core.Authentication authentication) {
         // 1. Authenticate check
-        if (driverUser == null) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Yêu cầu đăng nhập");
+        }
+
+        String username = authentication.getName();
+        com.duong.salesmanagement.model.User driverUser = 
+            this.userRepository.findByUsername(username).orElse(null);
+
+        if (driverUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Không tìm thấy user");
         }
 
         if (request == null || request.getOrderId() == null) {

@@ -25,6 +25,12 @@ const TrackingService = (function() {
                 isWsConnected = true;
                 stopFallbackPolling();
                 console.log("WebSocket connected. Stopped polling.");
+                
+                // Lắng nghe sự kiện thay đổi trạng thái đơn hàng (để reload thanh progress bar)
+                WebSocketManager.subscribe('/topic/order-status.' + currentOrderId, function(data) {
+                    console.log("Order status changed! Reloading page...", data);
+                    window.location.reload();
+                });
             },
             function() {
                 isWsConnected = false;
