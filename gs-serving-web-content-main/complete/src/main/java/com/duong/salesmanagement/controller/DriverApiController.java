@@ -171,6 +171,7 @@ public class DriverApiController {
                 o.getDeliveryAddress(),
                 o.getStatus().name(),
                 o.getTotalAmount(),
+                o.getShippingFee() != null ? o.getShippingFee() : 15000.0,
                 o.getOrderTime() != null ? o.getOrderTime().toString() : "",
                 o.getCustomer().getUser().getFullName(),
                 itemNames
@@ -207,11 +208,13 @@ public class DriverApiController {
         public String customerPhone;
         public String restaurantPhone;
 
+        public Double shippingFee;
+
         public DriverOrderDTO(Long id, String restaurantName, String restaurantAddress,
-                              String deliveryAddress, String status, Double totalAmount,
+                              String deliveryAddress, String status, Double totalAmount, Double shippingFee,
                               String orderTime, String customerName, List<String> items) {
             this.id = id; this.restaurantName = restaurantName; this.restaurantAddress = restaurantAddress;
-            this.deliveryAddress = deliveryAddress; this.status = status; this.totalAmount = totalAmount;
+            this.deliveryAddress = deliveryAddress; this.status = status; this.totalAmount = totalAmount; this.shippingFee = shippingFee;
             this.orderTime = orderTime; this.customerName = customerName; this.items = items;
         }
     }

@@ -60,7 +60,7 @@
             list.innerHTML = orders.map(o => {
                 // Mock distance for UI
                 const dist = (Math.random() * 3 + 0.5).toFixed(1);
-                const income = (o.totalAmount * 0.1);
+                const income = o.shippingFee || 15000;
                 
                 return `
                 <div class="mobile-card shadow-sm mb-3">

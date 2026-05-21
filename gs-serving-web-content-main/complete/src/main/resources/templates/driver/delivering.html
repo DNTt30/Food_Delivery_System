@@ -253,7 +253,12 @@ async function loadActiveDeliveries() {
 
 // ── Render cards ───────────────────────────────────────────────────
 function renderCards(orders) {
-    document.getElementById('activeOrders').innerHTML = orders.map(o => `
+    document.getElementById('activeOrders').innerHTML = orders.map(o => {
+        const rLat = o.restaurantLat || 20.9626;
+        const rLng = o.restaurantLng || 105.7725;
+        const cLat = o.customerLat || 20.9700;
+        const cLng = o.customerLng || 105.7800;
+        return `
     <div class="step-card">
         <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="step-label s1">① LẤY HÀNG</span>
@@ -292,7 +297,10 @@ function renderCards(orders) {
                 <i class="bi bi-chat-dots"></i>
             </button>
         </div>
-    </div>`).join('<div style="border-top:1px dashed #e2e8f0;margin:4px 0 12px;"></div>');
+    </div>
+    `;
+    }).join('<div style="border-top:1px dashed #e2e8f0;margin:4px 0 12px;"></div>');
+}
 
     // Subscriptions chat
     const ids = orders.map(o => o.id);
