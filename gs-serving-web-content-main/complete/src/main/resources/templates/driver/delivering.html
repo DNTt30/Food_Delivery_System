@@ -530,8 +530,15 @@ function navTo(lat, lng) {
         const p2 = [lat, lng];
         driverMap.fitBounds([p1, p2], { padding: [30, 30] });
     } else {
-        // Nếu chưa có định vị tài xế, chỉ trỏ camera về điểm đó
-        driverMap.flyTo([lat, lng], 16, { animate: true });
+        toast('Đang chờ tín hiệu GPS...', 'warning');
+        if (currentOrder && currentOrder.restaurantLat && currentOrder.deliveryLat) {
+            // Fallback: Vẽ đường từ quán đến khách nếu không có định vị tài xế
+            drawRoute(currentOrder.restaurantLat, currentOrder.restaurantLng, currentOrder.deliveryLat, currentOrder.deliveryLng, '#94a3b8');
+            driverMap.fitBounds([[currentOrder.restaurantLat, currentOrder.restaurantLng], [currentOrder.deliveryLat, currentOrder.deliveryLng]], { padding: [30, 30] });
+        } else {
+            // Nếu chưa có định vị tài xế, chỉ trỏ camera về điểm đó
+            driverMap.flyTo([lat, lng], 16, { animate: true });
+        }
     }
 }
 function chat(orderId, role, label) {
