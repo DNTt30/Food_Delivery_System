@@ -271,6 +271,14 @@ public class OrderService {
             throw new RuntimeException("Đơn hàng chưa sẵn sàng để lấy");
         if (order.getDriver() != null)
             throw new RuntimeException("Đơn hàng đã được nhận bửi tài xế khác");
+
+        // Kiểm tra xem tài xế đã có đơn hàng nào đang giao chưa
+        List<FoodOrder> preparing = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.PREPARING);
+        List<FoodOrder> delivering = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.DELIVERING);
+        if (!preparing.isEmpty() || !delivering.isEmpty()) {
+            throw new RuntimeException("Bạn đang có đơn hàng chưa hoàn thành. Vui lòng hoàn thành trước khi nhận đơn mới.");
+        }
+
         order.setDriver(driver);
         // Chặng 1: Driver đang đến nhà hàng — giữ nguyên status PREPARING
         // (sẽ chuyển sang DELIVERING khi Driver bấm "Đã lấy hàng")
