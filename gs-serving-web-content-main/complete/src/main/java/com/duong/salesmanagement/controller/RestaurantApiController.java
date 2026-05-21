@@ -385,8 +385,9 @@ public class RestaurantApiController {
     /** GET /api/restaurant/vouchers — Danh sách voucher */
     @GetMapping("/vouchers")
     public ResponseEntity<?> getVouchers(Authentication auth) {
-        if (getAuthenticatedRestaurant(auth) == null) return unauthorized();
-        List<Voucher> vouchers = voucherRepository.findAll();
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
+        List<Voucher> vouchers = voucherRepository.findByRestaurant(restaurant);
         List<VoucherDTO> dtos = vouchers.stream().map(v -> new VoucherDTO(
                 v.getId(), v.getCode(), v.getDiscountValue(),
                 v.getDiscountType() != null ? v.getDiscountType().name() : null,
@@ -399,7 +400,8 @@ public class RestaurantApiController {
     /** POST /api/restaurant/vouchers — Tạo voucher mới */
     @PostMapping("/vouchers")
     public ResponseEntity<?> createVoucher(Authentication auth, @RequestBody VoucherDTO dto) {
-        if (getAuthenticatedRestaurant(auth) == null) return unauthorized();
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
 
         if (dto.code == null || dto.code.isBlank())
             return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher không được để trống"));
@@ -407,6 +409,7 @@ public class RestaurantApiController {
         Voucher v = new Voucher();
         v.setCode(dto.code.trim().toUpperCase());
         v.setDiscountValue(dto.discountValue);
+        v.setRestaurant(restaurant); // Assign to current restaurant
         if (dto.discountType != null) {
             try { v.setDiscountType(DiscountType.valueOf(dto.discountType)); }
             catch (IllegalArgumentException ignored) {}
@@ -423,10 +426,12 @@ public class RestaurantApiController {
     @PutMapping("/vouchers/{id}")
     public ResponseEntity<?> updateVoucher(Authentication auth, @PathVariable Long id,
                                            @RequestBody VoucherDTO dto) {
-        if (getAuthenticatedRestaurant(auth) == null) return unauthorized();
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
 
         Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null) return ResponseEntity.notFound().build();
+        if (v == null || v.getRestaurant() == null || !v.getRestaurant().getId().equals(restaurant.getId())) 
+            return ResponseEntity.notFound().build();
 
         if (dto.code != null)          v.setCode(dto.code.trim().toUpperCase());
         if (dto.discountValue != null)  v.setDiscountValue(dto.discountValue);
@@ -445,9 +450,11 @@ public class RestaurantApiController {
     /** PATCH /api/restaurant/vouchers/{id}/toggle — Bật/tắt voucher */
     @PatchMapping("/vouchers/{id}/toggle")
     public ResponseEntity<?> toggleVoucher(Authentication auth, @PathVariable Long id) {
-        if (getAuthenticatedRestaurant(auth) == null) return unauthorized();
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
         Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null) return ResponseEntity.notFound().build();
+        if (v == null || v.getRestaurant() == null || !v.getRestaurant().getId().equals(restaurant.getId())) 
+            return ResponseEntity.notFound().build();
         v.setActive(!v.isActive());
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("isActive", v.isActive(),
@@ -457,9 +464,11 @@ public class RestaurantApiController {
     /** DELETE /api/restaurant/vouchers/{id} — Xóa voucher */
     @DeleteMapping("/vouchers/{id}")
     public ResponseEntity<?> deleteVoucher(Authentication auth, @PathVariable Long id) {
-        if (getAuthenticatedRestaurant(auth) == null) return unauthorized();
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
         Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null) return ResponseEntity.notFound().build();
+        if (v == null || v.getRestaurant() == null || !v.getRestaurant().getId().equals(restaurant.getId())) 
+            return ResponseEntity.notFound().build();
         voucherRepository.delete(v);
         return ResponseEntity.ok(Map.of("message", "Đã xóa voucher"));
     }

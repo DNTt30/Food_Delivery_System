@@ -22,6 +22,10 @@ public class Voucher {
     private LocalDate expirationDate;
     private boolean isActive;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "restaurant_id")
+    private RestaurantProfile restaurant;
+
     public Voucher() {}
 
     public Long getId() { return id; }
@@ -36,4 +40,6 @@ public class Voucher {
     public void setExpirationDate(LocalDate expirationDate) { this.expirationDate = expirationDate; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+    public RestaurantProfile getRestaurant() { return restaurant; }
+    public void setRestaurant(RestaurantProfile restaurant) { this.restaurant = restaurant; }
 }

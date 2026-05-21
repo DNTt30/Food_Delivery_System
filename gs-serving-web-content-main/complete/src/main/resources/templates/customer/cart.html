@@ -237,7 +237,7 @@
         }
 
         try {
-            const res = await fetch(`/api/customer/vouchers/check?code=${codeInput}`, {
+            const res = await fetch(`/api/customer/vouchers/check?code=${codeInput}&restaurantId=${restaurantId}`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             const data = await res.json();

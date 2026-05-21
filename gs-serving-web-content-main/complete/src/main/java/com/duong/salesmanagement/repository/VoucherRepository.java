@@ -1,6 +1,7 @@
 package com.duong.salesmanagement.repository;
 
 import com.duong.salesmanagement.model.Voucher;
+import com.duong.salesmanagement.model.RestaurantProfile;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,4 +12,6 @@ import java.util.Optional;
 public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     Optional<Voucher> findByCode(String code);
     List<Voucher> findByIsActiveTrue();
+    List<Voucher> findByRestaurant(RestaurantProfile restaurant);
+    List<Voucher> findByRestaurantIsNull();
 }

@@ -207,7 +207,7 @@ public class AdminApiController {
     @GetMapping("/vouchers")
     public ResponseEntity<?> getAllVouchers(Authentication authentication) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        return ResponseEntity.ok(voucherRepository.findAll().stream()
+        return ResponseEntity.ok(voucherRepository.findByRestaurantIsNull().stream()
                 .map(this::mapVoucher).collect(Collectors.toList()));
     }
 
@@ -225,6 +225,7 @@ public class AdminApiController {
         if (req.expiryDate != null && !req.expiryDate.isBlank())
             v.setExpirationDate(LocalDate.parse(req.expiryDate));
         v.setActive(req.active);
+        v.setRestaurant(null); // Explicitly null for global vouchers
         voucherRepository.save(v);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo voucher thành công"));
     }
@@ -235,7 +236,7 @@ public class AdminApiController {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         Voucher v = voucherRepository.findById(id).orElse(null);
-        if (v == null) return ResponseEntity.notFound().build();
+        if (v == null || v.getRestaurant() != null) return ResponseEntity.notFound().build();
 
         if (req.code != null && !req.code.isBlank()) v.setCode(req.code.toUpperCase());
         v.setDiscountValue(req.discountValue);
@@ -250,10 +251,10 @@ public class AdminApiController {
     @DeleteMapping("/vouchers/{id}")
     public ResponseEntity<?> deleteVoucher(Authentication authentication, @PathVariable Long id) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-
-        if (!voucherRepository.existsById(id)) return ResponseEntity.notFound().build();
-        voucherRepository.deleteById(id);
-        return ResponseEntity.ok(Map.of("message", "Đã xóa voucher"));
+        Voucher v = voucherRepository.findById(id).orElse(null);
+        if (v == null || v.getRestaurant() != null) return ResponseEntity.notFound().build();
+        voucherRepository.delete(v);
+        return ResponseEntity.ok(Map.of("message", "Xóa voucher thành công"));
     }
 
     private Map<String, Object> mapVoucher(Voucher v) {

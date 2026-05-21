@@ -148,12 +148,21 @@ public class CustomerApiController {
 
     // Kiểm tra Voucher
     @GetMapping("/vouchers/check")
-    public ResponseEntity<?> checkVoucher(@RequestParam String code) {
+    public ResponseEntity<?> checkVoucher(@RequestParam String code, 
+                                          @RequestParam(required = false) Long restaurantId) {
         Voucher voucher = voucherRepository.findByCode(code).orElse(null);
         if (voucher == null || !voucher.isActive() || 
            (voucher.getExpirationDate() != null && voucher.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
             return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá không hợp lệ hoặc đã hết hạn"));
         }
+        
+        // Validate ownership: must be global or belong to the restaurant
+        if (voucher.getRestaurant() != null) {
+            if (restaurantId == null || !voucher.getRestaurant().getId().equals(restaurantId)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá này không áp dụng cho nhà hàng này"));
+            }
+        }
+
         return ResponseEntity.ok(Map.of(
             "code", voucher.getCode(),
             "discountType", voucher.getDiscountType().name(),

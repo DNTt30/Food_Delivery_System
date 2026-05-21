@@ -156,7 +156,11 @@ public class OrderService {
             Optional<Voucher> vOpt = voucherRepository.findByCode(voucherCode.trim());
             if (vOpt.isPresent()) {
                 Voucher v = vOpt.get();
-                if (v.isActive() && (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
+                boolean isGlobalOrBelongsToRestaurant = (v.getRestaurant() == null) || 
+                                                        (v.getRestaurant().getId().equals(restaurant.getId()));
+                
+                if (v.isActive() && isGlobalOrBelongsToRestaurant && 
+                   (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
                     double discount = 0;
                     if (v.getDiscountType() == DiscountType.PERCENTAGE) {
                         discount = totalAmount * (v.getDiscountValue() / 100.0);
