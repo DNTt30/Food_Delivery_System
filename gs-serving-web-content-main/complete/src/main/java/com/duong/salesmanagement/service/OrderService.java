@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@SuppressWarnings("null")
+
 public class OrderService {
 
     private final FoodOrderRepository foodOrderRepository;

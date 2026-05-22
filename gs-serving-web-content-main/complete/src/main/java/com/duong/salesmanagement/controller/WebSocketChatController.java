@@ -23,7 +23,7 @@ import java.util.Map;
  * then the server broadcasts to WebSocket subscribers via this controller.
  */
 @Controller
-@SuppressWarnings("null")
+
 public class WebSocketChatController {
 
     private final SimpMessagingTemplate messagingTemplate;

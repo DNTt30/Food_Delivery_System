@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CustomerApiController.class)
-@SuppressWarnings("null")
+
 public class OrderControllerTest {
 
     @Autowired

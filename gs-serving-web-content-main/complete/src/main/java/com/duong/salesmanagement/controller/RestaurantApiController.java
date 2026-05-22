@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/restaurant")
-@SuppressWarnings("null")
+
 public class RestaurantApiController {
 
     private final UserRepository userRepository;

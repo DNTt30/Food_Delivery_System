@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
-@SuppressWarnings("null")
+
 public class AdminApiController {
 
     private final UserRepository userRepository;

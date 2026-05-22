@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/customer")
-@SuppressWarnings("null")
+
 public class CustomerApiController {
 
     private final RestaurantProfileRepository restaurantProfileRepository;
