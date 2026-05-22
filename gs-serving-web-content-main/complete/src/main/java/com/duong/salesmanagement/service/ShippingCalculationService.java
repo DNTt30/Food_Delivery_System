@@ -42,6 +42,14 @@ public class ShippingCalculationService {
 
     /**
      * Tính khoảng cách Haversine giữa 2 điểm tọa độ
+     * Công thức : d = 2r · arcsin(√(sin²(Δφ/2) + cos(φ₁) · cos(φ₂) · sin²(Δλ/2)))
+     * Trong đó:
+     * d = khoảng cách cung lớn giữa hai điểm
+     * r = bán kính Trái Đất (khoảng 6.371 km hoặc 3.959 dặm)
+     * φ₁, φ₂ = vĩ độ điểm 1 và 2 (theo radian)
+     * Δφ = φ₂ − φ₁ (chênh lệch vĩ độ)
+     * Δλ = λ₂ − λ₁ (chênh lệch kinh độ)
+     * λ₁, λ₂ = kinh độ điểm 1 và 2 (theo radian)
      */
     public double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);

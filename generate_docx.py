@@ -105,7 +105,7 @@ doc.add_paragraph()
 ct = doc.add_table(rows=7, cols=2)
 ct.style = 'Table Grid'
 cover_data = [
-    ('Nhom:', 'TEAM 14 - He thong Dat do an Truc tuyen'),
+    ('Nhom:', 'TEAM 12 - He thong Quan LyDat do an Truc tuyen'),
     ('Thanh vien:', 'Duong Ngoc Tu (MSSV)'),
     ('', 'Thanh vien 2 (MSSV2)'),
     ('', 'Thanh vien 3 (MSSV3)'),
