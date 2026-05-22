@@ -10,10 +10,10 @@
      LEAFLET — phải load trong <main> vì layout
      chỉ inject <title>, không inject toàn bộ <head>
 ════════════════════════════════════════════════ -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
-<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
 <style>
 /* ─── Layout ─────────────────────────────── */
@@ -220,6 +220,10 @@ function makeIcon(url) {
 
 // ── Load data ──────────────────────────────────────────────────────
 async function loadActiveDeliveries() {
+    if (!token) {
+        window.location.href = '/common/auth';
+        return;
+    }
     show('loading'); hide('emptyState'); hide('phaseBanner');
     hide('map-wrapper'); hide('actionArea');
     document.getElementById('activeOrders').innerHTML = '';
@@ -324,6 +328,10 @@ function initMap(o) {
 
     // Khởi tạo sau 1 tick để DOM sẵn sàng kích thước
     setTimeout(() => {
+        if (typeof L === 'undefined') {
+            toast('⚠️ Không thể tải thư viện bản đồ. Vui lòng kiểm tra kết nối mạng.', 'danger');
+            return;
+        }
         const centerLat = (rLat + cLat) / 2;
         const centerLng = (rLng + cLng) / 2;
         driverMap = L.map('driver-map', { zoomControl: false })
@@ -534,7 +542,7 @@ function navTo(lat, lng) {
         if (currentOrder && currentOrder.restaurantLat && currentOrder.deliveryLat) {
             // Fallback: Vẽ đường từ quán đến khách nếu không có định vị tài xế
             drawRoute(currentOrder.restaurantLat, currentOrder.restaurantLng, currentOrder.deliveryLat, currentOrder.deliveryLng, '#94a3b8');
-            driverMap.fitBounds([[currentOrder.restaurantLat, currentOrder.restaurantLng], [currentOrder.deliveryLat, currentOrder.deliveryLng]], { padding: [30, 30] });
+            driverMap.fitBounds([ [currentOrder.restaurantLat, currentOrder.restaurantLng], [currentOrder.deliveryLat, currentOrder.deliveryLng] ], { padding: [30, 30] });
         } else {
             // Nếu chưa có định vị tài xế, chỉ trỏ camera về điểm đó
             driverMap.flyTo([lat, lng], 16, { animate: true });

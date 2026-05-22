@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
-public class ShippingCalculationService {
+public class ShippingCalculationService implements IShippingCalculationService {
 
     private static final double EARTH_RADIUS_KM = 6371.0;
     private static final double BASE_FEE = 15000.0;

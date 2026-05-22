@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Service
 
-public class OrderService {
+public class OrderService implements IOrderService {
 
     private final FoodOrderRepository foodOrderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -25,7 +25,7 @@ public class OrderService {
     private final NotificationService notificationService;
     private final GeocodingService geocodingService;
     private final RestaurantProfileRepository restaurantProfileRepository;
-    private final ShippingCalculationService shippingCalculationService;
+    private final IShippingCalculationService shippingCalculationService;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
@@ -37,7 +37,7 @@ public class OrderService {
                         NotificationService notificationService,
                         GeocodingService geocodingService,
                         RestaurantProfileRepository restaurantProfileRepository,
-                        ShippingCalculationService shippingCalculationService) {
+                        IShippingCalculationService shippingCalculationService) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;

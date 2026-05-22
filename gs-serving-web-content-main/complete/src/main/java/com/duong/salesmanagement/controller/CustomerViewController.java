@@ -2,7 +2,7 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.User;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -17,10 +17,10 @@ import java.util.Optional;
 @RequestMapping("/customer")
 public class CustomerViewController {
 
-    private final OrderService orderService;
+    private final IOrderService orderService;
     private final FoodOrderRepository foodOrderRepository;
 
-    public CustomerViewController(OrderService orderService, FoodOrderRepository foodOrderRepository) {
+    public CustomerViewController(IOrderService orderService, FoodOrderRepository foodOrderRepository) {
         this.orderService = orderService;
         this.foodOrderRepository = foodOrderRepository;
     }

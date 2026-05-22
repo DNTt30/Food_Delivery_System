@@ -66,6 +66,7 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 | 5 | Rò rỉ thông tin liên lạc | Sử dụng `PhoneMaskUtil` để ẩn số điện thoại sau khi giao hàng thành công. |
 | 6 | Lỗi 403 Forbidden Nominatim API | Bổ sung header `User-Agent` (`FoodDeliveryApp/1.0`) cho RestTemplate trong `GeocodingService`. |
 | 7 | Thiếu tọa độ / Sai khoảng cách | Thiết lập cơ chế Fallback thông minh khi đặt hàng và tự động lưu tọa độ trực tiếp qua Map Picker. |
+| 8 | Lỗi màn hình Đang giao trống/trắng | Khắc phục lỗi Thymeleaf engine nhận nhầm mảng Javascript `[[...]]` bằng cách thêm dấu cách `[ [...] ]` để hiển thị bản đồ và danh sách đơn hàng. |
 
 ---
 

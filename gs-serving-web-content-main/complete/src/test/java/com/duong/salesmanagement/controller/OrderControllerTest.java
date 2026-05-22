@@ -2,7 +2,9 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
+import com.duong.salesmanagement.service.IShippingCalculationService;
+import com.duong.salesmanagement.service.GeocodingService;
 import com.duong.salesmanagement.security.JwtUtil;
 import com.duong.salesmanagement.security.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +34,7 @@ public class OrderControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private OrderService orderService;
+    private IOrderService orderService;
     @MockBean
     private RestaurantProfileRepository restaurantProfileRepository;
     @MockBean
@@ -45,6 +47,10 @@ public class OrderControllerTest {
     private VoucherRepository voucherRepository;
     @MockBean
     private ReviewRepository reviewRepository;
+    @MockBean
+    private IShippingCalculationService shippingCalculationService;
+    @MockBean
+    private GeocodingService geocodingService;
     @MockBean
     private JwtUtil jwtUtil;
     @MockBean

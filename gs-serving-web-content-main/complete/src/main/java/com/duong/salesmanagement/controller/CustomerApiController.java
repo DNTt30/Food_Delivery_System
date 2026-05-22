@@ -2,6 +2,8 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
+import com.duong.salesmanagement.service.IOrderService;
+import com.duong.salesmanagement.service.IShippingCalculationService;
 import com.duong.salesmanagement.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,22 +22,22 @@ public class CustomerApiController {
 
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final MenuItemRepository menuItemRepository;
-    private final OrderService orderService;
+    private final IOrderService orderService;
     private final UserRepository userRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
-    private final com.duong.salesmanagement.service.ShippingCalculationService shippingCalculationService;
+    private final IShippingCalculationService shippingCalculationService;
     private final com.duong.salesmanagement.service.GeocodingService geocodingService;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
-                                 OrderService orderService,
+                                 IOrderService orderService,
                                  UserRepository userRepository,
                                  CustomerProfileRepository customerProfileRepository,
                                  VoucherRepository voucherRepository,
                                  ReviewRepository reviewRepository,
-                                 com.duong.salesmanagement.service.ShippingCalculationService shippingCalculationService,
+                                 IShippingCalculationService shippingCalculationService,
                                  com.duong.salesmanagement.service.GeocodingService geocodingService) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;

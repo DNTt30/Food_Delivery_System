@@ -5,7 +5,7 @@ import com.duong.salesmanagement.dto.TrackingResponseDTO;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.TrackingPhase;
 import com.duong.salesmanagement.service.LocationTrackingService;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +25,12 @@ public class DriverLocationController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationTrackingService locationTrackingService;
-    private final OrderService orderService;
+    private final IOrderService orderService;
     private final com.duong.salesmanagement.repository.UserRepository userRepository;
 
     public DriverLocationController(SimpMessagingTemplate messagingTemplate,
                                     LocationTrackingService locationTrackingService,
-                                    OrderService orderService,
+                                    IOrderService orderService,
                                     com.duong.salesmanagement.repository.UserRepository userRepository) {
         this.messagingTemplate = messagingTemplate;
         this.locationTrackingService = locationTrackingService;

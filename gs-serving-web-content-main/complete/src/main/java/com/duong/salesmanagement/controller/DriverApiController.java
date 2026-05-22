@@ -2,7 +2,7 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,11 +18,11 @@ public class DriverApiController {
 
     private final UserRepository userRepository;
     private final DriverProfileRepository driverProfileRepository;
-    private final OrderService orderService;
+    private final IOrderService orderService;
 
     public DriverApiController(UserRepository userRepository,
                                DriverProfileRepository driverProfileRepository,
-                               OrderService orderService) {
+                               IOrderService orderService) {
         this.userRepository = userRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.orderService = orderService;

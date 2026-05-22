@@ -2,7 +2,7 @@ package com.duong.salesmanagement.controller;
 
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,7 +34,7 @@ public class RestaurantApiController {
     private final FoodOrderRepository foodOrderRepository;
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
-    private final OrderService orderService;
+    private final IOrderService orderService;
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
 
     public RestaurantApiController(UserRepository userRepository,
@@ -43,7 +43,7 @@ public class RestaurantApiController {
                                    FoodOrderRepository foodOrderRepository,
                                    VoucherRepository voucherRepository,
                                    ReviewRepository reviewRepository,
-                                   OrderService orderService,
+                                   IOrderService orderService,
                                    com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;

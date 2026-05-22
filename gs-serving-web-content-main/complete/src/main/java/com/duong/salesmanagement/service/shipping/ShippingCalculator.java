@@ -30,7 +30,7 @@ public class ShippingCalculator {
 
     private ShippingStrategy strategy;
 
-    public ShippingCalculator(ShippingStrategy strategy) {
+    public ShippingCalculator(@org.springframework.beans.factory.annotation.Qualifier("standardShipping") ShippingStrategy strategy) {
         this.strategy = strategy;
     }
 

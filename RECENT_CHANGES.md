@@ -25,6 +25,18 @@ Use this format when logging new changes:
 
 ## Historic Code Changes Log
 
+### 2026-05-22: Resolved Driver Delivering Screen Blank Rendering Issue
+*   **Description**: Fixed a server-side Thymeleaf 3 template processing crash on the driver's delivery view. The expression parser incorrectly treated a 2D JavaScript array literal `[[...]]` as an inline Thymeleaf expression. Padding the nested brackets with a space (`[ [...] ]`) prevents Thymeleaf from parsing them, restoring full map and order details rendering.
+*   **Changed Files**:
+    *   [delivering.html](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/resources/templates/driver/delivering.html)
+*   **Affected Modules**: `tracking`, `order` (Driver Delivery View)
+*   **API Impact**: None.
+*   **Database Schema Updates**: None.
+*   **Retesting Checklist**:
+    - [x] Login as a Driver, accept/deliver an order, and navigate to `/driver/delivering`.
+    - [x] Verify the page loads successfully (not blank) and the Leaflet map initializes correctly with route line, restaurant, and customer markers.
+
+
 ### 2026-05-15: Modernized Partner Profiles & Map Location Pickers
 *   **Description**: Decoupled restaurant profiles from shared profile forms by establishing a standalone, role-specific partner workspace. Integrated a premium location coordinates selection map with search query autocomplete capabilities.
 *   **Changed Files**:

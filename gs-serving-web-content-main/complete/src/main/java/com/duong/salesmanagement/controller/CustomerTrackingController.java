@@ -6,7 +6,7 @@ import com.duong.salesmanagement.model.OrderTrackingLocation;
 import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.OrderTrackingLocationRepository;
-import com.duong.salesmanagement.service.OrderService;
+import com.duong.salesmanagement.service.IOrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,11 +20,11 @@ public class CustomerTrackingController {
 
     private final FoodOrderRepository foodOrderRepository;
     private final OrderTrackingLocationRepository trackingLocationRepository;
-    private final OrderService orderService;
+    private final IOrderService orderService;
 
     public CustomerTrackingController(FoodOrderRepository foodOrderRepository,
                                       OrderTrackingLocationRepository trackingLocationRepository,
-                                      OrderService orderService) {
+                                      IOrderService orderService) {
         this.foodOrderRepository = foodOrderRepository;
         this.trackingLocationRepository = trackingLocationRepository;
         this.orderService = orderService;
