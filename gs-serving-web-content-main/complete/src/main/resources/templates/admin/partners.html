@@ -51,7 +51,7 @@
         <table class="table table-hover align-middle rounded-4 overflow-hidden shadow-sm">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th><th>Tên đăng nhập</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th class="text-end">Hành động</th>
+                    <th>ID</th><th>Họ và tên</th><th>Tên đăng nhập</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th class="text-end">Hành động</th>
                 </tr>
             </thead>
             <tbody id="userTableBody"></tbody>
@@ -138,6 +138,50 @@
     </div>
 </div>
 
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Chi tiết người dùng</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="userDetailsLoading" class="text-center py-4"><div class="spinner-border text-danger"></div></div>
+                <div id="userDetailsContent" class="d-none">
+                    <div class="text-center mb-4">
+                        <div class="mx-auto mb-2" style="width:70px;height:70px;background:#e2e8f0;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                            <i class="bi bi-person-fill fs-2 text-secondary" id="udRoleIcon"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1" id="udFullName">Họ và tên</h5>
+                        <p class="text-muted small mb-0" id="udUsername">@username</p>
+                    </div>
+                    <table class="table table-sm table-borderless small">
+                        <tr><td class="text-muted" width="130">ID người dùng:</td><td id="udId" class="font-monospace text-muted"></td></tr>
+                        <tr><td class="text-muted">Email:</td><td id="udEmail"></td></tr>
+                        <tr><td class="text-muted">Số điện thoại:</td><td id="udPhone"></td></tr>
+                        <tr><td class="text-muted">Vai trò:</td><td id="udRole"></td></tr>
+                        <tr><td class="text-muted">Trạng thái:</td><td id="udStatus"></td></tr>
+                        
+                        <!-- Role specific rows -->
+                        <tr class="ud-cust-row d-none"><td class="text-muted">Địa chỉ nhận hàng:</td><td id="udAddress"></td></tr>
+                        <tr class="ud-cust-row d-none"><td class="text-muted">Tọa độ vị trí:</td><td id="udCoords"></td></tr>
+                        
+                        <tr class="ud-driver-row d-none"><td class="text-muted">Biển số xe:</td><td id="udLicensePlate"></td></tr>
+                        <tr class="ud-driver-row d-none"><td class="text-muted">Nhận đơn:</td><td id="udDriverStatus"></td></tr>
+                        
+                        <tr class="ud-rest-row d-none"><td class="text-muted">Tên nhà hàng:</td><td id="udRestaurantName"></td></tr>
+                        <tr class="ud-rest-row d-none"><td class="text-muted">Địa chỉ nhà hàng:</td><td id="udRestAddress"></td></tr>
+                        <tr class="ud-rest-row d-none"><td class="text-muted">Đánh giá TB:</td><td id="udRestRating"></td></tr>
+                        
+                        <tr><td class="text-muted">Tổng số đơn hàng:</td><td id="udOrderCount" class="fw-bold text-success"></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .tab-btn.active { background: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
 .rest-card { border-radius: 14px !important; transition: box-shadow 0.2s; }
@@ -149,14 +193,76 @@
     let allUsers = [], allRestaurants = [];
     let currentTab = 'users-all';
     let restFilter = 'all';
-    let confirmModal, confirmAction, restDetailsModal;
+    let confirmModal, confirmAction, restDetailsModal, userDetailsModal;
 
     document.addEventListener('DOMContentLoaded', () => {
         confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
         restDetailsModal = new bootstrap.Modal(document.getElementById('restDetailsModal'));
+        userDetailsModal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
         document.getElementById('confirmBtn').onclick = () => { confirmModal.hide(); confirmAction && confirmAction(); };
         loadAll();
     });
+
+    async function showUserDetails(id) {
+        userDetailsModal.show();
+        document.getElementById('userDetailsLoading').classList.remove('d-none');
+        document.getElementById('userDetailsContent').classList.add('d-none');
+        document.querySelectorAll('.ud-cust-row, .ud-driver-row, .ud-rest-row').forEach(row => row.classList.add('d-none'));
+        try {
+            const res = await fetch(`/api/admin/users/${id}/details`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error('Failed');
+            const u = await res.json();
+            
+            document.getElementById('udId').textContent = u.id;
+            document.getElementById('udFullName').textContent = u.fullName || 'Chưa cập nhật';
+            document.getElementById('udUsername').textContent = '@' + u.username;
+            document.getElementById('udEmail').textContent = u.email || '—';
+            document.getElementById('udPhone').textContent = u.phone || '—';
+            
+            const roles = {
+                CUSTOMER: 'Khách hàng',
+                DRIVER: 'Tài xế',
+                RESTAURANT: 'Nhà hàng đối tác',
+                ADMIN: 'Quản trị viên'
+            };
+            document.getElementById('udRole').textContent = roles[u.role] || u.role;
+            document.getElementById('udStatus').innerHTML = u.enabled 
+                ? '<span class="badge bg-success-subtle text-success border border-success">Hoạt động</span>' 
+                : '<span class="badge bg-danger-subtle text-danger border border-danger">Đã khóa</span>';
+            document.getElementById('udOrderCount').textContent = (u.orderCount !== undefined ? u.orderCount : 0) + ' đơn hàng';
+            
+            const iconEl = document.getElementById('udRoleIcon');
+            iconEl.className = 'bi fs-2 ';
+            if (u.role === 'CUSTOMER') {
+                iconEl.className += 'bi-person-fill text-primary';
+                document.getElementById('udAddress').textContent = u.address || '—';
+                document.getElementById('udCoords').textContent = (u.latitude && u.longitude) ? `${u.latitude}, ${u.longitude}` : 'Chưa cập nhật';
+                document.querySelectorAll('.ud-cust-row').forEach(row => row.classList.remove('d-none'));
+            } else if (u.role === 'DRIVER') {
+                iconEl.className += 'bi-bicycle text-success';
+                document.getElementById('udLicensePlate').textContent = u.licensePlate || '—';
+                document.getElementById('udDriverStatus').innerHTML = u.isAvailable 
+                    ? '<span class="badge bg-success">Đang sẵn sàng nhận đơn</span>' 
+                    : '<span class="badge bg-secondary">Đang bận / Offline</span>';
+                document.querySelectorAll('.ud-driver-row').forEach(row => row.classList.remove('d-none'));
+            } else if (u.role === 'RESTAURANT') {
+                iconEl.className += 'bi-shop text-warning';
+                document.getElementById('udRestaurantName').textContent = u.restaurantName || '—';
+                document.getElementById('udRestAddress').textContent = u.address || '—';
+                document.getElementById('udRestRating').innerHTML = u.averageRating ? `<i class="bi bi-star-fill text-warning"></i> ${u.averageRating.toFixed(1)}` : 'Chưa có';
+                document.querySelectorAll('.ud-rest-row').forEach(row => row.classList.remove('d-none'));
+            } else {
+                iconEl.className += 'bi-shield-shaded text-danger';
+            }
+            
+            document.getElementById('userDetailsLoading').classList.add('d-none');
+            document.getElementById('userDetailsContent').classList.remove('d-none');
+        } catch(e) {
+            document.getElementById('userDetailsLoading').innerHTML = '<div class="text-danger py-3">Lỗi tải dữ liệu. Vui lòng thử lại.</div>';
+        }
+    }
 
     async function showRestDetails(id) {
         restDetailsModal.show();
@@ -214,6 +320,7 @@
         if (tab === 'restaurants') {
             document.getElementById('usersPanel').classList.add('d-none');
             document.getElementById('restaurantsPanel').classList.remove('d-none');
+            filterRestaurants(document.getElementById('restSearch').value);
         } else {
             document.getElementById('restaurantsPanel').classList.add('d-none');
             document.getElementById('usersPanel').classList.remove('d-none');
@@ -243,7 +350,7 @@
             // Re-apply tab visibility
             if (currentTab === 'restaurants') {
                 document.getElementById('restaurantsPanel').classList.remove('d-none');
-                renderRestaurants(allRestaurants);
+                filterRestaurants(document.getElementById('restSearch').value);
             } else {
                 document.getElementById('usersPanel').classList.remove('d-none');
                 filterUsers();
@@ -277,7 +384,7 @@
     function renderUsers(users) {
         const tbody = document.getElementById('userTableBody');
         if (!users.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Không có người dùng</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Không có người dùng</td></tr>';
             return;
         }
         tbody.innerHTML = users.map(u => {
@@ -287,17 +394,20 @@
                 : '<span class="badge bg-danger-subtle text-danger border border-danger small">Đã khóa</span>';
             const toggleLabel = u.enabled ? 'Khóa TK' : 'Mở khóa';
             const toggleClass = u.enabled ? 'btn-outline-warning' : 'btn-outline-success';
-            const isAdmin = u.role === 'ROLE_ADMIN';
+            const isAdmin = u.role === 'ADMIN';
+            const shortId = u.id ? (u.id.substring(0, 8) + '...') : '—';
             return `<tr>
-                <td class="text-muted small">#${u.id}</td>
-                <td class="fw-semibold">${u.username}</td>
+                <td class="text-muted small" title="${u.id}">${shortId}</td>
+                <td class="fw-semibold">${u.fullName || '—'}</td>
+                <td>${u.username}</td>
                 <td class="text-muted small">${u.email || '—'}</td>
                 <td>${roleBadge}</td>
                 <td>${statusBadge}</td>
                 <td class="text-end">
                     ${!isAdmin ? `
-                    <button class="btn btn-sm ${toggleClass} rounded-pill px-2 me-1" onclick="toggleUser(${u.id}, ${u.enabled}, '${u.username}')">${toggleLabel}</button>
-                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="deleteUser(${u.id}, '${u.username}')"><i class="bi bi-trash3"></i></button>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-2 me-1" onclick="showUserDetails('${u.id}')"><i class="bi bi-info-circle"></i> Chi tiết</button>
+                    <button class="btn btn-sm ${toggleClass} rounded-pill px-2 me-1" onclick="toggleUser('${u.id}', ${u.enabled}, '${u.username}')">${toggleLabel}</button>
+                    <button class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="deleteUser('${u.id}', '${u.username}')"><i class="bi bi-trash3"></i></button>
                     ` : '<span class="text-muted small">—</span>'}
                 </td>
             </tr>`;

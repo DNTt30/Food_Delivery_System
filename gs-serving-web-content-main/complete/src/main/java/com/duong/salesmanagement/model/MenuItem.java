@@ -22,6 +22,7 @@ public class MenuItem {
     private String description;
     private Double price;
     private String imageUrl;
+    private String videoUrl;
     private boolean isAvailable;
 
     public MenuItem() {}
@@ -38,6 +39,8 @@ public class MenuItem {
     public void setPrice(Double price) { this.price = price; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
     public boolean isAvailable() { return isAvailable; }
     public void setAvailable(boolean available) { isAvailable = available; }
     public Category getCategory() { return category; }

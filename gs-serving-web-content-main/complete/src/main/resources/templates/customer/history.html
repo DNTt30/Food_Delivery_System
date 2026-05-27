@@ -65,29 +65,6 @@
                     <label class="fw-semibold mb-2">Nhận xét của bạn</label>
                     <textarea id="reviewComment" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
                 </div>
-                
-                <!-- Image upload area -->
-                <div class="mb-3" id="imageUploadArea">
-                    <label class="fw-semibold mb-2 d-block">Hình ảnh đánh giá</label>
-                    <input type="file" id="reviewImageFile" accept="image/*" class="form-control mb-2" onchange="uploadReviewImage()">
-                    <input type="hidden" id="reviewImageUrl">
-                    <div id="uploadStatus" class="small text-muted mb-2 d-none"></div>
-                    <img id="reviewImagePreview" class="d-none img-thumbnail" style="max-height: 120px; border-radius: 8px;">
-                </div>
-                
-                <!-- View image area (for existing reviews) -->
-                <div class="mb-3 d-none" id="reviewImageViewOnly">
-                    <label class="fw-semibold mb-2 d-block">Hình ảnh đã đăng</label>
-                    <img id="viewReviewImage" class="img-thumbnail" style="max-height: 150px; border-radius: 8px;">
-                </div>
-                
-                <!-- Restaurant reply area (for existing reviews) -->
-                <div class="mb-3 d-none p-3 bg-light rounded-3 border-start border-4 border-warning" id="restaurantReplyArea">
-                    <div class="fw-bold mb-1" style="font-size: 0.85rem;"><i class="bi bi-chat-left-dots text-warning me-1"></i>Phản hồi từ Nhà hàng</div>
-                    <p class="mb-1 text-dark" id="restaurantReplyText" style="font-size: 0.85rem; font-style: italic;"></p>
-                    <small class="text-muted" id="restaurantReplyDate" style="font-size: 0.72rem;"></small>
-                </div>
-                
                 <div id="reviewAlert" class="alert d-none"></div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -256,16 +233,6 @@
         selectedRating = 0;
         selectStar(0);
         
-        // Reset image upload fields
-        document.getElementById('reviewImageFile').value = '';
-        document.getElementById('reviewImageUrl').value = '';
-        document.getElementById('reviewImagePreview').classList.add('d-none');
-        document.getElementById('reviewImagePreview').src = '';
-        document.getElementById('uploadStatus').classList.add('d-none');
-        document.getElementById('imageUploadArea').classList.remove('d-none');
-        document.getElementById('reviewImageViewOnly').classList.add('d-none');
-        document.getElementById('restaurantReplyArea').classList.add('d-none');
-        
         // Kích hoạt lại sự kiện click cho sao
         document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'auto');
         
@@ -285,24 +252,6 @@
         
         selectStar(order.reviewRating);
         
-        // Hide upload area, show images and reply if present
-        document.getElementById('imageUploadArea').classList.add('d-none');
-        
-        if (order.reviewImageUrl) {
-            document.getElementById('viewReviewImage').src = order.reviewImageUrl;
-            document.getElementById('reviewImageViewOnly').classList.remove('d-none');
-        } else {
-            document.getElementById('reviewImageViewOnly').classList.add('d-none');
-        }
-
-        if (order.restaurantReply) {
-            document.getElementById('restaurantReplyText').textContent = order.restaurantReply;
-            document.getElementById('restaurantReplyDate').textContent = formatDate(order.repliedAt);
-            document.getElementById('restaurantReplyArea').classList.remove('d-none');
-        } else {
-            document.getElementById('restaurantReplyArea').classList.add('d-none');
-        }
-        
         // Vô hiệu hóa sự kiện click cho sao khi ở chế độ xem
         document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'none');
         
@@ -317,45 +266,6 @@
         });
     }
 
-    async function uploadReviewImage() {
-        const fileInput = document.getElementById('reviewImageFile');
-        const uploadStatus = document.getElementById('uploadStatus');
-        const preview = document.getElementById('reviewImagePreview');
-        const hiddenInput = document.getElementById('reviewImageUrl');
-        
-        if (!fileInput.files.length) return;
-        
-        uploadStatus.classList.remove('d-none');
-        uploadStatus.className = 'small text-primary mb-2';
-        uploadStatus.textContent = '⏳ Đang tải ảnh lên...';
-        preview.classList.add('d-none');
-        
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        
-        try {
-            const res = await fetch('/api/upload/image', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + token },
-                body: formData
-            });
-            const data = await res.json();
-            if (res.ok) {
-                hiddenInput.value = data.url;
-                preview.src = data.url;
-                preview.classList.remove('d-none');
-                uploadStatus.className = 'small text-success mb-2';
-                uploadStatus.textContent = '✅ Tải ảnh thành công!';
-            } else {
-                uploadStatus.className = 'small text-danger mb-2';
-                uploadStatus.textContent = '❌ Lỗi: ' + (data.error || 'Không thể tải ảnh');
-            }
-        } catch {
-            uploadStatus.className = 'small text-danger mb-2';
-            uploadStatus.textContent = '❌ Lỗi kết nối mạng!';
-        }
-    }
-
     async function submitReview() {
         if (!selectedRating) { alert('Vui lòng chọn số sao!'); return; }
         const orderId = document.getElementById('reviewOrderId').value;
@@ -365,11 +275,7 @@
             const res = await fetch(`/api/customer/orders/${orderId}/review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ 
-                    rating: selectedRating, 
-                    comment: document.getElementById('reviewComment').value,
-                    imageUrl: document.getElementById('reviewImageUrl').value
-                })
+                body: JSON.stringify({ rating: selectedRating, comment: document.getElementById('reviewComment').value })
             });
             const data = await res.json();
             const alertEl = document.getElementById('reviewAlert');

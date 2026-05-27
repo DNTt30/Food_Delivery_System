@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Món ăn yêu thích - FoodDelivery</title>
+</head>
+<body>
+<main>
+<div class="container py-4" style="max-width: 800px;">
+    
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/customer/home" class="text-danger text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item active">Yêu thích</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="bi bi-heart-fill text-danger me-2"></i>Món ăn yêu thích</h3>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-7359557-6024626.png" alt="Empty" style="width: 200px; opacity: 0.8;" class="mb-3">
+        <h5 class="text-muted fw-bold">Chưa có món ăn yêu thích nào</h5>
+        <p class="text-muted small mb-4">Hãy lướt Food TikTok và thả tim những món bạn thích nhé!</p>
+        <a href="/customer/feed" class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm">
+            Khám phá TikTok Feed <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+
+    <!-- Favorites List -->
+    <div class="row g-3" id="favoritesList">
+        <!-- Rendered via JS -->
+    </div>
+
+</div>
+
+<script>
+    function loadFavorites() {
+        const favs = JSON.parse(localStorage.getItem('fd_favorites') || '[]');
+        const listEl = document.getElementById('favoritesList');
+        const emptyEl = document.getElementById('emptyState');
+        
+        listEl.innerHTML = '';
+        
+        if (favs.length === 0) {
+            emptyEl.classList.remove('d-none');
+            return;
+        }
+        
+        emptyEl.classList.add('d-none');
+        
+        favs.forEach(f => {
+            const img = f.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop';
+            const html = `
+            <div class="col-12 col-md-6">
+                <div class="card border-0 shadow-sm h-100 position-relative" style="border-radius:14px;overflow:hidden;">
+                    <div class="d-flex h-100">
+                        <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="fw-bold mb-1">${f.name}</h6>
+                                <p class="text-muted small mb-2"><i class="bi bi-shop me-1 text-danger"></i>${f.restaurantName}</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="text-danger fw-bold">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(f.price || 0)}</span>
+                            </div>
+                        </div>
+                        <img src="${img}" alt="${f.name}" style="width:100px;height:100px;object-fit:cover;flex-shrink:0;align-self:center;margin:8px;border-radius:10px;">
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="position-absolute bottom-0 end-0 p-2 d-flex gap-2">
+                        <button class="btn btn-light btn-sm rounded-circle shadow-sm text-danger" onclick="removeFav(${f.id})" title="Bỏ yêu thích">
+                            <i class="bi bi-heartbreak-fill"></i>
+                        </button>
+                        <a href="/customer/detail?id=${f.restaurantId}" class="btn btn-danger btn-sm rounded-pill shadow-sm px-3" title="Đến nhà hàng">
+                            <i class="bi bi-shop me-1"></i>Đặt món
+                        </a>
+                    </div>
+                </div>
+            </div>`;
+            listEl.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function removeFav(id) {
+        let favs = JSON.parse(localStorage.getItem('fd_favorites') || '[]');
+        favs = favs.filter(f => f.id !== id);
+        localStorage.setItem('fd_favorites', JSON.stringify(favs));
+        loadFavorites();
+    }
+
+    document.addEventListener('DOMContentLoaded', loadFavorites);
+</script>
+</main>
+</body>
+</html>

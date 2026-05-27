@@ -118,6 +118,11 @@
                         <input type="url" id="itemImageUrl" class="form-control form-control-sm mt-1" placeholder="https://..." oninput="previewImageUrl(this.value)">
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">URL Video Ngắn (Food TikTok)</label>
+                    <input type="url" id="itemVideoUrl" class="form-control" placeholder="https://.../video.mp4">
+                    <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Chỉ hỗ trợ video định dạng .mp4 hoặc link trực tiếp</small>
+                </div>
                 <div id="modalAlert" class="alert d-none"></div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -234,6 +239,7 @@
         document.getElementById('itemAvailable').value = 'true';
         document.getElementById('itemImage').value = '';
         document.getElementById('itemImageUrl').value = '';
+        document.getElementById('itemVideoUrl').value = '';
         document.getElementById('imagePreviewContainer').style.display = 'none';
         document.getElementById('modalAlert').className = 'alert d-none';
     }
@@ -247,6 +253,7 @@
         document.getElementById('itemAvailable').value = item.isAvailable ? 'true' : 'false';
         document.getElementById('itemImage').value = item.imageUrl || '';
         document.getElementById('itemImageUrl').value = item.imageUrl || '';
+        document.getElementById('itemVideoUrl').value = item.videoUrl || '';
         if (item.imageUrl) {
             document.getElementById('imagePreview').src = item.imageUrl;
             document.getElementById('imagePreviewContainer').style.display = 'block';
@@ -296,6 +303,7 @@
             description: document.getElementById('itemDesc').value.trim(),
             price,
             imageUrl: document.getElementById('itemImage').value || null,
+            videoUrl: document.getElementById('itemVideoUrl').value || null,
             isAvailable: document.getElementById('itemAvailable').value === 'true'
         };
         const method = id ? 'PUT' : 'POST';
@@ -342,6 +350,7 @@
                     description: item.description,
                     price: item.price,
                     imageUrl: item.imageUrl,
+                    videoUrl: item.videoUrl,
                     isAvailable: newAvailable 
                 })
             });

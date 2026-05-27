@@ -94,6 +94,16 @@
             transition: all 0.2s;
         }
 
+        @keyframes bounceCart {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4) translateY(-2px); }
+            100% { transform: scale(1); }
+        }
+
+        .badge-bounce {
+            animation: bounceCart 0.4s ease-in-out;
+        }
+
         .user-profile-btn:hover {
             background: #f3f4f6;
         }
@@ -170,7 +180,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-action-btn text-decoration-none" href="javascript:void(0)" onclick="goToCart(event)">
+                    <a class="nav-action-btn text-decoration-none" href="/customer/carts">
                         <i class="bi bi-bag"></i>
                         <span id="cartBadge" class="nav-badge d-none">0</span>
                     </a>
@@ -194,6 +204,7 @@
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item dropdown-item-premium" href="/common/profile"><i class="bi bi-person"></i> Hồ sơ</a></li>
+                        <li><a class="dropdown-item dropdown-item-premium" href="/customer/favorites"><i class="bi bi-heart text-danger"></i> Yêu thích</a></li>
                         <li><a class="dropdown-item dropdown-item-premium" href="/customer/history"><i class="bi bi-clock-history"></i> Đơn hàng</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
@@ -211,22 +222,42 @@
 
 <script>
 (function () {
-    function updateCartBadge() {
-        let total = 0;
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith('fd_cart_')) {
-                try { total += Object.values(JSON.parse(localStorage.getItem(k)) || {}).reduce((s, it) => s + (it.quantity || 0), 0); } catch {}
+    window.updateGlobalCartBadge = function() {
+        try {
+            let total = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('fd_cart_')) {
+                    try { 
+                        const cartData = JSON.parse(localStorage.getItem(k));
+                        if (cartData) {
+                            const cartItems = Array.isArray(cartData) ? cartData : Object.values(cartData);
+                            cartItems.forEach(it => {
+                                if (it && typeof it === 'object') {
+                                    total += parseInt(it.qty || it.quantity || 0, 10) || 0;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Cart badge error:", e);
+                    }
+                }
             }
-        }
-        const badge = document.getElementById('cartBadge');
-        if (!badge) return;
-        if (total > 0) { 
-            badge.textContent = total > 99 ? '99+' : total; 
-            badge.classList.remove('d-none'); 
-        } else {
-            badge.classList.add('d-none');
-        }
+            const badge = document.getElementById('cartBadge');
+            if (badge) {
+                if (total > 0) { 
+                    badge.textContent = total > 99 ? '99+' : total; 
+                    badge.classList.remove('d-none'); 
+                    badge.style.display = 'block';
+                    // Trigger animation
+                    badge.classList.remove('badge-bounce');
+                    void badge.offsetWidth; // trigger reflow
+                    badge.classList.add('badge-bounce');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        } catch(e) { console.error('Global badge error', e); }
     }
 
     function applyUserInfo(username) {
@@ -263,23 +294,10 @@
         if (q) window.location.href = '/customer/home?search=' + encodeURIComponent(q);
     };
 
-    window.goToCart = function (e) {
-        e?.preventDefault();
-        let found = null;
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith('fd_cart_')) {
-                try {
-                    const c = JSON.parse(localStorage.getItem(k));
-                    if (Object.values(c || {}).some(it => (it.quantity || 0) > 0)) { found = k; break; }
-                } catch {}
-            }
-        }
-        window.location.href = found ? '/customer/cart?restaurantId=' + found.replace('fd_cart_', '') : '/customer/home';
-    };
+
 
     document.addEventListener('DOMContentLoaded', () => {
-        updateCartBadge();
+        window.updateGlobalCartBadge();
         updateNavUser();
         
         // Change navbar on scroll
@@ -294,7 +312,7 @@
             }
         });
     });
-    window.addEventListener('storage', updateCartBadge);
+    window.addEventListener('storage', window.updateGlobalCartBadge);
 })();
 </script>
 

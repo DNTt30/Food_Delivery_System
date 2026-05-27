@@ -17,9 +17,6 @@ public class Review {
 
     private Integer rating;
     private String comment;
-    private String imageUrl;
-    private String restaurantReply;
-    private LocalDateTime repliedAt;
     private LocalDateTime createdAt;
 
     public Review() {}
@@ -32,12 +29,6 @@ public class Review {
     public void setRating(Integer rating) { this.rating = rating; }
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-    public String getRestaurantReply() { return restaurantReply; }
-    public void setRestaurantReply(String restaurantReply) { this.restaurantReply = restaurantReply; }
-    public LocalDateTime getRepliedAt() { return repliedAt; }
-    public void setRepliedAt(LocalDateTime repliedAt) { this.repliedAt = repliedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

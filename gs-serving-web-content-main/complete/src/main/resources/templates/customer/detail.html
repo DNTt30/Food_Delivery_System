@@ -55,8 +55,8 @@
                             <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1"><i class="bi bi-truck me-1"></i>Freeship 3km</span>
                         </div>
                     </div>
-                    <button onclick="viewCart()" class="btn btn-danger rounded-pill px-4 fw-bold">
-                        <i class="bi bi-bag me-1"></i>Giỏ hàng (<span id="cartCount">0</span>)
+                    <button onclick="viewCart()" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="bi bi-cart-check me-1"></i>Thanh toán (<span id="cartCount">0</span>)
                     </button>
                 </div>
             </div>
@@ -82,7 +82,7 @@
 <!-- Floating Cart Button (mobile) -->
 <div id="floatingCart" class="d-none position-fixed bottom-0 start-0 end-0 p-3 d-md-none" style="z-index:999;">
     <button onclick="viewCart()" class="btn btn-danger w-100 py-3 fw-bold rounded-pill shadow-lg">
-        <i class="bi bi-bag me-2"></i>Xem giỏ hàng (<span id="cartCountMobile">0</span> món)
+        <i class="bi bi-cart-check me-2"></i>Thanh toán (<span id="cartCountMobile">0</span> món)
         — <span id="cartTotalMobile"></span>
     </button>
 </div>
@@ -177,6 +177,49 @@
         const floatCart = document.getElementById('floatingCart');
         if (count > 0) floatCart.classList.remove('d-none');
         else floatCart.classList.add('d-none');
+        
+        if (window.updateGlobalCartBadge) {
+            window.updateGlobalCartBadge();
+        } else {
+            // Force fallback if global function is missing
+            let globalTotal = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('fd_cart_')) {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(k));
+                        if (data) {
+                            const items = Array.isArray(data) ? data : Object.values(data);
+                            items.forEach(it => {
+                                if (it && typeof it === 'object') {
+                                    globalTotal += parseInt(it.qty || it.quantity || 0, 10) || 0;
+                                }
+                            });
+                        }
+                    } catch(e){}
+                }
+            }
+            const navBadge = document.getElementById('cartBadge');
+            if (navBadge) {
+                if (globalTotal > 0) {
+                    navBadge.textContent = globalTotal > 99 ? '99+' : globalTotal;
+                    navBadge.classList.remove('d-none');
+                    navBadge.style.display = 'block';
+                    navBadge.classList.remove('badge-bounce');
+                    void navBadge.offsetWidth;
+                    navBadge.classList.add('badge-bounce');
+                } else {
+                    navBadge.classList.add('d-none');
+                }
+            }
+        }
+        
+        // Final force to be absolutely sure the badge shows on desktop
+        const forceBadge = document.getElementById('cartBadge');
+        if (forceBadge && count > 0) {
+            forceBadge.classList.remove('d-none');
+            forceBadge.style.display = 'block';
+        }
     }
 
     function formatVND(n) {

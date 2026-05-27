@@ -24,11 +24,20 @@ public class WebController {
     @GetMapping("/customer/dashboard")
     public String customerDashboard() { return "customer/home"; }
 
+    @GetMapping("/customer/feed")
+    public String customerFeed() { return "customer/feed"; }
+
     @GetMapping("/customer/detail")
     public String customerDetail() { return "customer/detail"; }
 
     @GetMapping("/customer/cart")
     public String customerCart() { return "customer/cart"; }
+
+    @GetMapping("/customer/carts")
+    public String customerCartsList() { return "customer/carts"; }
+
+    @GetMapping("/customer/favorites")
+    public String customerFavorites() { return "customer/favorites"; }
 
 
     @GetMapping("/customer/history")

@@ -41,7 +41,7 @@ public interface IOrderService {
      * Khách hàng đánh giá đơn hàng đã hoàn thành.
      * Business rule: Chỉ đánh giá được 1 lần sau khi đơn COMPLETED.
      */
-    Review reviewOrder(Long orderId, CustomerProfile customer, int rating, String comment, String imageUrl);
+    Review reviewOrder(Long orderId, CustomerProfile customer, int rating, String comment);
 
     /**
      * Tài xế nhận đơn giao hàng.

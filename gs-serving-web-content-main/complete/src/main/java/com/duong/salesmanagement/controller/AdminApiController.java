@@ -23,17 +23,25 @@ public class AdminApiController {
     private final VoucherRepository voucherRepository;
     private final FoodOrderRepository foodOrderRepository;
     private final ReviewRepository reviewRepository;
+    private final CustomerProfileRepository customerProfileRepository;
+    private final DriverProfileRepository driverProfileRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private OrderItemRepository orderItemRepository;
 
     public AdminApiController(UserRepository userRepository,
                               RestaurantProfileRepository restaurantProfileRepository,
                               VoucherRepository voucherRepository,
                               FoodOrderRepository foodOrderRepository,
-                              ReviewRepository reviewRepository) {
+                              ReviewRepository reviewRepository,
+                              CustomerProfileRepository customerProfileRepository,
+                              DriverProfileRepository driverProfileRepository) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.voucherRepository = voucherRepository;
         this.foodOrderRepository = foodOrderRepository;
         this.reviewRepository = reviewRepository;
+        this.customerProfileRepository = customerProfileRepository;
+        this.driverProfileRepository = driverProfileRepository;
     }
 
     private boolean isAdmin(Authentication authentication) {
@@ -68,6 +76,18 @@ public class AdminApiController {
         stats.put("deliveringOrders", deliveringOrders);
         stats.put("completedOrders", completedOrders);
         stats.put("totalRevenue", totalRevenue);
+
+        List<Object[]> topItems = orderItemRepository.findTopSellingProducts(OrderStatus.COMPLETED, org.springframework.data.domain.PageRequest.of(0, 5));
+        List<java.util.Map<String, Object>> topProducts = topItems.stream().map(obj -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", obj[0]);
+            map.put("name", obj[1]);
+            map.put("sold", obj[2]);
+            map.put("restaurant", obj[3]);
+            return map;
+        }).collect(Collectors.toList());
+        stats.put("topProducts", topProducts);
+
         return ResponseEntity.ok(stats);
     }
 
@@ -112,6 +132,60 @@ public class AdminApiController {
         userRepository.delete(user);
         return ResponseEntity.ok(Map.of("message", "Đã xóa tài khoản"));
     }
+
+    @GetMapping("/users/{id}/details")
+    public ResponseEntity<?> getUserDetails(Authentication authentication, @PathVariable String id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        User user = userRepository.findById(id).orElse(null);
+        if (user == null) return ResponseEntity.notFound().build();
+
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", user.getId());
+        result.put("username", user.getUsername());
+        result.put("fullName", user.getFullName());
+        result.put("email", user.getEmail());
+        result.put("role", user.getRole().name());
+        result.put("enabled", user.isEnabled());
+
+        if (user.getRole() == Role.CUSTOMER) {
+            CustomerProfile customerProfile = customerProfileRepository.findByUser(user).orElse(null);
+            if (customerProfile != null) {
+                result.put("phone", customerProfile.getPhoneNumber());
+                result.put("address", customerProfile.getDeliveryAddress());
+                result.put("latitude", customerProfile.getLatitude());
+                result.put("longitude", customerProfile.getLongitude());
+
+                List<FoodOrder> orders = foodOrderRepository.findByCustomerOrderByOrderTimeDesc(customerProfile);
+                result.put("orderCount", orders.size());
+            }
+        } else if (user.getRole() == Role.DRIVER) {
+            DriverProfile driverProfile = driverProfileRepository.findByUser(user).orElse(null);
+            if (driverProfile != null) {
+                result.put("phone", driverProfile.getPhoneNumber());
+                result.put("licensePlate", driverProfile.getLicensePlate());
+                result.put("isAvailable", driverProfile.isAvailable());
+
+                List<FoodOrder> orders = foodOrderRepository.findByDriverOrderByOrderTimeDesc(driverProfile);
+                result.put("orderCount", orders.size());
+            }
+        } else if (user.getRole() == Role.RESTAURANT) {
+            RestaurantProfile restaurantProfile = restaurantProfileRepository.findByUser(user).orElse(null);
+            if (restaurantProfile != null) {
+                result.put("restaurantName", restaurantProfile.getRestaurantName());
+                result.put("address", restaurantProfile.getAddress());
+                result.put("bannerUrl", restaurantProfile.getBannerUrl());
+                result.put("isOpen", restaurantProfile.isOpen());
+                result.put("averageRating", restaurantProfile.getAverageRating());
+
+                List<FoodOrder> orders = foodOrderRepository.findByRestaurant(restaurantProfile);
+                result.put("orderCount", orders.size());
+            }
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
 
     // UC-18: Quản lý nhà hàng (duyệt/khóa)
     @GetMapping("/restaurants")

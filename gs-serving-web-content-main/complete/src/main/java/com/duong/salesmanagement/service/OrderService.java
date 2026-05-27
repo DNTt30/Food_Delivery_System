@@ -230,7 +230,7 @@ public class OrderService implements IOrderService {
     }
 
     @Transactional
-    public Review reviewOrder(Long orderId, CustomerProfile customer, int rating, String comment, String imageUrl) {
+    public Review reviewOrder(Long orderId, CustomerProfile customer, int rating, String comment) {
         FoodOrder order = foodOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
         if (!order.getCustomer().getId().equals(customer.getId()))
@@ -244,7 +244,6 @@ public class OrderService implements IOrderService {
         review.setOrder(order);
         review.setRating(rating);
         review.setComment(comment);
-        review.setImageUrl(imageUrl);
         review.setCreatedAt(LocalDateTime.now());
         Review savedReview = reviewRepository.save(review);
 

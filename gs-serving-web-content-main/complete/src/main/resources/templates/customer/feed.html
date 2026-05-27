@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Food TikTok Feed</title>
+</head>
+<body>
+<main>
+<style>
+    /* Full screen dark feed */
+    body, html { margin: 0; padding: 0; background-color: #000; height: 100vh; overflow: hidden; }
+    main { padding: 0 !important; }
+    header, footer { display: none !important; } /* Hide normal header/footer */
+    
+    .tiktok-feed-container {
+        height: calc(100vh - 76px);
+        width: 100%;
+        max-width: 450px;
+        margin: 0 auto;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        background-color: #000;
+        position: relative;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .tiktok-feed-container::-webkit-scrollbar { display: none; }
+    
+    .tiktok-video-wrapper {
+        height: calc(100vh - 76px);
+        width: 100%;
+        scroll-snap-align: start;
+        position: relative;
+        background-color: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .tiktok-video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .tiktok-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        padding-bottom: 30px;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+    
+    .tiktok-info {
+        flex: 1;
+        padding-right: 20px;
+    }
+    
+    .tiktok-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .tiktok-action-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.3);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .tiktok-action-btn:hover {
+        transform: scale(1.1);
+        background: rgba(255, 255, 255, 0.4);
+    }
+
+    .close-btn {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        color: white;
+        font-size: 1.5rem;
+        background: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+    }
+</style>
+
+<div class="tiktok-feed-container" id="feedContainer">
+    <a href="/customer/home" class="close-btn"><i class="bi bi-x-lg"></i></a>
+    <!-- Videos will be injected here -->
+</div>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    async function loadFeed() {
+        try {
+            // Lấy tất cả nhà hàng và menu của họ để tạo feed
+            const res = await fetch('/api/customer/restaurants', { headers: { 'Authorization': 'Bearer ' + token } });
+            const restaurants = await res.json();
+            
+            let allVideos = [];
+            
+            // Fetch chi tiết từng nhà hàng để lấy món ăn có videoUrl
+            for (const r of restaurants) {
+                const detailRes = await fetch(`/api/customer/restaurants/${r.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
+                if(detailRes.ok) {
+                    const detail = await detailRes.json();
+                    const menuWithVideo = detail.menuItems.filter(m => m.videoUrl && m.isAvailable);
+                    menuWithVideo.forEach(m => {
+                        allVideos.push({
+                            restaurant: detail,
+                            item: m
+                        });
+                    });
+                }
+            }
+            
+            // Trộn ngẫu nhiên
+            allVideos = allVideos.sort(() => 0.5 - Math.random());
+            
+            renderFeed(allVideos);
+            
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function renderFeed(videos) {
+        const container = document.getElementById('feedContainer');
+        if(videos.length === 0) {
+            container.innerHTML += `
+                <div class="tiktok-video-wrapper">
+                    <div class="text-center text-white">
+                        <i class="bi bi-camera-video-off display-1"></i>
+                        <h4 class="mt-3">Chưa có video nào</h4>
+                        <p>Các nhà hàng chưa cập nhật video món ăn.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        videos.forEach(v => {
+            const html = `
+                <div class="tiktok-video-wrapper">
+                    <video class="tiktok-video" src="${v.item.videoUrl}" loop autoplay muted playsinline></video>
+                    <div class="tiktok-overlay">
+                        <div class="tiktok-info">
+                            <h4 class="fw-bold mb-1">${v.item.name}</h4>
+                            <p class="mb-2 opacity-75 small text-truncate">${v.item.description || ''}</p>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-warning text-dark"><i class="bi bi-shop"></i> ${v.restaurant.name}</span>
+                            </div>
+                            <h5 class="text-danger fw-bold mb-0">${formatVND(v.item.price)}</h5>
+                        </div>
+                        <div class="tiktok-actions">
+                            <div class="tiktok-action-btn" id="likeBtn_${v.item.id}" onclick="likeVideo(this, ${v.item.id}, ${v.restaurant.id}, '${v.item.name.replace(/'/g, "\\'")}', '${v.item.imageUrl || ''}', ${v.item.price}, '${v.restaurant.name.replace(/'/g, "\\'")}')">
+                                <i class="bi bi-heart-fill"></i>
+                            </div>
+                            <div class="tiktok-action-btn" onclick="addToCart(${v.item.id}, ${v.restaurant.id}, '${v.item.name.replace(/'/g, "\\'")}', ${v.item.price}, '${v.restaurant.name.replace(/'/g, "\\'")}')">
+                                <i class="bi bi-cart-plus"></i>
+                            </div>
+                            <div class="tiktok-action-btn" onclick="location.href='/customer/detail?id=${v.restaurant.id}'">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            
+            // Set initial like state
+            let favs = JSON.parse(localStorage.getItem('fd_favorites') || '[]');
+            if (favs.find(f => f.id === v.item.id)) {
+                const btn = document.getElementById(`likeBtn_${v.item.id}`);
+                if (btn) btn.style.color = '#ff2b54';
+            }
+        });
+
+        setupIntersectionObserver();
+    }
+
+    function setupIntersectionObserver() {
+        const videos = document.querySelectorAll('.tiktok-video');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.play().catch(e => console.log('Autoplay prevented', e));
+                } else {
+                    entry.target.pause();
+                }
+            });
+        }, { threshold: 0.6 });
+
+        videos.forEach(v => observer.observe(v));
+    }
+
+    function formatVND(n) { 
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); 
+    }
+
+    function likeVideo(btn, itemId, restId, name, imageUrl, price, restName) {
+        let favs = JSON.parse(localStorage.getItem('fd_favorites') || '[]');
+        const idx = favs.findIndex(f => f.id === itemId);
+        
+        if (idx >= 0) {
+            // Đã like -> unlike
+            favs.splice(idx, 1);
+            btn.style.color = 'white';
+            btn.querySelector('i').classList.remove('animate-pulse-soft');
+        } else {
+            // Chưa like -> like
+            favs.push({
+                id: itemId,
+                restaurantId: restId,
+                name: name,
+                imageUrl: imageUrl,
+                price: price,
+                restaurantName: restName
+            });
+            btn.style.color = '#ff2b54';
+            btn.querySelector('i').classList.add('animate-pulse-soft');
+        }
+        localStorage.setItem('fd_favorites', JSON.stringify(favs));
+    }
+
+    function addToCart(itemId, restId, name, price, restName) {
+        // Save restaurant info
+        localStorage.setItem('fd_restaurant_' + restId, JSON.stringify({ id: restId, name: restName }));
+        
+        // Save cart items
+        let cart = JSON.parse(localStorage.getItem('fd_cart_' + restId) || '[]');
+        
+        const existing = cart.find(i => i.id === itemId);
+        if(existing) existing.qty += 1;
+        else cart.push({ id: itemId, name, price, qty: 1 });
+        
+        localStorage.setItem('fd_cart_' + restId, JSON.stringify(cart));
+        
+        // Force the badge UI to show and jump right away
+        const navBadge = document.getElementById('cartBadge');
+        if (navBadge) {
+            navBadge.classList.remove('d-none');
+            navBadge.style.display = 'block';
+            let current = parseInt(navBadge.textContent || '0', 10) || 0;
+            navBadge.textContent = current + 1;
+            navBadge.classList.remove('badge-bounce');
+            void navBadge.offsetWidth;
+            navBadge.classList.add('badge-bounce');
+        }
+
+        if (window.updateGlobalCartBadge) {
+            window.updateGlobalCartBadge();
+        }
+        
+        // Show success toast with "View Cart" button
+        const toastId = 'toast_' + Date.now();
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 p-3 bg-success text-white rounded-4 shadow-lg d-flex align-items-center justify-content-between';
+        toast.style.zIndex = 9999;
+        toast.style.width = '320px';
+        toast.innerHTML = `
+            <div><i class="bi bi-check-circle me-1"></i>Đã thêm món!</div>
+            <a href="/customer/cart?restaurantId=${restId}" class="btn btn-sm btn-light fw-bold rounded-pill text-success">Giỏ hàng <i class="bi bi-arrow-right"></i></a>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            const el = document.getElementById(toastId);
+            if(el) el.remove();
+        }, 4000);
+    }
+
+    // Unmute on first interaction
+    document.addEventListener('click', () => {
+        document.querySelectorAll('video').forEach(v => v.muted = false);
+    }, {once:true});
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFeed();
+    });
+</script>
+</main>
+</body>
+</html>
