@@ -123,6 +123,9 @@ public class CustomerApiController {
                     r.getOrder().getCustomer().getUser().getFullName(),
                     r.getRating(),
                     r.getComment(),
+                    r.getImageUrl(),
+                    r.getRestaurantReply(),
+                    r.getRepliedAt() != null ? r.getRepliedAt().toString() : null,
                     r.getCreatedAt() != null ? r.getCreatedAt().toString() : "",
                     items
             );
@@ -222,6 +225,9 @@ public class CustomerApiController {
             boolean isReviewed = reviewOpt.isPresent();
             Integer reviewRating = isReviewed ? reviewOpt.get().getRating() : null;
             String reviewComment = isReviewed ? reviewOpt.get().getComment() : null;
+            String reviewImageUrl = isReviewed ? reviewOpt.get().getImageUrl() : null;
+            String restaurantReply = isReviewed ? reviewOpt.get().getRestaurantReply() : null;
+            String repliedAt = isReviewed && reviewOpt.get().getRepliedAt() != null ? reviewOpt.get().getRepliedAt().toString() : null;
 
             return new OrderSummaryDTO(
                     o.getId(),
@@ -234,7 +240,10 @@ public class CustomerApiController {
                     items,
                     isReviewed,
                     reviewRating,
-                    reviewComment
+                    reviewComment,
+                    reviewImageUrl,
+                    restaurantReply,
+                    repliedAt
             );
         }).collect(Collectors.toList());
 
@@ -263,6 +272,9 @@ public class CustomerApiController {
         boolean isReviewed = reviewOpt.isPresent();
         Integer reviewRating = isReviewed ? reviewOpt.get().getRating() : null;
         String reviewComment = isReviewed ? reviewOpt.get().getComment() : null;
+        String reviewImageUrl = isReviewed ? reviewOpt.get().getImageUrl() : null;
+        String restaurantReply = isReviewed ? reviewOpt.get().getRestaurantReply() : null;
+        String repliedAt = isReviewed && reviewOpt.get().getRepliedAt() != null ? reviewOpt.get().getRepliedAt().toString() : null;
 
         OrderDetailDTO dto = new OrderDetailDTO(
                 order.getId(),
@@ -276,7 +288,10 @@ public class CustomerApiController {
                 items,
                 isReviewed,
                 reviewRating,
-                reviewComment
+                reviewComment,
+                reviewImageUrl,
+                restaurantReply,
+                repliedAt
         );
         return ResponseEntity.ok(dto);
     }
@@ -306,7 +321,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Đánh giá phải từ 1 đến 5 sao"));
 
         try {
-            orderService.reviewOrder(id, customer, request.rating, request.comment);
+            orderService.reviewOrder(id, customer, request.rating, request.comment, request.imageUrl);
             return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã đánh giá!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -383,16 +398,23 @@ public class CustomerApiController {
         public boolean isReviewed;
         public Integer reviewRating;
         public String reviewComment;
+        public String reviewImageUrl;
+        public String restaurantReply;
+        public String repliedAt;
 
         public OrderSummaryDTO(Long id, String restaurantName, String restaurantImage, String status,
                                Double totalAmount, String orderTime, String deliveryAddress, List<OrderItemDTO> items,
-                               boolean isReviewed, Integer reviewRating, String reviewComment) {
+                               boolean isReviewed, Integer reviewRating, String reviewComment,
+                               String reviewImageUrl, String restaurantReply, String repliedAt) {
             this.id = id; this.restaurantName = restaurantName; this.restaurantImage = restaurantImage;
             this.status = status; this.totalAmount = totalAmount; this.orderTime = orderTime;
             this.deliveryAddress = deliveryAddress; this.items = items;
             this.isReviewed = isReviewed;
             this.reviewRating = reviewRating;
             this.reviewComment = reviewComment;
+            this.reviewImageUrl = reviewImageUrl;
+            this.restaurantReply = restaurantReply;
+            this.repliedAt = repliedAt;
         }
     }
 
@@ -403,8 +425,10 @@ public class CustomerApiController {
         public OrderDetailDTO(Long id, String restaurantName, String status, Double totalAmount,
                               String orderTime, String deliveryAddress, String driverName,
                               String driverPhone, List<OrderItemDTO> items, boolean isReviewed, 
-                              Integer reviewRating, String reviewComment) {
-            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items, isReviewed, reviewRating, reviewComment);
+                              Integer reviewRating, String reviewComment,
+                              String reviewImageUrl, String restaurantReply, String repliedAt) {
+            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items, 
+                  isReviewed, reviewRating, reviewComment, reviewImageUrl, restaurantReply, repliedAt);
             this.driverName = driverName;
             this.driverPhone = driverPhone;
         }
@@ -421,19 +445,27 @@ public class CustomerApiController {
     public static class ReviewRequest {
         public int rating;
         public String comment;
+        public String imageUrl;
     }
 
     public static class ReviewDTO {
         public String customerName;
         public int rating;
         public String comment;
+        public String imageUrl;
+        public String restaurantReply;
+        public String repliedAt;
         public String createdAt;
         public List<String> orderItems;
 
-        public ReviewDTO(String customerName, int rating, String comment, String createdAt, List<String> orderItems) {
+        public ReviewDTO(String customerName, int rating, String comment, String imageUrl, 
+                         String restaurantReply, String repliedAt, String createdAt, List<String> orderItems) {
             this.customerName = customerName;
             this.rating = rating;
             this.comment = comment;
+            this.imageUrl = imageUrl;
+            this.restaurantReply = restaurantReply;
+            this.repliedAt = repliedAt;
             this.createdAt = createdAt;
             this.orderItems = orderItems;
         }

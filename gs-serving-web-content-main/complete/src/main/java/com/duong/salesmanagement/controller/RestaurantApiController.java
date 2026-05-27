@@ -3,6 +3,7 @@ package com.duong.salesmanagement.controller;
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
 import com.duong.salesmanagement.service.IOrderService;
+import com.duong.salesmanagement.service.NotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ public class RestaurantApiController {
     private final ReviewRepository reviewRepository;
     private final IOrderService orderService;
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
+    private final NotificationService notificationService;
 
     public RestaurantApiController(UserRepository userRepository,
                                    RestaurantProfileRepository restaurantProfileRepository,
@@ -44,7 +46,8 @@ public class RestaurantApiController {
                                    VoucherRepository voucherRepository,
                                    ReviewRepository reviewRepository,
                                    IOrderService orderService,
-                                   com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository) {
+                                   com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository,
+                                   NotificationService notificationService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -53,6 +56,7 @@ public class RestaurantApiController {
         this.reviewRepository = reviewRepository;
         this.orderService = orderService;
         this.trackingLocationRepository = trackingLocationRepository;
+        this.notificationService = notificationService;
     }
 
     // ================================================================
@@ -501,6 +505,9 @@ public class RestaurantApiController {
                 r.getOrder().getCustomer().getUser().getFullName(),
                 r.getRating(),
                 r.getComment(),
+                r.getImageUrl(),
+                r.getRestaurantReply(),
+                r.getRepliedAt() != null ? r.getRepliedAt().toString() : null,
                 r.getCreatedAt() != null ? r.getCreatedAt().toString() : null
         )).collect(Collectors.toList());
 
@@ -508,6 +515,43 @@ public class RestaurantApiController {
                 "reviews", dtos,
                 "avgRating", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0,
                 "totalReviews", dtos.size()
+        ));
+    }
+
+    /** POST /api/restaurant/reviews/{id}/reply — Phản hồi đánh giá */
+    @PostMapping("/reviews/{id}/reply")
+    public ResponseEntity<?> replyToReview(Authentication auth, @PathVariable Long id,
+                                            @RequestBody Map<String, String> body) {
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
+
+        String replyText = body.get("reply");
+        if (replyText == null || replyText.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nội dung phản hồi không được để trống"));
+        }
+
+        Review review = reviewRepository.findById(id).orElse(null);
+        if (review == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!review.getOrder().getRestaurant().getId().equals(restaurant.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Bạn không có quyền phản hồi đánh giá này"));
+        }
+
+        review.setRestaurantReply(replyText.trim());
+        review.setRepliedAt(LocalDateTime.now());
+        reviewRepository.save(review);
+
+        // Gửi thông báo đến khách hàng
+        notificationService.notifyRestaurantReplied(
+                review.getOrder().getCustomer().getUser(), review.getOrder().getId());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Phản hồi đánh giá thành công!",
+                "restaurantReply", review.getRestaurantReply(),
+                "repliedAt", review.getRepliedAt().toString()
         ));
     }
 
@@ -597,12 +641,17 @@ public class RestaurantApiController {
         public String customerName;
         public Integer rating;
         public String comment;
+        public String imageUrl;
+        public String restaurantReply;
+        public String repliedAt;
         public String createdAt;
 
         public ReviewDTO(Long id, Long orderId, String customerName,
-                         Integer rating, String comment, String createdAt) {
+                         Integer rating, String comment, String imageUrl,
+                         String restaurantReply, String repliedAt, String createdAt) {
             this.id = id; this.orderId = orderId; this.customerName = customerName;
-            this.rating = rating; this.comment = comment; this.createdAt = createdAt;
+            this.rating = rating; this.comment = comment; this.imageUrl = imageUrl;
+            this.restaurantReply = restaurantReply; this.repliedAt = repliedAt; this.createdAt = createdAt;
         }
     }
 }

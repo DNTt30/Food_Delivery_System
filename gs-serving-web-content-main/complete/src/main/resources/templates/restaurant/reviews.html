@@ -164,28 +164,96 @@ function renderReviews(reviews) {
     reviews.forEach(r => {
         const initial = (r.customerName || 'K').charAt(0).toUpperCase();
         const starColor = r.rating >= 4 ? '#f59e0b' : r.rating === 3 ? '#84cc16' : '#ef4444';
+        
+        // Render review image
+        const imgHtml = r.imageUrl 
+            ? `<div class="mt-2"><img src="${r.imageUrl}" class="img-fluid rounded-3" style="max-height: 120px; cursor: pointer; object-fit: cover;" onclick="window.open('${r.imageUrl}')"></div>` 
+            : '';
+            
+        // Render restaurant reply block
+        const replyHtml = r.restaurantReply ? `
+        <div class="mt-3 p-3 bg-light rounded-3 border-start border-4 border-warning">
+            <div class="fw-bold text-warning small mb-1" style="font-size: 0.8rem;"><i class="bi bi-reply-all me-1"></i>Đã phản hồi:</div>
+            <p class="mb-1 text-dark small" style="font-style: italic;">"${esc(r.restaurantReply)}"</p>
+            <small class="text-muted" style="font-size: 0.68rem;">${fmtDate(r.repliedAt)}</small>
+        </div>` : `
+        <div class="mt-3" id="reply-container-${r.id}">
+            <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="showReplyInput(${r.id})">
+                <i class="bi bi-reply me-1"></i>Phản hồi
+            </button>
+        </div>`;
+
         list.insertAdjacentHTML('beforeend', `
         <div class="col-md-6 col-xl-4">
         <div class="card review-card shadow-sm h-100">
-            <div class="card-body p-4">
-                <div class="d-flex gap-3 mb-3">
-                    <div class="customer-avatar">${initial}</div>
-                    <div class="flex-grow-1">
-                        <div class="fw-semibold" style="font-size:.9rem;">${esc(r.customerName || 'Khách')}</div>
-                        <div class="review-date"><i class="bi bi-receipt me-1"></i>Đơn #${r.orderId} • ${fmtDate(r.createdAt)}</div>
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex gap-3 mb-3">
+                        <div class="customer-avatar">${initial}</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size:.9rem;">${esc(r.customerName || 'Khách')}</div>
+                            <div class="review-date"><i class="bi bi-receipt me-1"></i>Đơn #${r.orderId} • ${fmtDate(r.createdAt)}</div>
+                        </div>
                     </div>
+                    <div class="mb-2" style="color:${starColor};font-size:1.15rem;">
+                        ${'★'.repeat(r.rating || 0)}${'☆'.repeat(5 - (r.rating||0))}
+                        <span class="ms-1 text-muted small">(${r.rating}/5)</span>
+                    </div>
+                    ${r.comment
+                        ? `<p class="review-comment mb-0">"${esc(r.comment)}"</p>`
+                        : `<p class="review-comment text-muted mb-0 fst-italic">Khách hàng không để lại bình luận</p>`}
+                    ${imgHtml}
                 </div>
-                <div class="mb-2" style="color:${starColor};font-size:1.15rem;">
-                    ${'★'.repeat(r.rating || 0)}${'☆'.repeat(5 - (r.rating||0))}
-                    <span class="ms-1 text-muted small">(${r.rating}/5)</span>
-                </div>
-                ${r.comment
-                    ? `<p class="review-comment mb-0">"${esc(r.comment)}"</p>`
-                    : `<p class="review-comment text-muted mb-0 fst-italic">Khách hàng không để lại bình luận</p>`}
+                ${replyHtml}
             </div>
         </div>
         </div>`);
     });
+}
+
+function showReplyInput(reviewId) {
+    const container = document.getElementById(`reply-container-${reviewId}`);
+    container.innerHTML = `
+    <div class="mt-2 w-100">
+        <textarea class="form-control form-control-sm mb-2" id="reply-text-${reviewId}" rows="2" placeholder="Nhập nội dung phản hồi..."></textarea>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-warning rounded-pill px-3 fw-bold text-dark" onclick="submitRestaurantReply(${reviewId})">Gửi</button>
+            <button class="btn btn-sm btn-light border rounded-pill px-3" onclick="cancelReplyInput(${reviewId})">Hủy</button>
+        </div>
+    </div>`;
+}
+
+function cancelReplyInput(reviewId) {
+    const container = document.getElementById(`reply-container-${reviewId}`);
+    container.innerHTML = `
+    <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="showReplyInput(${reviewId})">
+        <i class="bi bi-reply me-1"></i>Phản hồi
+    </button>`;
+}
+
+async function submitRestaurantReply(reviewId) {
+    const replyText = document.getElementById(`reply-text-${reviewId}`).value;
+    if (!replyText.trim()) { alert('Vui lòng nhập nội dung phản hồi!'); return; }
+    
+    try {
+        const res = await fetch(`/api/restaurant/reviews/${reviewId}/reply`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ reply: replyText })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Đã gửi phản hồi thành công!');
+            loadReviews();
+        } else {
+            alert(data.error || 'Lỗi khi gửi phản hồi');
+        }
+    } catch (e) {
+        alert('Lỗi kết nối mạng!');
+    }
 }
 
 loadReviews();
