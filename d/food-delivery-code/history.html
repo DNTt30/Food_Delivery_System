@@ -1,0 +1,117 @@
+<!-- Fragment trích xuất UI Modal và AJAX Script bóc từ màn hình lịch sử đơn hàng customer/history.html -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-semibold" id="reviewModalLabel">Viết đánh giá đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewOrderId">
+                
+                <!-- Chọn điểm số sao -->
+                <div class="mb-3">
+                    <label class="form-label font-bold">Số sao đánh giá (1-5)</label>
+                    <div class="text-warning fs-3" id="ratingStars">
+                        <span class="star" data-value="1" style="cursor: pointer;">★</span>
+                        <span class="star" data-value="2" style="cursor: pointer;">★</span>
+                        <span class="star" data-value="3" style="cursor: pointer;">★</span>
+                        <span class="star" data-value="4" style="cursor: pointer;">★</span>
+                        <span class="star" data-value="5" style="cursor: pointer;">★</span>
+                    </div>
+                </div>
+
+                <!-- Lời nhận xét -->
+                <div class="mb-3">
+                    <label for="reviewComment" class="form-label font-bold">Ý kiến nhận xét</label>
+                    <textarea class="form-control" id="reviewComment" rows="3" placeholder="Độ ngon của đồ ăn, tốc độ ship của tài xế..."></textarea>
+                </div>
+
+                <!-- ĐẮP THÊM Ô TẢI ẢNH LÊN THEO YÊU CẦU: -->
+                <div class="mb-3">
+                    <label class="form-label font-semibold">Hình ảnh đính kèm</label>
+                    <input type="file" id="reviewImageFile" accept="image/*" class="form-control">
+                    <div id="imageUploadProgress" class="text-xs text-muted mt-1 select-none"></div>
+                    <div id="imagePreviewContainer" class="mt-2 text-center d-none">
+                        <img id="imagePreview" src="" alt="Thumbnail preview" class="img-thumbnail" style="max-height: 120px; width: auto;">
+                        <input type="hidden" id="reviewImageUrlVal" value="">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning font-bold text-dark" onclick="submitReviewForm()">Gửi đánh giá</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Logic khi tệp tin tin chụp ảnh được chọn từ thiết bị
+document.getElementById('reviewImageFile').addEventListener('change', async function() {
+    const fileInput = this;
+    if (fileInput.files.length === 0) return;
+
+    const progressDiv = document.getElementById('imageUploadProgress');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImg = document.getElementById('imagePreview');
+    const hiddenUrlInput = document.getElementById('reviewImageUrlVal');
+
+    progressDiv.innerHTML = "⏳ Đang tải ảnh của bạn lên máy chủ...";
+    
+    // Khởi tạo FormData
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+        // Gửi ảnh thô tới API upload ảnh chung của hệ thống Spring Boot
+        const res = await fetch('/api/upload/image', { 
+            method: 'POST', 
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }, 
+            body: formData 
+        });
+
+        if (res.ok) {
+            const data = await res.json(); // Nhận link dạng: { "url": "/images/uuid-photo.jpg" }
+            hiddenUrlInput.value = data.url;
+            previewImg.src = data.url;
+            previewContainer.classList.remove('d-none');
+            progressDiv.innerHTML = "<span class='text-success'>✅ Tải ảnh thành công!</span>";
+        } else {
+            progressDiv.innerHTML = "<span class='text-danger'>❌ Lỗi khi gửi ảnh lên. Chọn lại ảnh khác!</span>";
+        }
+    } catch (err) {
+        progressDiv.innerHTML = "<span class='text-danger'>❌ Không thể kết nối với server Spring Boot.</span>";
+    }
+});
+
+// Gửi form đánh giá đầy đủ kèm URL ảnh tương đối
+async function submitReviewForm() {
+    const orderId = document.getElementById('reviewOrderId').value;
+    const rating = document.querySelector('#ratingStars .star.active')?.dataset.value || 5;
+    const comment = document.getElementById('reviewComment').value.trim();
+    const imageUrl = document.getElementById('reviewImageUrlVal').value;
+
+    if (!comment) return alert("Vui lòng nhập nhận xét của bạn!");
+
+    try {
+        const res = await fetch(`/api/customer/orders/${orderId}/review`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ rating, comment, imageUrl })
+        });
+
+        if (res.ok) {
+            alert("Gửi đánh giá đơn hàng thành công!");
+            window.location.reload();
+        } else {
+            alert("Lỗi khi gửi đánh giá.");
+        }
+    } catch (err) {
+        console.error("Error:", err);
+    }
+}
+</script>

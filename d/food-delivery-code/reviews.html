@@ -1,0 +1,75 @@
+<!-- Fragment giao diện quản trị đánh giá và phản hồi của nhà hàng restaurant/reviews.html -->
+<div class="container mt-4">
+    <h3 class="mb-4">Danh sách đánh giá của khách hàng</h3>
+
+    <!-- Vòng lặp các đánh giá lấy từ Thymeleaf Model -->
+    <div class="card shadow-sm mb-3" th:each="r : ${reviews}">
+        <div class="card-body">
+            <h5 class="card-title text-warning" th:text="${'★'.repeat(r.rating)}">★★★★★</h5>
+            <p class="card-text text-dark font-medium" th:text="${r.comment}">Nội dung nhận xét</p>
+            
+            <!-- HIỂN THỊ ẢNH KHÁCH ĐĂNG (MỚI BỔ SUNG THEO ĐỀ BÀI) -->
+            <div class="mb-3" th:if="${r.imageUrl != null}">
+                <a th:href="${r.imageUrl}" target="_blank" title="Cầm để xem ảnh độ phân giải cao">
+                    <img th:src="${r.imageUrl}" class="img-thumbnail" style="max-height: 120px; width: auto; cursor: zoom-in;">
+                </a>
+            </div>
+
+            <!-- PHẦN PHẢN HỒI NẾU ĐÃ TRẢ LỜI RỒI -->
+            <div class="bg-light p-3 rounded mt-2 border border-slate-200" th:if="${r.restaurantReply != null}">
+                <p class="mb-1 text-muted small"><strong>Phản hồi từ quán của bạn:</strong></p>
+                <p class="mb-0 italic text-secondary" th:text="${r.restaurantReply}">Lời nhắn nhủ chăm sóc khách hàng</p>
+                <span class="text-xs text-muted" th:text="${#temporals.format(r.repliedAt, 'dd-MM-yyyy HH:mm')}">Mốc giờ phản hồi</span>
+            </div>
+
+            <!-- PHẦN PHẢN HỒI NHANH NẾU CHƯA TRẢ LỜI CỦA CHỦ QUÁN (MỚI BỔ SUNG) -->
+            <div th:id="'replyBox-' + ${r.id}" th:if="${r.restaurantReply == null}" class="mt-3">
+                <button class="btn btn-outline-primary btn-sm" th:onclick="'showReplyForm(' + ${r.id} + ')'">💬 Phản hồi</button>
+                <div th:id="'form-container-' + ${r.id}" class="d-none mt-2">
+                    <textarea th:id="'replyInput-' + ${r.id}" class="form-control mb-2" rows="2" placeholder="Nhập câu trả lời gửi đến điện thoại khách..."></textarea>
+                    <div class="text-end">
+                        <button class="btn btn-secondary btn-sm me-1" th:onclick="'hideReplyForm(' + ${r.id} + ')'">Hủy bỏ</button>
+                        <button class="btn btn-success btn-sm font-bold" th:onclick="'submitReply(' + ${r.id} + ')'">Gửi phản hồi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle hiện ô TextArea nhập chữ
+function showReplyForm(id) {
+    document.getElementById('form-container-' + id).classList.remove('d-none');
+}
+function hideReplyForm(id) {
+    document.getElementById('form-container-' + id).classList.add('d-none');
+}
+
+// Bấm gửi dữ liệu phản hồi lên API restaurant reply
+async function submitReply(id) {
+    const input = document.getElementById('replyInput-' + id);
+    const text = input.value.trim();
+    if (!text) return alert("Nội dung phản hồi không được rỗng!");
+
+    try {
+        const res = await fetch('/api/restaurant/reviews/' + id + '/reply', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+            },
+            body: JSON.stringify({ reply: text })
+        });
+
+        if (res.ok) {
+            alert("Phản hồi đánh giá khách hàng thành công!");
+            window.location.reload(); // Reset lại view HTML Thymeleaf
+        } else {
+            alert("Lỗi khi kết nối gửi dữ liệu đến API.");
+        }
+    } catch (err) {
+        console.error("Error Reply:", err);
+    }
+}
+</script>
