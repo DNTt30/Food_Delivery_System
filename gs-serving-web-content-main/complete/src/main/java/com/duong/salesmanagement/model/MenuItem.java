@@ -24,6 +24,7 @@ public class MenuItem {
     private String imageUrl;
     private String videoUrl;
     private boolean isAvailable;
+    private Integer soldCount = 0;
 
     public MenuItem() {}
 
@@ -45,4 +46,6 @@ public class MenuItem {
     public void setAvailable(boolean available) { isAvailable = available; }
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
+    public Integer getSoldCount() { return soldCount; }
+    public void setSoldCount(Integer soldCount) { this.soldCount = soldCount; }
 }

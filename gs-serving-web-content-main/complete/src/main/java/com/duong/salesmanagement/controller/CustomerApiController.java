@@ -84,6 +84,24 @@ public class CustomerApiController {
         return ResponseEntity.ok(dtos);
     }
 
+    // UC: Món Bán Chạy
+    @GetMapping("/top-items")
+    public ResponseEntity<?> getTopItems() {
+        List<MenuItem> items = menuItemRepository.findTop10ByIsAvailableTrueOrderBySoldCountDesc();
+        List<Map<String, Object>> result = items.stream().map(m -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", m.getId());
+            map.put("name", m.getName());
+            map.put("price", m.getPrice());
+            map.put("imageUrl", m.getImageUrl());
+            map.put("restaurantId", m.getRestaurant().getId());
+            map.put("restaurantName", m.getRestaurant().getRestaurantName());
+            map.put("soldCount", m.getSoldCount() != null ? m.getSoldCount() : 0);
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
     // UC-06: Xem thực đơn nhà hàng
     @GetMapping("/restaurants/{id}")
     public ResponseEntity<?> getRestaurantDetail(@PathVariable Long id) {

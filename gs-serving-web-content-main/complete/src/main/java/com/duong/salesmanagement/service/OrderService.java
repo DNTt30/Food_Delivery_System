@@ -324,6 +324,19 @@ public class OrderService implements IOrderService {
             throw new RuntimeException("Đơn hàng không đang trong trạng thái giao");
         order.setStatus(OrderStatus.COMPLETED);
         foodOrderRepository.save(order);
+
+        // Update soldCount for menu items
+        if (order.getOrderItems() != null) {
+            for (OrderItem item : order.getOrderItems()) {
+                MenuItem menuItem = item.getMenuItem();
+                if (menuItem != null) {
+                    int current = menuItem.getSoldCount() != null ? menuItem.getSoldCount() : 0;
+                    menuItem.setSoldCount(current + item.getQuantity());
+                    menuItemRepository.save(menuItem);
+                }
+            }
+        }
+
         driver.setAvailable(true);
         driverProfileRepository.save(driver);
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket

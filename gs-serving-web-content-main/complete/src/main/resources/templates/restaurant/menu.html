@@ -108,19 +108,43 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small">Ảnh món ăn</label>
-                    <input type="file" id="itemImageFile" class="form-control" accept="image/*" onchange="uploadImage(this)">
+                    
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <label class="btn btn-outline-warning btn-sm rounded-pill fw-bold px-3 mb-0" style="cursor: pointer;">
+                            <i class="bi bi-image me-1"></i> Chọn Ảnh từ máy
+                            <input type="file" id="itemImageFile" class="d-none" accept="image/*" onchange="uploadImage(this)">
+                        </label>
+                        <span id="imageUploadStatus" class="small text-muted"></span>
+                    </div>
+
                     <input type="hidden" id="itemImage">
                     <div class="mt-2" id="imagePreviewContainer" style="display:none;">
-                        <img id="imagePreview" src="" class="rounded-3" style="max-height:150px;max-width:100%;object-fit:cover;" alt="">
+                        <img id="imagePreview" src="" class="rounded-3 shadow-sm border" style="max-height:120px;max-width:100%;object-fit:cover;" alt="">
                     </div>
                     <div class="mt-2">
                         <small class="text-muted">Hoặc nhập URL: </small>
-                        <input type="url" id="itemImageUrl" class="form-control form-control-sm mt-1" placeholder="https://..." oninput="previewImageUrl(this.value)">
+                        <input type="url" id="itemImageUrl" class="form-control form-control-sm mt-1 bg-light border-0" placeholder="https://..." oninput="previewImageUrl(this.value)">
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">URL Video Ngắn (Food TikTok)</label>
-                    <input type="url" id="itemVideoUrl" class="form-control" placeholder="https://.../video.mp4">
+                    <label class="form-label fw-semibold small">Video Ngắn (Food TikTok)</label>
+
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <label class="btn btn-outline-danger btn-sm rounded-pill fw-bold px-3 mb-0" style="cursor: pointer;">
+                            <i class="bi bi-camera-video me-1"></i> Chọn Video từ máy
+                            <input type="file" id="itemVideoFile" class="d-none" accept="video/mp4,video/webm" onchange="uploadVideo(this)">
+                        </label>
+                        <span id="videoUploadStatus" class="small text-muted"></span>
+                    </div>
+
+                    <div class="mt-2" id="videoPreviewContainer" style="display:none;">
+                        <video id="videoPreview" class="rounded-3 shadow-sm border" style="max-height:150px;max-width:100%;object-fit:cover;" autoplay muted loop></video>
+                    </div>
+
+                    <div class="mt-2">
+                        <small class="text-muted">Hoặc nhập URL: </small>
+                        <input type="url" id="itemVideoUrl" class="form-control form-control-sm mt-1 bg-light border-0" placeholder="https://.../video.mp4" oninput="previewVideoUrl(this.value)">
+                    </div>
                     <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Chỉ hỗ trợ video định dạng .mp4 hoặc link trực tiếp</small>
                 </div>
                 <div id="modalAlert" class="alert d-none"></div>
@@ -240,7 +264,11 @@
         document.getElementById('itemImage').value = '';
         document.getElementById('itemImageUrl').value = '';
         document.getElementById('itemVideoUrl').value = '';
+        document.getElementById('itemVideoUrl').value = '';
         document.getElementById('imagePreviewContainer').style.display = 'none';
+        if(document.getElementById('videoPreviewContainer')) document.getElementById('videoPreviewContainer').style.display = 'none';
+        if(document.getElementById('imageUploadStatus')) document.getElementById('imageUploadStatus').textContent = '';
+        if(document.getElementById('videoUploadStatus')) document.getElementById('videoUploadStatus').textContent = '';
         document.getElementById('modalAlert').className = 'alert d-none';
     }
 
@@ -260,6 +288,13 @@
         } else {
             document.getElementById('imagePreviewContainer').style.display = 'none';
         }
+        if (item.videoUrl) {
+            previewVideoUrl(item.videoUrl);
+        } else if(document.getElementById('videoPreviewContainer')) {
+            document.getElementById('videoPreviewContainer').style.display = 'none';
+        }
+        if(document.getElementById('imageUploadStatus')) document.getElementById('imageUploadStatus').textContent = '';
+        if(document.getElementById('videoUploadStatus')) document.getElementById('videoUploadStatus').textContent = '';
         document.getElementById('modalAlert').className = 'alert d-none';
         modalInstance.show();
     }
@@ -276,6 +311,8 @@
 
     async function uploadImage(input) {
         if (!input.files || !input.files[0]) return;
+        const status = document.getElementById('imageUploadStatus');
+        if(status) { status.textContent = 'Đang tải lên...'; status.className = 'small text-warning fw-bold'; }
         const fd = new FormData();
         fd.append('file', input.files[0]);
         try {
@@ -286,8 +323,44 @@
                 document.getElementById('itemImageUrl').value = d.url;
                 document.getElementById('imagePreview').src = d.url;
                 document.getElementById('imagePreviewContainer').style.display = 'block';
+                if(status) { status.textContent = 'Tải ảnh thành công!'; status.className = 'small text-success fw-bold'; }
+            } else {
+                if(status) { status.textContent = 'Lỗi!'; status.className = 'small text-danger fw-bold'; }
             }
-        } catch {}
+        } catch {
+            if(status) { status.textContent = 'Lỗi kết nối!'; status.className = 'small text-danger fw-bold'; }
+        }
+    }
+
+    function previewVideoUrl(url) {
+        if (url) {
+            document.getElementById('videoPreview').src = url;
+            document.getElementById('videoPreviewContainer').style.display = 'block';
+        } else {
+            document.getElementById('videoPreviewContainer').style.display = 'none';
+        }
+    }
+
+    async function uploadVideo(input) {
+        if (!input.files || !input.files[0]) return;
+        const status = document.getElementById('videoUploadStatus');
+        if(status) { status.textContent = 'Đang tải lên...'; status.className = 'small text-warning fw-bold'; }
+        
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        try {
+            const res = await fetch('/api/upload/image', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const d = await res.json();
+            if (res.ok) {
+                document.getElementById('itemVideoUrl').value = d.url;
+                previewVideoUrl(d.url);
+                if(status) { status.textContent = 'Tải video thành công!'; status.className = 'small text-success fw-bold'; }
+            } else {
+                if(status) { status.textContent = 'Lỗi!'; status.className = 'small text-danger fw-bold'; }
+            }
+        } catch {
+            if(status) { status.textContent = 'Lỗi kết nối!'; status.className = 'small text-danger fw-bold'; }
+        }
     }
 
     async function saveItem() {

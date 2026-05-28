@@ -174,13 +174,18 @@
             <!-- Action Buttons -->
             <ul class="navbar-nav ms-auto align-items-center gap-3">
                 <li class="nav-item">
-                    <a class="nav-action-btn text-decoration-none" href="/customer/history">
+                    <a class="nav-action-btn text-decoration-none" href="/customer/feed" title="Video Review" style="color: #ff3366; animation: pulse 2s infinite;">
+                        <i class="bi bi-play-btn-fill fs-5"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-action-btn text-decoration-none" href="/customer/history" title="Lịch sử đơn hàng">
                         <i class="bi bi-receipt"></i>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-action-btn text-decoration-none" href="/customer/carts">
+                    <a class="nav-action-btn text-decoration-none" href="/customer/carts" title="Giỏ hàng">
                         <i class="bi bi-bag"></i>
                         <span id="cartBadge" class="nav-badge d-none">0</span>
                     </a>
@@ -209,7 +214,7 @@
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <button class="dropdown-item dropdown-item-premium text-danger fw-bold" 
-                                    onclick="localStorage.clear(); window.location.href='/';">
+                                    onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
                                 <i class="bi bi-box-arrow-right"></i> Đăng xuất
                             </button>
                         </li>

@@ -11,4 +11,5 @@ import java.util.List;
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByRestaurant(RestaurantProfile restaurant);
     List<MenuItem> findByRestaurantAndIsAvailableTrue(RestaurantProfile restaurant);
+    List<MenuItem> findTop10ByIsAvailableTrueOrderBySoldCountDesc();
 }

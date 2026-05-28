@@ -16,6 +16,7 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
 
     @Query("SELECT r FROM RestaurantProfile r WHERE " +
            "LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :kw, '%')) OR " +
-           "LOWER(r.address) LIKE LOWER(CONCAT('%', :kw, '%'))")
+           "LOWER(r.address) LIKE LOWER(CONCAT('%', :kw, '%')) OR " +
+           "EXISTS (SELECT 1 FROM MenuItem m WHERE m.restaurant = r AND LOWER(m.name) LIKE LOWER(CONCAT('%', :kw, '%')))")
     List<RestaurantProfile> searchByKeyword(@Param("kw") String keyword);
 }

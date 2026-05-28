@@ -315,7 +315,7 @@
 
         <!-- Logout Area -->
         <div class="text-center py-3">
-            <button class="btn btn-link text-danger text-decoration-none fw-bold" onclick="localStorage.clear(); window.location.href='/';">
+            <button class="btn btn-link text-danger text-decoration-none fw-bold" onclick="localStorage.removeItem('jwt_token');localStorage.removeItem('role');localStorage.removeItem('username');window.location.href='/';">
                 <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất tài khoản
             </button>
         </div>

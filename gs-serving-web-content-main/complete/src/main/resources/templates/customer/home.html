@@ -234,45 +234,19 @@
         </div>
     </div>
 
-    <!-- Category Icons -->
+    <!-- Top Selling Items -->
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-end mb-4">
-            <h4 class="fw-bold mb-0">Bạn đang thèm món gì?</h4>
-            <a href="#" class="text-danger fw-bold text-decoration-none small">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+            <h4 class="fw-bold mb-0">🔥 Top các món bán chạy</h4>
+            <a href="/customer/feed" class="text-danger fw-bold text-decoration-none small">Khám phá ngay <i class="bi bi-arrow-right"></i></a>
         </div>
-        <div class="d-flex gap-4 overflow-auto pb-3 no-scrollbar">
-            <div class="cat-pill" onclick="filterRestaurants('all', this)">
-                <div class="cat-icon-wrapper">🍜</div>
-                <span>Tất cả</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🍕</div>
-                <span>Pizza</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🍔</div>
-                <span>Burger</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🍣</div>
-                <span>Sushi</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🍵</div>
-                <span>Trà sữa</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🥗</div>
-                <span>Healthy</span>
-            </div>
-            <div class="cat-pill">
-                <div class="cat-icon-wrapper">🥐</div>
-                <span>Bánh mì</span>
-            </div>
-            <div class="cat-pill" onclick="filterRestaurants('open', this)">
-                <div class="cat-icon-wrapper"><i class="bi bi-door-open"></i></div>
-                <span>Đang mở</span>
-            </div>
+        <div class="d-flex gap-3 overflow-auto pb-3 no-scrollbar" id="topItemsList">
+            <!-- Loading Skeleton for Top Items -->
+            <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
+            <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
+            <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
+            <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
+            <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
         </div>
     </div>
 
@@ -322,12 +296,7 @@
         <button class="btn btn-danger rounded-pill px-5 fw-bold" onclick="clearSearch()">Xem tất cả nhà hàng</button>
     </div>
 
-    <!-- Food TikTok Floating Button -->
-    <a href="/customer/feed" class="btn btn-primary rounded-circle shadow-lg position-fixed d-flex justify-content-center align-items-center transform-hover" 
-       style="bottom: 80px; right: 20px; width: 60px; height: 60px; z-index: 1000; background: var(--primary-gradient); border: none;"
-       title="Xem Food TikTok Feed">
-        <i class="bi bi-play-btn-fill fs-2 text-white"></i>
-    </a>
+    <!-- Removed floating Food TikTok button to move to global navbar -->
 
 </div>
 
@@ -438,15 +407,25 @@
     function doSearch() {
         const q = document.getElementById('searchInput').value.trim();
         loadRestaurants(q);
+        // Reset category pills visually
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
     }
 
     function clearSearch() {
         document.getElementById('searchInput').value = '';
         loadRestaurants();
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    }
+
+    function doCategorySearch(keyword, el) {
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        if (el) el.classList.add('active');
+        
+        document.getElementById('searchInput').value = keyword;
+        loadRestaurants(keyword);
     }
 
     function filterRestaurants(filter, el) {
-        currentFilter = filter;
         document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
         if (el) el.classList.add('active');
 
@@ -454,6 +433,40 @@
         if (filter === 'open') filtered = filtered.filter(r => r.isOpen);
         renderRestaurants(filtered);
     }
+
+    async function loadTopItems() {
+        const topItemsContainer = document.getElementById('topItemsList');
+        if(!topItemsContainer) return;
+        try {
+            const res = await fetch('/api/customer/top-items', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+                const items = await res.json();
+                topItemsContainer.innerHTML = '';
+                items.forEach(item => {
+                    const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+                    const img = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop';
+                    const card = `
+                        <div class="card border-0 shadow-sm position-relative" style="min-width: 160px; max-width: 160px; cursor: pointer; border-radius: 16px; overflow: hidden; flex-shrink: 0;" onclick="location.href='/customer/detail?id=${item.restaurantId}'">
+                            <span class="badge bg-danger rounded-pill position-absolute" style="top: 8px; right: 8px; font-size: 0.65rem; font-weight: 600;">Đã bán ${item.soldCount || 0}</span>
+                            <img src="${img}" class="card-img-top" style="height: 120px; object-fit: cover;" alt="${item.name}">
+                            <div class="card-body p-2">
+                                <h6 class="text-truncate fw-bold mb-1" style="font-size: 0.9rem;">${item.name}</h6>
+                                <p class="text-danger fw-bold mb-0" style="font-size: 0.85rem;">${priceFmt}</p>
+                                <small class="text-muted text-truncate d-block" style="font-size: 0.75rem;"><i class="bi bi-shop me-1"></i>${item.restaurantName}</small>
+                            </div>
+                        </div>
+                    `;
+                    topItemsContainer.insertAdjacentHTML('beforeend', card);
+                });
+            }
+        } catch(e) {
+            console.log("Error loading top items:", e);
+        }
+    }
+
+    // Init
+    loadRestaurants();
+    loadTopItems();
 
     function sortRestaurants(sortBy) {
         let sorted = [...allRestaurants];

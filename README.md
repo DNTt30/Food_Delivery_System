@@ -66,11 +66,10 @@ Food_Delivery_System/
 ### 👤 Khách hàng (Customer)
 - ✅ **Xác thực & Đăng ký:** OTP qua Email, Reset mật khẩu
 - ✅ **Trải nghiệm Premium UI/UX:** Giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
-- ✅ **Food TikTok Feed:** Khám phá món ăn qua video ngắn, lướt vuốt thả tim siêu thực tế.
-- ✅ **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích, mua sắm nhanh chóng.
-- ✅ **Tìm kiếm & Đặt hàng:** Search thông minh, filter nhà hàng, Giỏ hàng Global Real-time (Hiệu ứng chấm đỏ nảy sinh động).
-- ✅ **Quản lý Đơn hàng:** Xem lịch sử, hủy đơn (trạng thái cho phép)
-- ✅ **Theo dõi Giao hàng:** Live GPS Tracking trực quan với bản đồ và thanh tiến trình động (Tracking Progress Bar)
+- ✅ **Video Review Feed (Khám phá):** Trải nghiệm xem video ngắn lướt vuốt thả tim, thiết kế chuẩn Generic an toàn không vi phạm bản quyền thương hiệu.
+- ✅ **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
+- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh (tìm theo Tên nhà hàng & Tên món ăn), lọc nhà hàng, Giỏ hàng Global Real-time.
+- ✅ **Top Món Bán Chạy:** Hệ thống tự động tính toán và hiển thị lượt bán lịch sử (`soldCount`) cho từng món ăn, tăng độ tin cậy.
 - ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
 
