@@ -206,3 +206,11 @@ mvn spring-boot:run
 # Database
 
 [Connect to Aivan from CLI](https://aiven.io/docs/products/mysql/howto/connect-from-cli)
+
+# Recent Updates
+
+### Merge Review & Reply Features (by Quan)
+- Cập nhật chức năng Khách hàng Đánh giá (Review) đơn hàng kèm theo Ảnh (hỗ trợ hiển thị URL ảnh mượt mà).
+- Cập nhật chức năng Nhà hàng Phản hồi (Reply) lại đánh giá của Khách hàng trực tiếp trên giao diện portal của Nhà hàng.
+- Nâng cấp hệ thống Notification (Cảnh báo & Chuông) cho các sự kiện Phản hồi Đánh giá. Khách hàng bấm vào thông báo sẽ được điều hướng đúng về Lịch sử Đơn hàng để xem lại.
+- Bổ sung hiệu ứng hình ảnh (Active/Hover) trên thanh điều hướng cho các tính năng Home, History, Carts.

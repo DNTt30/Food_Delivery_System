@@ -427,6 +427,12 @@
                             <div style="font-size:0.9rem">${stars}</div>
                             ${itemsText}
                             <p class="mb-0 text-secondary mt-1" style="font-size:0.95rem; line-height: 1.5;">${rv.comment || '<em class="text-muted">Không có bình luận.</em>'}</p>
+                            ${rv.imageUrl ? `<div class="mt-2"><img src="${rv.imageUrl}" class="img-thumbnail" style="max-height: 100px;"></div>` : ''}
+                            ${rv.restaurantReply ? `
+                            <div class="bg-light p-2 rounded mt-2 border border-slate-200">
+                                <p class="mb-1 text-muted small"><strong>Phản hồi từ quán:</strong></p>
+                                <p class="mb-0 italic text-secondary" style="font-size:0.9rem">${rv.restaurantReply}</p>
+                            </div>` : ''}
                         </div>
                     </div>
                 </div>`;

@@ -142,7 +142,10 @@ public class CustomerApiController {
                     r.getRating(),
                     r.getComment(),
                     r.getCreatedAt() != null ? r.getCreatedAt().toString() : "",
-                    items
+                    items,
+                    r.getImageUrl(),
+                    r.getRestaurantReply(),
+                    r.getRepliedAt() != null ? r.getRepliedAt().toString() : ""
             );
         }).collect(Collectors.toList());
 
@@ -324,7 +327,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Đánh giá phải từ 1 đến 5 sao"));
 
         try {
-            orderService.reviewOrder(id, customer, request.rating, request.comment);
+            orderService.reviewOrder(id, customer, request.rating, request.comment, request.imageUrl);
             return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã đánh giá!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -440,6 +443,7 @@ public class CustomerApiController {
     public static class ReviewRequest {
         public int rating;
         public String comment;
+        public String imageUrl;
     }
 
     public static class ReviewDTO {
@@ -448,13 +452,20 @@ public class CustomerApiController {
         public String comment;
         public String createdAt;
         public List<String> orderItems;
+        public String imageUrl;
+        public String restaurantReply;
+        public String repliedAt;
 
-        public ReviewDTO(String customerName, int rating, String comment, String createdAt, List<String> orderItems) {
+        public ReviewDTO(String customerName, int rating, String comment, String createdAt, List<String> orderItems,
+                         String imageUrl, String restaurantReply, String repliedAt) {
             this.customerName = customerName;
             this.rating = rating;
             this.comment = comment;
             this.createdAt = createdAt;
             this.orderItems = orderItems;
+            this.imageUrl = imageUrl;
+            this.restaurantReply = restaurantReply;
+            this.repliedAt = repliedAt;
         }
     }
 }

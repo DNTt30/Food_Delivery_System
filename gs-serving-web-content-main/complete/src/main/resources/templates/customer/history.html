@@ -65,6 +65,15 @@
                     <label class="fw-semibold mb-2">Nhận xét của bạn</label>
                     <textarea id="reviewComment" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
                 </div>
+                <div class="mb-3">
+                    <label class="fw-semibold mb-2">Hình ảnh đính kèm (Tùy chọn)</label>
+                    <input type="file" id="reviewImageFile" accept="image/*" class="form-control">
+                    <div id="imageUploadProgress" class="text-muted mt-1" style="font-size: 0.85rem"></div>
+                    <div id="imagePreviewContainer" class="mt-2 text-center d-none">
+                        <img id="imagePreview" src="" alt="Thumbnail preview" class="img-thumbnail" style="max-height: 120px; width: auto;">
+                        <input type="hidden" id="reviewImageUrlVal" value="">
+                    </div>
+                </div>
                 <div id="reviewAlert" class="alert d-none"></div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -164,7 +173,7 @@
                             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                 <div>
                                     <h6 class="fw-bold mb-0">${o.restaurantName}</h6>
-                                    <small class="text-muted">${formatDate(o.orderTime)}</small>
+                                    <small class="text-muted">Đơn #${o.id} • ${formatDate(o.orderTime)}</small>
                                 </div>
                                 <span class="badge rounded-pill px-3 py-2 status-${o.status} fw-semibold"
                                       style="font-size:0.78rem;">${STATUS_LABELS[o.status] || o.status}</span>
@@ -230,6 +239,13 @@
         document.getElementById('reviewComment').readOnly = false;
         document.getElementById('btnSubmitReview').classList.remove('d-none');
         document.getElementById('reviewAlert').className = 'alert d-none';
+        
+        // Reset image
+        document.getElementById('reviewImageFile').value = '';
+        document.getElementById('imageUploadProgress').innerHTML = '';
+        document.getElementById('imagePreviewContainer').classList.add('d-none');
+        document.getElementById('reviewImageUrlVal').value = '';
+        
         selectedRating = 0;
         selectStar(0);
         
@@ -266,16 +282,52 @@
         });
     }
 
+    document.getElementById('reviewImageFile').addEventListener('change', async function() {
+        const fileInput = this;
+        if (fileInput.files.length === 0) return;
+
+        const progressDiv = document.getElementById('imageUploadProgress');
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const previewImg = document.getElementById('imagePreview');
+        const hiddenUrlInput = document.getElementById('reviewImageUrlVal');
+
+        progressDiv.innerHTML = "⏳ Đang tải ảnh của bạn lên máy chủ...";
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const res = await fetch('/api/upload/image', { 
+                method: 'POST', 
+                headers: { 'Authorization': 'Bearer ' + token }, 
+                body: formData 
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                hiddenUrlInput.value = data.url;
+                previewImg.src = data.url;
+                previewContainer.classList.remove('d-none');
+                progressDiv.innerHTML = "<span class='text-success'>✅ Tải ảnh thành công!</span>";
+            } else {
+                progressDiv.innerHTML = "<span class='text-danger'>❌ Lỗi khi tải lên. Vui lòng chọn ảnh khác!</span>";
+            }
+        } catch (err) {
+            progressDiv.innerHTML = "<span class='text-danger'>❌ Không thể kết nối máy chủ.</span>";
+        }
+    });
+
     async function submitReview() {
         if (!selectedRating) { alert('Vui lòng chọn số sao!'); return; }
         const orderId = document.getElementById('reviewOrderId').value;
+        const imageUrl = document.getElementById('reviewImageUrlVal').value;
         const btn = document.getElementById('btnSubmitReview');
         btn.disabled = true;
         try {
             const res = await fetch(`/api/customer/orders/${orderId}/review`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ rating: selectedRating, comment: document.getElementById('reviewComment').value })
+                body: JSON.stringify({ rating: selectedRating, comment: document.getElementById('reviewComment').value, imageUrl: imageUrl })
             });
             const data = await res.json();
             const alertEl = document.getElementById('reviewAlert');

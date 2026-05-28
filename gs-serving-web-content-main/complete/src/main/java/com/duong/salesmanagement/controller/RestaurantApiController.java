@@ -36,6 +36,7 @@ public class RestaurantApiController {
     private final ReviewRepository reviewRepository;
     private final IOrderService orderService;
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
+    private final com.duong.salesmanagement.service.NotificationService notificationService;
 
     public RestaurantApiController(UserRepository userRepository,
                                    RestaurantProfileRepository restaurantProfileRepository,
@@ -44,7 +45,8 @@ public class RestaurantApiController {
                                    VoucherRepository voucherRepository,
                                    ReviewRepository reviewRepository,
                                    IOrderService orderService,
-                                   com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository) {
+                                   com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository,
+                                   com.duong.salesmanagement.service.NotificationService notificationService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -53,6 +55,7 @@ public class RestaurantApiController {
         this.reviewRepository = reviewRepository;
         this.orderService = orderService;
         this.trackingLocationRepository = trackingLocationRepository;
+        this.notificationService = notificationService;
     }
 
     // ================================================================
@@ -502,13 +505,54 @@ public class RestaurantApiController {
                 r.getOrder().getCustomer().getUser().getFullName(),
                 r.getRating(),
                 r.getComment(),
-                r.getCreatedAt() != null ? r.getCreatedAt().toString() : null
+                r.getCreatedAt() != null ? r.getCreatedAt().toString() : null,
+                r.getImageUrl(),
+                r.getRestaurantReply(),
+                r.getRepliedAt() != null ? r.getRepliedAt().toString() : null
         )).collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
                 "reviews", dtos,
                 "avgRating", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0,
                 "totalReviews", dtos.size()
+        ));
+    }
+
+    @PostMapping("/reviews/{id}/reply")
+    public ResponseEntity<?> replyToReview(Authentication auth, 
+                                           @PathVariable Long id, 
+                                           @RequestBody Map<String, String> body) {
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
+
+        Review review = reviewRepository.findById(id).orElse(null);
+        if (review == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Đánh giá không tồn tại"));
+        }
+
+        if (!review.getOrder().getRestaurant().getId().equals(restaurant.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Không có quyền phản hồi đánh giá này"));
+        }
+
+        String replyText = body.get("reply");
+        if (replyText == null || replyText.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Nội dung phản hồi không được bỏ trống"));
+        }
+
+        review.setRestaurantReply(replyText);
+        review.setRepliedAt(LocalDateTime.now());
+        reviewRepository.save(review);
+
+        notificationService.notifyRestaurantReplied(
+                review.getOrder().getCustomer().getUser(), 
+                review.getOrder().getId(),
+                restaurant.getRestaurantName()
+        );
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Phản hồi đánh giá thành công!",
+            "repliedAt", review.getRepliedAt()
         ));
     }
 
@@ -600,11 +644,16 @@ public class RestaurantApiController {
         public Integer rating;
         public String comment;
         public String createdAt;
+        public String imageUrl;
+        public String restaurantReply;
+        public String repliedAt;
 
         public ReviewDTO(Long id, Long orderId, String customerName,
-                         Integer rating, String comment, String createdAt) {
+                         Integer rating, String comment, String createdAt,
+                         String imageUrl, String restaurantReply, String repliedAt) {
             this.id = id; this.orderId = orderId; this.customerName = customerName;
             this.rating = rating; this.comment = comment; this.createdAt = createdAt;
+            this.imageUrl = imageUrl; this.restaurantReply = restaurantReply; this.repliedAt = repliedAt;
         }
     }
 }

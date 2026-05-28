@@ -19,6 +19,15 @@ public class Review {
     private String comment;
     private LocalDateTime createdAt;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "restaurant_reply", columnDefinition = "TEXT")
+    private String restaurantReply;
+
+    @Column(name = "replied_at")
+    private LocalDateTime repliedAt;
+
     public Review() {}
 
     public Long getId() { return id; }
@@ -31,4 +40,10 @@ public class Review {
     public void setComment(String comment) { this.comment = comment; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getRestaurantReply() { return restaurantReply; }
+    public void setRestaurantReply(String restaurantReply) { this.restaurantReply = restaurantReply; }
+    public LocalDateTime getRepliedAt() { return repliedAt; }
+    public void setRepliedAt(LocalDateTime repliedAt) { this.repliedAt = repliedAt; }
 }

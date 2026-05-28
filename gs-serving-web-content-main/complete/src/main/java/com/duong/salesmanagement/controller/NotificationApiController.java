@@ -148,6 +148,12 @@ public class NotificationApiController {
             return null;
         }
         String role = n.getUser().getRole().name();
+        
+        // Custom override for NEW_REVIEW
+        if (n.getType() == NotificationType.NEW_REVIEW && "CUSTOMER".equals(role)) {
+            return "/customer/history";
+        }
+
         return switch (role) {
             case "CUSTOMER"   -> "/customer/tracking?orderId=" + n.getRelatedOrderId();
             case "RESTAURANT" -> "/restaurant/orders";

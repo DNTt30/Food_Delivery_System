@@ -219,4 +219,13 @@ public class NotificationService {
                 String.format("Bạn đã giao thành công đơn #%d. Thu nhập: +%.0f₫", orderId, earnings),
                 NotificationType.ORDER_COMPLETED, orderId);
     }
+
+    /** Gửi thông báo khi nhà hàng trả lời đánh giá (cho Customer) */
+    @Transactional
+    public void notifyRestaurantReplied(User customerUser, Long orderId, String restaurantName) {
+        createNotification(customerUser,
+                "💬 Phản hồi đánh giá mới!",
+                "Nhà hàng " + restaurantName + " đã phản hồi đánh giá của bạn cho đơn #" + orderId + ".",
+                NotificationType.NEW_REVIEW, orderId);
+    }
 }

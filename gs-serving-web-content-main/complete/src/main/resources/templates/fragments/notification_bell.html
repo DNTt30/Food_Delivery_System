@@ -34,6 +34,7 @@
             line-height: 1;
         }
         #notifBellBtn:hover { background: #fef2f2; color: #ef4444; }
+        #notifBellBtn.active { background: #ffe4e6; color: #ef4444; box-shadow: 0 4px 10px rgba(255, 75, 43, 0.15); }
         #notifBellBtn i { font-size: 1.25rem; }
 
         #notifBadge {
@@ -361,6 +362,10 @@
             toggle() {
                 _isOpen = !_isOpen;
                 dropdown().style.display = _isOpen ? 'block' : 'none';
+                const bellBtn = document.getElementById('notifBellBtn');
+                if (bellBtn) {
+                    _isOpen ? bellBtn.classList.add('active') : bellBtn.classList.remove('active');
+                }
                 if (_isOpen) {
                     _renderList();
                     // Mark all as read when user opens
@@ -373,6 +378,8 @@
             close() {
                 _isOpen = false;
                 dropdown().style.display = 'none';
+                const bellBtn = document.getElementById('notifBellBtn');
+                if (bellBtn) bellBtn.classList.remove('active');
             },
 
             setFilter(filter, btn) {

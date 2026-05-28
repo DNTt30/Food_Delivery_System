@@ -180,8 +180,42 @@ function renderReviews(reviews) {
                     <span class="ms-1 text-muted small">(${r.rating}/5)</span>
                 </div>
                 ${r.comment
-                    ? `<p class="review-comment mb-0">"${esc(r.comment)}"</p>`
-                    : `<p class="review-comment text-muted mb-0 fst-italic">Khách hàng không để lại bình luận</p>`}
+                    ? `<p class="review-comment mb-2">"${esc(r.comment)}"</p>`
+                    : `<p class="review-comment text-muted mb-2 fst-italic">Khách hàng không để lại bình luận</p>`}
+                
+                ${r.imageUrl ? `
+                <div class="mb-3">
+                    <a href="${r.imageUrl}" target="_blank" title="Cầm để xem ảnh">
+                        <img src="${r.imageUrl}" class="img-thumbnail" style="max-height: 120px; width: auto; cursor: zoom-in;">
+                    </a>
+                </div>` : ''}
+
+                ${r.restaurantReply ? `
+                <div id="replyDisplay-${r.id}" class="bg-light p-3 rounded mt-2 border" style="border-color: #e2e8f0 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <p class="mb-0 text-muted" style="font-size: 0.8rem;"><strong>Phản hồi từ quán của bạn:</strong></p>
+                        <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none" onclick="editReplyForm(${r.id}, '${esc(r.restaurantReply).replace(/'/g, "\\'")}')" style="font-size: 0.75rem;"><i class="bi bi-pencil me-1"></i>Sửa</button>
+                    </div>
+                    <p class="mb-1 fst-italic text-secondary" style="font-size: 0.85rem;">${esc(r.restaurantReply)}</p>
+                    <span class="text-muted" style="font-size: 0.75rem;">${fmtDate(r.repliedAt)}</span>
+                </div>
+                <div id="form-container-${r.id}" class="d-none mt-2">
+                    <textarea id="replyInput-${r.id}" class="form-control mb-2 text-sm" rows="2" placeholder="Nhập câu trả lời gửi đến khách..." style="font-size: 0.85rem;"></textarea>
+                    <div class="text-end">
+                        <button class="btn btn-secondary btn-sm me-1" onclick="hideReplyForm(${r.id})" style="font-size: 0.8rem;">Hủy bỏ</button>
+                        <button class="btn btn-success btn-sm fw-bold" onclick="submitReply(${r.id})" style="font-size: 0.8rem;">Cập nhật</button>
+                    </div>
+                </div>` : `
+                <div id="replyBox-${r.id}" class="mt-2">
+                    <button id="replyBtn-${r.id}" class="btn btn-outline-primary btn-sm" onclick="showReplyForm(${r.id})" style="font-size: 0.8rem;"><i class="bi bi-chat-dots me-1"></i> Phản hồi</button>
+                    <div id="form-container-${r.id}" class="d-none mt-2">
+                        <textarea id="replyInput-${r.id}" class="form-control mb-2 text-sm" rows="2" placeholder="Nhập câu trả lời gửi đến khách..." style="font-size: 0.85rem;"></textarea>
+                        <div class="text-end">
+                            <button class="btn btn-secondary btn-sm me-1" onclick="hideReplyForm(${r.id})" style="font-size: 0.8rem;">Hủy bỏ</button>
+                            <button class="btn btn-success btn-sm fw-bold" onclick="submitReply(${r.id})" style="font-size: 0.8rem;">Gửi phản hồi</button>
+                        </div>
+                    </div>
+                </div>`}
             </div>
         </div>
         </div>`);
@@ -189,6 +223,55 @@ function renderReviews(reviews) {
 }
 
 loadReviews();
+
+// Reply form actions
+function editReplyForm(id, oldText) {
+    document.getElementById('replyDisplay-' + id).classList.add('d-none');
+    document.getElementById('form-container-' + id).classList.remove('d-none');
+    document.getElementById('replyInput-' + id).value = oldText;
+}
+
+function showReplyForm(id) {
+    document.getElementById('replyBtn-' + id).classList.add('d-none');
+    document.getElementById('form-container-' + id).classList.remove('d-none');
+}
+
+function hideReplyForm(id) {
+    document.getElementById('form-container-' + id).classList.add('d-none');
+    const displayEl = document.getElementById('replyDisplay-' + id);
+    if (displayEl) {
+        displayEl.classList.remove('d-none');
+    } else {
+        document.getElementById('replyBtn-' + id).classList.remove('d-none');
+    }
+}
+
+async function submitReply(id) {
+    const input = document.getElementById('replyInput-' + id);
+    const text = input.value.trim();
+    if (!text) return alert("Nội dung phản hồi không được rỗng!");
+
+    try {
+        const res = await fetch('/api/restaurant/reviews/' + id + '/reply', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ reply: text })
+        });
+
+        if (res.ok) {
+            loadReviews(); // Tải lại danh sách để cập nhật view
+        } else {
+            const data = await res.json();
+            alert(data.error || "Lỗi khi kết nối gửi dữ liệu đến API.");
+        }
+    } catch (err) {
+        console.error("Error Reply:", err);
+        alert("Lỗi kết nối.");
+    }
+}
 </script>
 
 </main>

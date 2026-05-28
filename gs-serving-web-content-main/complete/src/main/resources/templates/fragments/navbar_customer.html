@@ -74,6 +74,12 @@
             transform: translateY(-2px);
         }
 
+        .nav-action-btn.active {
+            background: #ffe4e6;
+            color: var(--nav-accent);
+            box-shadow: 0 4px 10px rgba(255, 75, 43, 0.15);
+        }
+
         .nav-badge {
             position: absolute;
             top: -4px;
@@ -314,6 +320,20 @@
             } else {
                 nav.style.padding = '12px 0';
                 nav.style.boxShadow = 'none';
+            }
+        });
+
+        // Set active state for navbar icons
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.nav-action-btn').forEach(btn => {
+            const href = btn.getAttribute('href');
+            // Check if current URL matches the href
+            if (href && href !== '#' && currentPath.startsWith(href)) {
+                btn.classList.add('active');
+                if (btn.style.color === 'rgb(255, 51, 102)' || btn.style.color === '#ff3366') {
+                    btn.style.color = ''; // let CSS handle color when active
+                }
+                btn.style.animation = 'none'; // stop pulse if active
             }
         });
     });
