@@ -96,7 +96,7 @@ public class PaymentController {
 
         // TIME VN
         Calendar cld =
-    Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+    Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
 
         SimpleDateFormat formatter =
                 new SimpleDateFormat("yyyyMMddHHmmss");
@@ -137,7 +137,7 @@ public class PaymentController {
 
         vnp_Params.put(
                 "vnp_OrderInfo",
-                "Thanh toan don hang " + vnp_TxnRef
+                "Thanh toan don hang_" + vnp_TxnRef
         );
 
     
@@ -178,47 +178,41 @@ public class PaymentController {
 
             boolean first = true;
 
-            for (Map.Entry<String, String> entry
-                    : vnp_Params.entrySet()) {
+           for (Map.Entry<String, String> entry : vnp_Params.entrySet()) {
 
-                String fieldName =
-                        entry.getKey();
+    String fieldName = entry.getKey();
+    String fieldValue = entry.getValue();
 
-                String fieldValue =
-                        entry.getValue();
+    if (fieldValue != null && !fieldValue.isEmpty()) {
 
-                if (fieldValue != null
-                        && !fieldValue.isEmpty()) {
+        String encodedValue = URLEncoder.encode(
+                fieldValue,
+                StandardCharsets.US_ASCII.toString()
+        );
 
-                    if (!first) {
+        if (!first) {
+            hashData.append("&");
+            query.append("&");
+        }
 
-                        hashData.append('&');
-                        query.append('&');
-                    }
+        // HASH DATA
+        hashData.append(fieldName)
+                .append("=")
+                .append(encodedValue);
 
-                    // HASH DATA KHÔNG ENCODE
-                    hashData.append(fieldName)
-                            .append('=')
-                            .append(fieldValue);
+        // QUERY
+        query.append(
+                URLEncoder.encode(
+                        fieldName,
+                        StandardCharsets.US_ASCII.toString()
+                )
+        )
+        .append("=")
+        .append(encodedValue);
 
-                    // QUERY PHẢI ENCODE UTF8
-                    query.append(
-                                    URLEncoder.encode(
-                                            fieldName,
-                                            StandardCharsets.UTF_8
-                                    )
-                            )
-                            .append('=')
-                            .append(
-                                    URLEncoder.encode(
-                                            fieldValue,
-                                            StandardCharsets.UTF_8
-                                    )
-                            );
-
-                    first = false;
-                }
-            }
+        first = false;
+    }
+}
 
             log.info("HASH DATA = {}", hashData);
 
@@ -436,8 +430,13 @@ public class PaymentController {
                 }
 
                 sb.append(entry.getKey())
-                        .append('=')
-                        .append(fieldValue);
+                  .append("=")
+                  .append(
+                      URLEncoder.encode(
+                           fieldValue,
+                        StandardCharsets.US_ASCII
+      )
+  );
 
                 first = false;
             }
