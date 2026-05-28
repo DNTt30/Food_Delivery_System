@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Kết quả thanh toán</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f4f4f4;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            margin:0;
+        }
+
+        .box{
+            background:white;
+            padding:40px;
+            border-radius:12px;
+            box-shadow:0 0 10px rgba(0,0,0,0.1);
+            text-align:center;
+            width:400px;
+        }
+
+        .success{
+            color:green;
+        }
+
+        .fail{
+            color:red;
+        }
+
+        .btn{
+            display:inline-block;
+            margin-top:20px;
+            padding:10px 20px;
+            background:#007bff;
+            color:white;
+            text-decoration:none;
+            border-radius:6px;
+        }
+
+        .btn:hover{
+            background:#0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+
+    <h1 id="title">Đang xử lý...</h1>
+
+    <p id="message"></p>
+
+    <p id="order"></p>
+
+    <a href="/" class="btn">
+        Về trang chủ
+    </a>
+
+</div>
+
+<script>
+
+    const params = new URLSearchParams(window.location.search);
+
+    const status = params.get("status");
+
+    const orderId = params.get("orderId");
+
+    const title = document.getElementById("title");
+
+    const message = document.getElementById("message");
+
+    const order = document.getElementById("order");
+
+    if(status === "success"){
+
+        title.innerText = "Thanh toán thành công";
+
+        title.classList.add("success");
+
+        message.innerText =
+            "Đơn hàng của bạn đã được thanh toán.";
+
+    }else{
+
+        title.innerText = "Thanh toán thất bại";
+
+        title.classList.add("fail");
+
+        message.innerText =
+            "Giao dịch không thành công.";
+    }
+
+    order.innerText = "Mã đơn hàng: " + orderId;
+
+</script>
+
+</body>
+</html>
