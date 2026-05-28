@@ -26,6 +26,7 @@ public class OrderService {
     private final GeocodingService geocodingService;
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final ShippingCalculationService shippingCalculationService;
+    private final PaymentRepository paymentRepository;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
@@ -37,7 +38,8 @@ public class OrderService {
                         NotificationService notificationService,
                         GeocodingService geocodingService,
                         RestaurantProfileRepository restaurantProfileRepository,
-                        ShippingCalculationService shippingCalculationService) {
+                        ShippingCalculationService shippingCalculationService,
+                        PaymentRepository paymentRepository) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
@@ -49,6 +51,7 @@ public class OrderService {
         this.geocodingService = geocodingService;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.shippingCalculationService = shippingCalculationService;
+        this.paymentRepository = paymentRepository;
     }
 
     /**
@@ -75,7 +78,8 @@ public class OrderService {
 
     @Transactional
     public FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
-                                 List<OrderItemRequest> itemRequests, String deliveryAddress, String voucherCode) {
+                                 List<OrderItemRequest> itemRequests, String deliveryAddress,
+                                 String voucherCode, String paymentMethodStr) {
         FoodOrder order = new FoodOrder();
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
@@ -171,6 +175,19 @@ public class OrderService {
 
         savedOrder.setTotalAmount(totalAmount);
         FoodOrder finalOrder = foodOrderRepository.save(savedOrder);
+
+        // 💳 Tạo bản ghi Payment
+        PaymentMethod paymentMethod = PaymentMethod.CASH_ON_DELIVERY;
+        if ("VNPAY".equalsIgnoreCase(paymentMethodStr)) {
+            paymentMethod = PaymentMethod.VNPAY;
+        }
+        Payment payment = new Payment();
+        payment.setOrder(finalOrder);
+        payment.setPaymentMethod(paymentMethod);
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setAmount(totalAmount);
+        payment.setTransactionDate(LocalDateTime.now());
+        paymentRepository.save(payment);
 
         // 🔔 Notify: Customer đã đặt đơn
         notificationService.notifyOrderCreated(

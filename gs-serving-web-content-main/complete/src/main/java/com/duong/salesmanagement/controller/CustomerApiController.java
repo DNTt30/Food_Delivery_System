@@ -135,7 +135,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Nhà hàng hiện đang đóng cửa"));
 
         try {
-            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.voucherCode);
+            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.voucherCode, request.paymentMethod);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Đặt hàng thành công!",
                     "orderId", order.getId(),
