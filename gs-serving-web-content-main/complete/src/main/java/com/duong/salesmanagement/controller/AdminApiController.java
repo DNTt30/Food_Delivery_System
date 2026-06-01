@@ -57,15 +57,14 @@ public class AdminApiController {
 
         long totalUsers = userRepository.count();
         long totalRestaurants = restaurantProfileRepository.count();
-        List<FoodOrder> allOrders = foodOrderRepository.findAllByOrderByOrderTimeDesc();
-        long totalOrders = allOrders.size();
-        long pendingOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
-        long preparingOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PREPARING).count();
-        long deliveringOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERING).count();
-        long completedOrders = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
-        double totalRevenue = allOrders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                .mapToDouble(FoodOrder::getTotalAmount).sum();
+        long totalOrders = foodOrderRepository.count();
+        long pendingOrders = foodOrderRepository.countByStatus(OrderStatus.PENDING);
+        long preparingOrders = foodOrderRepository.countByStatus(OrderStatus.PREPARING);
+        long deliveringOrders = foodOrderRepository.countByStatus(OrderStatus.DELIVERING);
+        long completedOrders = foodOrderRepository.countByStatus(OrderStatus.COMPLETED);
+        
+        Double revenueOpt = foodOrderRepository.sumTotalAmountByStatus(OrderStatus.COMPLETED);
+        double totalRevenue = revenueOpt != null ? revenueOpt : 0.0;
 
         java.util.Map<String, Object> stats = new java.util.LinkedHashMap<>();
         stats.put("totalUsers", totalUsers);

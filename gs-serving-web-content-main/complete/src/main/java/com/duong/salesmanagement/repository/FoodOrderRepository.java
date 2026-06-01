@@ -29,4 +29,9 @@ public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
 
     @Query("SELECT o FROM FoodOrder o WHERE o.restaurant = :r AND o.status = :s ORDER BY o.orderTime DESC")
     List<FoodOrder> findByRestaurantAndStatus(@Param("r") RestaurantProfile r, @Param("s") OrderStatus s);
+
+    long countByStatus(OrderStatus status);
+
+    @Query("SELECT SUM(o.totalAmount) FROM FoodOrder o WHERE o.status = :status")
+    Double sumTotalAmountByStatus(@Param("status") OrderStatus status);
 }
