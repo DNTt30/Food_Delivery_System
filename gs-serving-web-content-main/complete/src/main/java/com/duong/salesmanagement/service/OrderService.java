@@ -108,7 +108,7 @@ public class OrderService implements IOrderService {
         order.setOrderTime(LocalDateTime.now());
         try {
             PaymentMethod pm = PaymentMethod.valueOf(paymentMethodStr);
-            if (pm == PaymentMethod.VNPAY || pm == PaymentMethod.MOMO || pm == PaymentMethod.MOMO_E_WALLET) {
+            if (pm == PaymentMethod.VNPAY || pm == PaymentMethod.MOMO_E_WALLET) {
                 order.setStatus(OrderStatus.PENDING_PAYMENT);
             } else {
                 order.setStatus(OrderStatus.PENDING);
