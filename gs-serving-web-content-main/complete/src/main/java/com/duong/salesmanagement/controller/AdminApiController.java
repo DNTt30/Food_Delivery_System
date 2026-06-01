@@ -236,18 +236,26 @@ public class AdminApiController {
         return ResponseEntity.ok(dtos);
     }
 
-    @PutMapping("/restaurants/{id}/toggle-open")
-    public ResponseEntity<?> toggleRestaurantOpen(Authentication authentication, @PathVariable Long id) {
+    @PutMapping("/restaurants/{id}/toggle-status")
+    public ResponseEntity<?> toggleRestaurantStatus(Authentication authentication, @PathVariable Long id) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         RestaurantProfile restaurant = restaurantProfileRepository.findById(id).orElse(null);
         if (restaurant == null) return ResponseEntity.notFound().build();
 
-        restaurant.setOpen(!restaurant.isOpen());
-        restaurantProfileRepository.save(restaurant);
+        User owner = restaurant.getUser();
+        owner.setEnabled(!owner.isEnabled());
+        userRepository.save(owner);
+        
+        // Nếu bị khóa, tự động đóng cửa hàng luôn
+        if (!owner.isEnabled()) {
+            restaurant.setOpen(false);
+            restaurantProfileRepository.save(restaurant);
+        }
+
         return ResponseEntity.ok(Map.of(
-                "message", restaurant.isOpen() ? "Nhà hàng đã mở cửa" : "Nhà hàng đã đóng cửa",
-                "isOpen", restaurant.isOpen()
+                "message", owner.isEnabled() ? "Đã mở khóa nhà hàng" : "Đã khóa nhà hàng",
+                "ownerEnabled", owner.isEnabled()
         ));
     }
 

@@ -475,18 +475,23 @@
             return;
         }
         el.innerHTML = restaurants.map(r => {
-            const openBadge = r.open
-                ? '<span class="badge bg-success-subtle text-success border border-success">Đang mở</span>'
-                : '<span class="badge bg-danger-subtle text-danger border border-danger">Đóng cửa</span>';
-            const img = r.bannerUrl || r.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=100&fit=crop';
             const ownerEnabled = r.ownerEnabled !== false;
+            let statusBadge = '';
+            if (!ownerEnabled) {
+                statusBadge = '<span class="badge bg-dark-subtle text-dark border border-dark">Đã khóa tài khoản</span>';
+            } else {
+                statusBadge = r.open
+                    ? '<span class="badge bg-success-subtle text-success border border-success">Đang mở cửa</span>'
+                    : '<span class="badge bg-danger-subtle text-danger border border-danger">Đóng cửa</span>';
+            }
+            const img = r.bannerUrl || r.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=100&fit=crop';
 
             return `<div class="col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm rest-card h-100 overflow-hidden">
                     <div class="position-relative" style="height:100px;overflow:hidden;">
                         <img src="${img}" class="w-100 h-100" style="object-fit:cover;"
                              onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=100&fit=crop'">
-                        <div class="position-absolute top-0 end-0 m-2">${openBadge}</div>
+                        <div class="position-absolute top-0 end-0 m-2">${statusBadge}</div>
                     </div>
                     <div class="card-body p-3">
                         <h6 class="fw-bold mb-1 text-truncate">${r.restaurantName}</h6>
@@ -494,13 +499,10 @@
                         <p class="text-muted small mb-2"><i class="bi bi-person me-1"></i>${r.ownerUsername || 'Chưa có chủ'}</p>
                         <div class="d-flex justify-content-between align-items-center gap-2">
                             <div class="d-flex gap-1">
-                                ${!ownerEnabled ? `
-                                <button class="btn btn-sm btn-success rounded-pill px-2 fw-semibold" onclick="approveRestaurant(${r.id}, '${r.restaurantName.replace(/'/g,"&#39;")}')">
-                                    <i class="bi bi-check-lg me-1"></i>Duyệt
-                                </button>` : ''}
-                                <button class="btn btn-sm ${r.open ? 'btn-outline-warning' : 'btn-outline-success'} rounded-pill px-2"
-                                        onclick="toggleRestaurant(${r.id}, ${r.open}, '${r.restaurantName.replace(/'/g,"&#39;")}')">
-                                    ${r.open ? '<i class="bi bi-lock"></i>' : '<i class="bi bi-unlock"></i>'}
+                                <button class="btn btn-sm ${ownerEnabled ? 'btn-outline-danger' : 'btn-outline-success'} rounded-pill px-2"
+                                        title="${ownerEnabled ? 'Khóa tài khoản' : 'Mở khóa / Duyệt'}"
+                                        onclick="toggleRestaurant(${r.id}, ${ownerEnabled}, '${r.restaurantName.replace(/'/g,"&#39;")}')">
+                                    ${ownerEnabled ? '<i class="bi bi-lock-fill"></i> Khóa' : '<i class="bi bi-unlock-fill"></i> Mở'}
                                 </button>
                                 <button class="btn btn-sm btn-outline-primary rounded-pill px-2 fw-semibold" onclick="showRestDetails(${r.id})" title="Xem chi tiết & Đánh giá">
                                     <i class="bi bi-info-circle me-1"></i>Chi tiết
@@ -525,13 +527,13 @@
         } catch { showToast('Lỗi kết nối!', 'danger'); }
     }
 
-    async function toggleRestaurant(id, currentOpen, name) {
-        if (!confirm(`${currentOpen ? 'Đóng cửa' : 'Mở cửa'} nhà hàng "${name}"?`)) return;
+    async function toggleRestaurant(id, currentEnabled, name) {
+        if (!confirm(`${currentEnabled ? 'Khóa' : 'Mở khóa'} tài khoản nhà hàng "${name}"?`)) return;
         try {
-            const res = await fetch(`/api/admin/restaurants/${id}/toggle-open`, {
+            const res = await fetch(`/api/admin/restaurants/${id}/toggle-status`, {
                 method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
             });
-            if (res.ok) { showToast(`Đã ${currentOpen ? 'đóng' : 'mở'} nhà hàng ${name}`, 'success'); loadAll(); }
+            if (res.ok) { showToast(`Đã ${currentEnabled ? 'khóa' : 'mở khóa'} nhà hàng ${name}`, 'success'); loadAll(); }
             else showToast('Lỗi cập nhật!', 'danger');
         } catch { showToast('Lỗi kết nối!', 'danger'); }
     }
