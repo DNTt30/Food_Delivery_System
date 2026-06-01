@@ -16,24 +16,29 @@ import java.util.List;
  */
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    List<Review> findByRestaurant(RestaurantProfile restaurant);
+    @Query("SELECT r FROM Review r WHERE r.order.restaurant = :restaurant ORDER BY r.createdAt DESC")
+    List<Review> findByRestaurant(@Param("restaurant") RestaurantProfile restaurant);
     
-    Double avgRatingByRestaurant(RestaurantProfile restaurant);
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.order.restaurant = :restaurant")
+    Double avgRatingByRestaurant(@Param("restaurant") RestaurantProfile restaurant);
     
     /**
      * Lấy danh sách review của nhà hàng với phân trang
      */
-    Page<Review> findByRestaurant(RestaurantProfile restaurant, Pageable pageable);
+    @Query("SELECT r FROM Review r WHERE r.order.restaurant = :restaurant")
+    Page<Review> findByRestaurant(@Param("restaurant") RestaurantProfile restaurant, Pageable pageable);
     
     /**
      * Lấy danh sách review của nhà hàng, sắp xếp theo rating (cao nhất trước)
      */
-    Page<Review> findByRestaurantOrderByRatingDesc(RestaurantProfile restaurant, Pageable pageable);
+    @Query("SELECT r FROM Review r WHERE r.order.restaurant = :restaurant ORDER BY r.rating DESC")
+    Page<Review> findByRestaurantOrderByRatingDesc(@Param("restaurant") RestaurantProfile restaurant, Pageable pageable);
     
     /**
      * Lấy danh sách review của nhà hàng, sắp xếp theo ngày tạo (mới nhất trước)
      */
-    Page<Review> findByRestaurantOrderByCreatedAtDesc(RestaurantProfile restaurant, Pageable pageable);
+    @Query("SELECT r FROM Review r WHERE r.order.restaurant = :restaurant ORDER BY r.createdAt DESC")
+    Page<Review> findByRestaurantOrderByCreatedAtDesc(@Param("restaurant") RestaurantProfile restaurant, Pageable pageable);
     
     /**
      * Đếm số review chưa được phản hồi
