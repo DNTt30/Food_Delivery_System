@@ -71,7 +71,9 @@ public class CustomerApiController {
             restaurants = restaurantProfileRepository.findAll();
         }
 
-        List<RestaurantDTO> dtos = restaurants.stream().map(r -> new RestaurantDTO(
+        List<RestaurantDTO> dtos = restaurants.stream()
+                .filter(r -> r.getUser() != null && r.getUser().isEnabled())
+                .map(r -> new RestaurantDTO(
                 r.getId(),
                 r.getRestaurantName(),
                 r.getAddress(),
@@ -88,7 +90,9 @@ public class CustomerApiController {
     @GetMapping("/top-items")
     public ResponseEntity<?> getTopItems() {
         List<MenuItem> items = menuItemRepository.findTop10ByIsAvailableTrueOrderBySoldCountDesc();
-        List<Map<String, Object>> result = items.stream().map(m -> {
+        List<Map<String, Object>> result = items.stream()
+                .filter(m -> m.getRestaurant() != null && m.getRestaurant().getUser() != null && m.getRestaurant().getUser().isEnabled())
+                .map(m -> {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", m.getId());
             map.put("name", m.getName());
