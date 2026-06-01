@@ -1,24 +1,61 @@
 package com.duong.salesmanagement.repository;
 
-import com.duong.salesmanagement.model.FoodOrder;
-import com.duong.salesmanagement.model.RestaurantProfile;
 import com.duong.salesmanagement.model.Review;
+import com.duong.salesmanagement.model.RestaurantProfile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Repository cho Review với hỗ trợ phân trang
+ */
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    Optional<Review> findByOrder(FoodOrder order);
-    boolean existsByOrder(FoodOrder order);
-
-    @Query("SELECT r FROM Review r WHERE r.order.restaurant = :restaurant ORDER BY r.createdAt DESC")
-    List<Review> findByRestaurant(@Param("restaurant") RestaurantProfile restaurant);
-
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.order.restaurant = :restaurant")
-    Double avgRatingByRestaurant(@Param("restaurant") RestaurantProfile restaurant);
+    List<Review> findByRestaurant(RestaurantProfile restaurant);
+    
+    Double avgRatingByRestaurant(RestaurantProfile restaurant);
+    
+    /**
+     * Lấy danh sách review của nhà hàng với phân trang
+     */
+    Page<Review> findByRestaurant(RestaurantProfile restaurant, Pageable pageable);
+    
+    /**
+     * Lấy danh sách review của nhà hàng, sắp xếp theo rating (cao nhất trước)
+     */
+    Page<Review> findByRestaurantOrderByRatingDesc(RestaurantProfile restaurant, Pageable pageable);
+    
+    /**
+     * Lấy danh sách review của nhà hàng, sắp xếp theo ngày tạo (mới nhất trước)
+     */
+    Page<Review> findByRestaurantOrderByCreatedAtDesc(RestaurantProfile restaurant, Pageable pageable);
+    
+    /**
+     * Đếm số review chưa được phản hồi
+     */
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId AND r.restaurantReply IS NULL")
+    Long countUnrepliedReviews(@Param("restaurantId") Long restaurantId);
+    
+    /**
+     * Đếm số review có ảnh
+     */
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId AND r.imageUrl IS NOT NULL")
+    Long countReviewsWithImages(@Param("restaurantId") Long restaurantId);
+    
+    /**
+     * Lấy trung bình rating
+     */
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.order.restaurant.id = :restaurantId")
+    Double getAverageRating(@Param("restaurantId") Long restaurantId);
+    
+    /**
+     * Phân bố rating (số lượng review theo từng mức sao)
+     */
+    @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId GROUP BY r.rating ORDER BY r.rating DESC")
+    List<Object[]> getRatingDistribution(@Param("restaurantId") Long restaurantId);
 }
