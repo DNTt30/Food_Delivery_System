@@ -36,9 +36,6 @@ public class ProfanityFilterService {
         
         String filtered = text;
         
-        // Chuyển về lowercase để so sánh
-        String lowerText = text.toLowerCase();
-        
         for (String word : BANNED_WORDS) {
             // Tạo regex pattern (case-insensitive, word boundary)
             String pattern = "(?i)\\b" + Pattern.quote(word) + "\\b";
