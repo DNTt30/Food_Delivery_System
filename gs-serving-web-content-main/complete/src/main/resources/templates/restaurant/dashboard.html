@@ -119,6 +119,18 @@
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
     }
+    .btn-outline-primary {
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+    .btn-outline-primary:hover, .btn-outline-primary.active {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+    }
+    .bg-light-subtle {
+        background-color: #f8f9fa;
+    }
 </style>
 
 <!-- Restaurant Banner -->
@@ -276,6 +288,172 @@
         </div>
     </div>
 
+
+    <!-- ================= DETAILED ANALYTICS SECTION ================= -->
+    <hr class="my-5" style="border-top: 1px dashed #ced4da;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold mb-0">📈 Phân Tích Chi Tiết & Báo Cáo Doanh Số</h4>
+            <small class="text-muted">Xem phân tích sâu về doanh thu, tốc độ tăng trưởng và hiệu suất sản phẩm</small>
+        </div>
+    </div>
+
+    <!-- ===== DATE RANGE PICKER ===== -->
+    <div class="card chart-card p-4 mb-4">
+        <h6 class="section-title mb-3">
+            <i class="bi bi-calendar3 text-primary me-2"></i>Chọn Khoảng Thời Gian Báo Cáo
+        </h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 active" id="btn-this-week" onclick="loadAnalyticsData('this-week')">Tuần Này</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btn-this-month" onclick="loadAnalyticsData('this-month')">Tháng Này</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btn-previous-month" onclick="loadAnalyticsData('previous-month')">Tháng Trước</button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" id="btn-this-year" onclick="loadAnalyticsData('this-year')">Năm Nay</button>
+            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="collapse" data-bs-target="#customRangeCollapse" aria-expanded="false" aria-controls="customRangeCollapse">
+                <i class="bi bi-sliders me-1"></i>Tùy Chọn Khác
+            </button>
+        </div>
+
+        <!-- Custom Date Range Form -->
+        <div class="collapse" id="customRangeCollapse">
+            <div class="card p-3 border shadow-none bg-light-subtle rounded-3 mt-2">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4 col-sm-6">
+                        <label for="customStartDate" class="form-label small fw-semibold text-muted">Từ Ngày</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                            <input type="date" id="customStartDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <label for="customEndDate" class="form-label small fw-semibold text-muted">Đến Ngày</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                            <input type="date" id="customEndDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <button class="btn btn-sm btn-success w-100 fw-bold rounded-pill" onclick="loadCustomRangeData()">
+                            <i class="bi bi-search me-1"></i>Áp Dụng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== REVENUE & ORDER COMPARISON METRICS ===== -->
+    <div class="row g-4 mb-4">
+        <!-- Doanh Thu Báo Cáo -->
+        <div class="col-md-6">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f3fcf6 0%, #fff 100%); border-left: 5px solid #2e7d32;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(46,125,50,0.12); color: #2e7d32;">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                    <span class="trend-badge" id="growthPercentBadge" style="background: rgba(46,125,50,0.1); color: #2e7d32;">
+                        <span id="growthIcon">↑</span> <span id="growthPercent">0%</span>
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Doanh Thu Kỳ Này (<span id="periodLabelText">Tuần Này</span>)</p>
+                <p class="stat-value mb-0 text-success" id="currentPeriodRevenue" style="font-size: 2.2rem;">0 đ</p>
+                <div class="small text-muted mt-2">
+                    Kỳ trước: <strong id="previousPeriodRevenue">0 đ</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Số Đơn Hàng Báo Cáo -->
+        <div class="col-md-6">
+            <div class="card stat-card shadow-sm p-4 h-100" style="background: linear-gradient(135deg, #f7f9fc 0%, #fff 100%); border-left: 5px solid #0056b3;">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="icon-bg" style="background: rgba(0,86,179,0.12); color: #0056b3;">
+                        <i class="bi bi-cart-check-fill"></i>
+                    </div>
+                    <span class="trend-badge" id="orderGrowthPercentBadge" style="background: rgba(0,86,179,0.1); color: #0056b3;">
+                        <span id="orderGrowthIcon">↑</span> <span id="orderGrowthPercent">0%</span>
+                    </span>
+                </div>
+                <p class="stat-label text-muted mb-1">Đơn Hàng Thành Công</p>
+                <p class="stat-value mb-0" id="currentPeriodOrders" style="color: #0056b3; font-size: 2.2rem;">0</p>
+                <div class="small text-muted mt-2 d-flex justify-content-between flex-wrap">
+                    <span>Đã hủy: <strong class="text-danger" id="cancelledOrders">0</strong></span>
+                    <span>Tỷ lệ hoàn thành: <strong class="text-success" id="completionRate">0%</strong></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== REVENUE COMPARISON CHART ===== -->
+    <div class="card chart-card p-4 mb-4">
+        <h6 class="section-title mb-4">
+            <i class="bi bi-graph-up text-success me-2"></i>So Sánh Doanh Thu Theo Ngày: Kỳ Này vs Kỳ Trước
+        </h6>
+        <div style="position: relative; height: 320px;">
+            <canvas id="revenueComparisonChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ===== BEST SELLERS & SLOW MOVING PRODUCTS ===== -->
+    <div class="row g-4">
+        <!-- Top 5 bán chạy -->
+        <div class="col-lg-6">
+            <div class="card chart-card p-4 h-100">
+                <h6 class="section-title mb-3">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Top 5 Món Ăn Bán Chạy Nhất
+                </h6>
+                <div style="position: relative; height: 180px;" class="mb-3">
+                    <canvas id="bestSellersChart"></canvas>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Hạng</th>
+                                <th>Tên Món</th>
+                                <th class="text-center">Số Lượng Bán</th>
+                                <th class="text-end">Doanh Thu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bestSellersList">
+                            <!-- filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Món bán chậm -->
+        <div class="col-lg-6">
+            <div class="card chart-card p-4 h-100">
+                <h6 class="section-title mb-3">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Món Bán Chậm & Cần Tối Ưu
+                </h6>
+                <div class="table-responsive mb-3">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Hạng</th>
+                                <th>Tên Món</th>
+                                <th class="text-center">Bán Được</th>
+                                <th class="text-center">Tỷ Lệ Hủy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slowMovingList">
+                            <!-- filled dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-warning border-0 shadow-none d-flex gap-2 align-items-start mb-0 p-3" style="background: rgba(255,193,7,0.1); border-left: 4px solid #ffc107 !important; border-radius: 8px;">
+                    <i class="bi bi-lightbulb-fill text-warning fs-5"></i>
+                    <div>
+                        <strong class="text-dark small d-block mb-1">Gợi Ý Kinh Doanh:</strong>
+                        <span class="text-muted small">Những món ăn này có lượng bán rất thấp hoặc tỷ lệ đơn hủy cao. Bạn nên cải thiện hình ảnh, điều chỉnh giá bán hoặc chạy chương trình khuyến mãi riêng cho các món này.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </div>
 
@@ -494,6 +672,10 @@
             document.getElementById('skeletonLoader').classList.add('d-none');
             document.getElementById('dashboardContent').classList.remove('d-none');
 
+            // Init and load analytics data
+            initDatePickerDefaults();
+            loadAnalyticsData('this-week');
+
         } catch (err) {
             console.error('Dashboard error:', err);
             document.getElementById('skeletonLoader').classList.add('d-none');
@@ -506,6 +688,19 @@
                 // Render empty charts as fallback
                 renderRevenueChart([], 0, 0, 0);
                 renderOrderStatusChart(0, 0);
+                updateAnalyticsUI({
+                    currentPeriodRevenue: 0,
+                    previousPeriodRevenue: 0,
+                    revenueGrowthPercent: 0,
+                    currentPeriodOrders: 0,
+                    cancelledOrders: 0,
+                    completionRate: 0,
+                    orderGrowthPercent: 0,
+                    topFiveBestSellers: [],
+                    slowMovingItems: [],
+                    chartDataCurrent: [],
+                    chartDataPrevious: []
+                });
             }
         }
     }
@@ -551,6 +746,340 @@
         t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
         document.body.appendChild(t);
         setTimeout(() => t.remove(), 3000);
+    }
+
+    // ===== DETAILED ANALYTICS FUNCTIONS =====
+
+    let revenueComparisonChartInstance = null;
+    let bestSellersChartInstance = null;
+
+    function initDatePickerDefaults() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        document.getElementById('customStartDate').valueAsDate = firstDay;
+        document.getElementById('customEndDate').valueAsDate = today;
+    }
+
+    async function loadAnalyticsData(preset) {
+        const buttons = ['this-week', 'this-month', 'previous-month', 'this-year'];
+        buttons.forEach(btn => {
+            const el = document.getElementById(`btn-${btn}`);
+            if (el) {
+                if (btn === preset) el.classList.add('active');
+                else el.classList.remove('active');
+            }
+        });
+
+        try {
+            const res = await fetch(`/api/restaurant/analytics/${preset}`, {
+                headers: { 'Authorization': 'Bearer ' + globalToken }
+            });
+
+            if (!res.ok) throw new Error('Không thể tải dữ liệu phân tích: ' + res.status);
+            const data = await res.json();
+            updateAnalyticsUI(data);
+        } catch (err) {
+            console.error('Error loading analytics:', err);
+        }
+    }
+
+    async function loadCustomRangeData() {
+        const startDate = document.getElementById('customStartDate').value;
+        const endDate = document.getElementById('customEndDate').value;
+
+        if (!startDate || !endDate) {
+            showToast('Vui lòng chọn cả ngày bắt đầu và ngày kết thúc!', 'warning');
+            return;
+        }
+
+        const buttons = ['this-week', 'this-month', 'previous-month', 'this-year'];
+        buttons.forEach(btn => {
+            const el = document.getElementById(`btn-${btn}`);
+            if (el) el.classList.remove('active');
+        });
+
+        try {
+            const res = await fetch(`/api/restaurant/analytics/custom?startDate=${startDate}&endDate=${endDate}`, {
+                headers: { 'Authorization': 'Bearer ' + globalToken }
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Lỗi server');
+            }
+            const data = await res.json();
+            updateAnalyticsUI(data);
+
+            const collapseEl = document.getElementById('customRangeCollapse');
+            const bsCollapse = bootstrap.Collapse.getInstance(collapseEl);
+            if (bsCollapse) {
+                bsCollapse.hide();
+            }
+        } catch (err) {
+            console.error('Error loading custom range analytics:', err);
+            showToast(err.message, 'danger');
+        }
+    }
+
+    function updateAnalyticsUI(stats) {
+        if (!stats) return;
+
+        document.getElementById('currentPeriodRevenue').textContent = formatCurrency(stats.currentPeriodRevenue);
+        document.getElementById('previousPeriodRevenue').textContent = formatCurrency(stats.previousPeriodRevenue);
+        document.getElementById('periodLabelText').textContent = stats.periodLabel || 'Kỳ này';
+
+        const growthPercentVal = stats.revenueGrowthPercent != null ? stats.revenueGrowthPercent : 0;
+        const formattedGrowthPercent = (growthPercentVal >= 0 ? '+' : '') + growthPercentVal.toFixed(1) + '%';
+        document.getElementById('growthPercent').textContent = formattedGrowthPercent;
+        
+        const growthIconEl = document.getElementById('growthIcon');
+        growthIconEl.textContent = stats.growthTrendIcon || (growthPercentVal >= 0 ? '↑' : '↓');
+        
+        const growthBadge = document.getElementById('growthPercentBadge');
+        if (growthPercentVal >= 0) {
+            growthBadge.style.background = 'rgba(46,125,50,0.1)';
+            growthBadge.style.color = '#2e7d32';
+        } else {
+            growthBadge.style.background = 'rgba(220,53,69,0.1)';
+            growthBadge.style.color = '#dc3545';
+        }
+
+        document.getElementById('currentPeriodOrders').textContent = stats.currentPeriodOrders || 0;
+        document.getElementById('cancelledOrders').textContent = stats.cancelledOrders || 0;
+        document.getElementById('completionRate').textContent = (stats.completionRate != null ? stats.completionRate : 0).toFixed(1) + '%';
+
+        const orderGrowthVal = stats.orderGrowthPercent != null ? stats.orderGrowthPercent : 0;
+        const formattedOrderGrowth = (orderGrowthVal >= 0 ? '+' : '') + orderGrowthVal.toFixed(1) + '%';
+        document.getElementById('orderGrowthPercent').textContent = formattedOrderGrowth;
+
+        const orderGrowthIconEl = document.getElementById('orderGrowthIcon');
+        orderGrowthIconEl.textContent = stats.orderTrendIcon || (orderGrowthVal >= 0 ? '↑' : '↓');
+
+        const orderGrowthBadge = document.getElementById('orderGrowthPercentBadge');
+        if (orderGrowthVal >= 0) {
+            orderGrowthBadge.style.background = 'rgba(46,125,50,0.1)';
+            orderGrowthBadge.style.color = '#2e7d32';
+        } else {
+            orderGrowthBadge.style.background = 'rgba(220,53,69,0.1)';
+            orderGrowthBadge.style.color = '#dc3545';
+        }
+
+        renderRevenueComparisonChart(stats.chartDataCurrent, stats.chartDataPrevious);
+        renderBestSellersChart(stats.topFiveBestSellers);
+        renderBestSellersTable(stats.topFiveBestSellers);
+        renderSlowMovingTable(stats.slowMovingItems);
+    }
+
+    function renderRevenueComparisonChart(currentData, previousData) {
+        const ctx = document.getElementById('revenueComparisonChart').getContext('2d');
+        if (revenueComparisonChartInstance) {
+            revenueComparisonChartInstance.destroy();
+        }
+
+        const currentDates = (currentData || []).map(d => {
+            if (!d.date) return '';
+            const dt = new Date(d.date);
+            return dt.toLocaleDateString('vi-VN', { month: 'numeric', day: 'numeric' });
+        });
+        const currentValues = (currentData || []).map(d => d.revenue || 0);
+        const previousValues = (previousData || []).map(d => d.revenue || 0);
+
+        const paddedPreviousValues = Array(currentValues.length).fill(0);
+        previousValues.forEach((val, idx) => {
+            if (idx < paddedPreviousValues.length) {
+                paddedPreviousValues[idx] = val;
+            }
+        });
+
+        revenueComparisonChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: currentDates,
+                datasets: [
+                    {
+                        label: 'Kỳ Này',
+                        data: currentValues,
+                        borderColor: '#2e7d32',
+                        backgroundColor: 'rgba(46, 125, 50, 0.05)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#2e7d32',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.35
+                    },
+                    {
+                        label: 'Kỳ Trước',
+                        data: paddedPreviousValues,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.05)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointBackgroundColor: '#dc3545',
+                        pointRadius: 3,
+                        fill: true,
+                        tension: 0.35
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { font: { family: 'Inter', size: 12 }, usePointStyle: true }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            font: { size: 11 },
+                            callback: v => formatCurrencyShort(v)
+                        }
+                    },
+                    x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    function renderBestSellersChart(bestSellers) {
+        const ctx = document.getElementById('bestSellersChart').getContext('2d');
+        if (bestSellersChartInstance) {
+            bestSellersChartInstance.destroy();
+        }
+
+        const items = bestSellers || [];
+        const labels = items.map(item => item.itemName || 'Chưa rõ');
+        const data = items.map(item => item.soldCount || 0);
+        const colorsHex = ['#ffc107', '#6c757d', '#fd7e14', '#0d6efd', '#20c997'];
+
+        bestSellersChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Đã bán',
+                    data: data,
+                    backgroundColor: colorsHex.slice(0, items.length),
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 12
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { size: 10, weight: 'bold' },
+                            callback: function(val, index) {
+                                const label = labels[index] || '';
+                                return label.length > 15 ? label.slice(0, 15) + '...' : label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderBestSellersTable(bestSellers) {
+        const tbody = document.getElementById('bestSellersList');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!bestSellers || bestSellers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Không có dữ liệu món bán chạy</td></tr>`;
+            return;
+        }
+
+        bestSellers.forEach((item, index) => {
+            const rank = index + 1;
+            let badgeClass = 'bg-secondary';
+            if (rank === 1) badgeClass = 'bg-warning text-dark';
+            else if (rank === 2) badgeClass = 'bg-light text-dark border';
+            else if (rank === 3) badgeClass = 'bg-danger-subtle text-danger';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="badge ${badgeClass} rounded-pill px-2 py-1">${rank}</span></td>
+                <td class="fw-semibold text-dark">${item.itemName || 'Món ăn'}</td>
+                <td class="text-center fw-bold text-secondary">${item.soldCount || 0}</td>
+                <td class="text-end fw-bold text-success">${formatCurrency(item.totalRevenue)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderSlowMovingTable(slowMovingItems) {
+        const tbody = document.getElementById('slowMovingList');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!slowMovingItems || slowMovingItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Không có dữ liệu món bán chậm</td></tr>`;
+            return;
+        }
+
+        slowMovingItems.forEach((item, index) => {
+            const rank = index + 1;
+            const cancellationRate = item.cancellationRate != null ? item.cancellationRate : 0;
+            let rateClass = 'bg-success-subtle text-success';
+            if (cancellationRate > 20) rateClass = 'bg-danger-subtle text-danger';
+            else if (cancellationRate > 10) rateClass = 'bg-warning-subtle text-warning';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="badge bg-light text-dark border rounded-pill px-2 py-1">${rank}</span></td>
+                <td class="fw-semibold text-dark">${item.itemName || 'Món ăn'}</td>
+                <td class="text-center fw-bold text-secondary">${item.soldCount || 0}</td>
+                <td class="text-center"><span class="badge ${rateClass} px-2 py-1">${cancellationRate.toFixed(1)}%</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function formatCurrency(value) {
+        if (value === null || value === undefined) return '0 đ';
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(value);
+    }
+
+    function formatCurrencyShort(value) {
+        if (value === null || value === undefined) return '0đ';
+        if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+        if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+        return value.toFixed(0) + 'đ';
     }
 
     document.addEventListener('DOMContentLoaded', loadDashboard);

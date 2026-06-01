@@ -37,6 +37,7 @@ public class RestaurantApiController {
     private final ReviewRepository reviewRepository;
     private final IOrderService orderService;
     private final ProfanityFilterService profanityFilterService;
+    private final com.duong.salesmanagement.service.ReviewService reviewService;
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
     private final com.duong.salesmanagement.service.NotificationService notificationService;
 
@@ -49,7 +50,8 @@ public class RestaurantApiController {
                                    IOrderService orderService,
                                    com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository,
                                    com.duong.salesmanagement.service.NotificationService notificationService,
-                                   ProfanityFilterService profanityFilterService) {
+                                   ProfanityFilterService profanityFilterService,
+                                   com.duong.salesmanagement.service.ReviewService reviewService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -60,6 +62,7 @@ public class RestaurantApiController {
         this.trackingLocationRepository = trackingLocationRepository;
         this.notificationService = notificationService;
         this.profanityFilterService = profanityFilterService;
+        this.reviewService = reviewService;
     }
 
     // ================================================================
@@ -537,6 +540,19 @@ public class RestaurantApiController {
         response.put("hasNext", reviewPage.hasNext());
         response.put("hasPrevious", reviewPage.hasPrevious());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/restaurant/reviews/statistics
+     * Lấy thống kê review cho nhà hàng
+     */
+    @GetMapping("/reviews/statistics")
+    public ResponseEntity<?> getReviewsStatistics(Authentication auth) {
+        RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
+        if (restaurant == null) return unauthorized();
+        
+        Map<String, Object> stats = reviewService.getReviewStatistics(restaurant);
+        return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/reviews/{id}/reply")

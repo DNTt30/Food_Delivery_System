@@ -35,23 +35,44 @@
 
 <!-- Summary + Chart -->
 <div id="reviewContent" class="d-none">
+    <!-- Statistics Cards Row -->
     <div class="row g-4 mb-4">
-        <!-- Avg Score -->
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px;">
+        <!-- Đánh giá trung bình -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px; background: linear-gradient(135deg, #fffcf0 0%, #fff 100%); border-left: 5px solid #ffc107;">
                 <div class="avg-score" id="avgScore">—</div>
                 <div id="avgStars" class="star-display my-2">☆☆☆☆☆</div>
-                <div class="avg-label" id="totalReviews">0 đánh giá</div>
+                <div class="avg-label text-muted">Đánh giá trung bình</div>
             </div>
         </div>
-        <!-- Rating Breakdown -->
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius:14px;">
-                <h6 class="fw-bold mb-3 text-muted" style="font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;">Phân bố đánh giá</h6>
-                <div id="ratingBars">
-                    <!-- filled by JS -->
-                </div>
+        <!-- Tổng đánh giá -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px; background: linear-gradient(135deg, #f0f7ff 0%, #fff 100%); border-left: 5px solid #0d6efd;">
+                <div class="display-5 fw-bold text-primary mt-2" id="statTotalReviews">0</div>
+                <div class="text-muted small fw-semibold mt-3">Tổng Đánh Giá</div>
             </div>
+        </div>
+        <!-- Chưa phản hồi -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px; background: linear-gradient(135deg, #fff5f5 0%, #fff 100%); border-left: 5px solid #dc3545;">
+                <div class="display-5 fw-bold text-danger mt-2" id="statUnrepliedReviews">0</div>
+                <div class="text-muted small fw-semibold mt-3">Chưa Phản Hồi</div>
+            </div>
+        </div>
+        <!-- Có Ảnh -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-4 text-center h-100" style="border-radius:14px; background: linear-gradient(135deg, #f0fff4 0%, #fff 100%); border-left: 5px solid #198754;">
+                <div class="display-5 fw-bold text-success mt-2" id="statReviewsWithImages">0</div>
+                <div class="text-muted small fw-semibold mt-3">Đánh Giá Có Ảnh</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Breakdown -->
+    <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius:14px;">
+        <h6 class="fw-bold mb-3 text-muted" style="font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;">Phân bố đánh giá</h6>
+        <div id="ratingBars">
+            <!-- filled by JS -->
         </div>
     </div>
 
@@ -65,13 +86,27 @@
             <button class="btn btn-outline-info filter-btn" data-stars="3" onclick="filterReviews(3, this)">⭐⭐⭐ 3 sao</button>
             <button class="btn btn-outline-danger filter-btn" data-stars="2" onclick="filterReviews(2, this)">⭐⭐ ≤2 sao</button>
         </div>
-        <button class="btn btn-light border rounded-pill px-3 shadow-sm btn-sm" onclick="loadReviews()" title="Cập nhật">
-            <i class="bi bi-arrow-clockwise"></i> Làm mới
-        </button>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" id="sortSelect" onchange="loadReviews()" style="width: auto;">
+                <option value="newest">Mới Nhất</option>
+                <option value="rating">Đánh Giá Cao Nhất</option>
+            </select>
+            <select class="form-select form-select-sm" id="pageSizeSelect" onchange="changePageSize(this)" style="width: auto;">
+                <option value="6">6 đánh giá/trang</option>
+                <option value="12">12 đánh giá/trang</option>
+                <option value="24">24 đánh giá/trang</option>
+            </select>
+            <button class="btn btn-light border rounded-pill px-3 shadow-sm btn-sm" onclick="loadReviews()" title="Cập nhật">
+                <i class="bi bi-arrow-clockwise"></i> Làm mới
+            </button>
+        </div>
     </div>
 
     <!-- Reviews List -->
     <div id="reviewList" class="row g-3"></div>
+
+    <!-- Pagination Navigation -->
+    <nav id="paginationNav" class="mt-4 d-flex justify-content-center"></nav>
 
     <div id="emptyFilter" class="text-center py-4 d-none">
         <div style="font-size:3rem">🔍</div>
@@ -89,6 +124,9 @@
 <script>
 const token = localStorage.getItem('jwt_token');
 let allReviews = [];
+let filteredReviews = [];
+let currentPage = 0;
+let pageSize = 6; // Mặc định hiển thị 6 reviews/trang
 
 function stars(rating, big) {
     const r = Math.round(rating || 0);
@@ -110,7 +148,11 @@ async function loadReviews() {
     document.getElementById('emptyState').classList.add('d-none');
 
     try {
-        const res = await fetch('/api/restaurant/reviews', { headers: { 'Authorization':'Bearer '+token } });
+        const sort = document.getElementById('sortSelect').value;
+        // Lấy tất cả reviews từ API (size=1000) để phục vụ lọc sao và phân trang client-side mượt mà
+        const res = await fetch('/api/restaurant/reviews?page=0&size=1000&sort=' + sort, { 
+            headers: { 'Authorization':'Bearer '+token } 
+        });
         if (res.status === 401 || res.status === 403) { window.location.href='/common/auth'; return; }
         const data = await res.json();
         allReviews = data.reviews || [];
@@ -122,48 +164,108 @@ async function loadReviews() {
         const avg = data.avgRating || 0;
         document.getElementById('avgScore').textContent   = avg.toFixed(1);
         document.getElementById('avgStars').textContent   = stars(avg, true);
-        document.getElementById('totalReviews').textContent = `${allReviews.length} đánh giá`;
 
-        // Rating bars
-        const bars = document.getElementById('ratingBars');
-        bars.innerHTML = '';
-        for (let s = 5; s >= 1; s--) {
-            const cnt  = allReviews.filter(r => r.rating === s).length;
-            const pct  = allReviews.length ? Math.round(cnt / allReviews.length * 100) : 0;
-            bars.insertAdjacentHTML('beforeend', `
-            <div class="bar-row">
-                <span style="width:32px;text-align:right;font-size:.8rem;font-weight:600;color:#6b7280;">${s}★</span>
-                <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
-                <span style="width:30px;font-size:.8rem;color:#9ca3af;">${cnt}</span>
-            </div>`);
-        }
+        // Load statistics cards & rating distribution
+        await loadStatistics();
 
         document.getElementById('reviewContent').classList.remove('d-none');
-        renderReviews(allReviews);
+        
+        // Reset về tab "Tất cả" khi load mới hoặc giữ nguyên tab active hiện tại
+        const activeFilterBtn = document.querySelector('.filter-btn.active');
+        const starsVal = activeFilterBtn ? parseInt(activeFilterBtn.getAttribute('data-stars')) : 0;
+        filterReviews(starsVal, activeFilterBtn || document.querySelector('.filter-btn'));
     } catch (e) {
         document.getElementById('loading').innerHTML = '<div class="text-danger text-center py-4">Lỗi kết nối</div>';
+    }
+}
+
+async function loadStatistics() {
+    try {
+        const res = await fetch('/api/restaurant/reviews/statistics', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('statTotalReviews').textContent = data.totalReviews || 0;
+            document.getElementById('statUnrepliedReviews').textContent = data.unrepliedReviews || 0;
+            document.getElementById('statReviewsWithImages').textContent = data.reviewsWithImages || 0;
+            
+            // Render phân bố sao
+            renderRatingBars(data.ratingDistribution, data.totalReviews || 0);
+        }
+    } catch (e) {
+        console.error("Lỗi khi tải thống kê:", e);
+    }
+}
+
+function renderRatingBars(distribution, total) {
+    const bars = document.getElementById('ratingBars');
+    bars.innerHTML = '';
+    
+    const distMap = {};
+    if (distribution && Array.isArray(distribution)) {
+        distribution.forEach(row => {
+            distMap[row[0]] = row[1];
+        });
+    }
+    
+    for (let s = 5; s >= 1; s--) {
+        const cnt = distMap[s] || 0;
+        const pct = total ? Math.round(cnt / total * 100) : 0;
+        bars.insertAdjacentHTML('beforeend', `
+        <div class="bar-row">
+            <span style="width:32px;text-align:right;font-size:.8rem;font-weight:600;color:#6b7280;">${s}★</span>
+            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+            <span style="width:30px;font-size:.8rem;color:#9ca3af;">${cnt}</span>
+        </div>`);
     }
 }
 
 function filterReviews(stars, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    const filtered = stars === 0 ? allReviews :
-                     stars === 2 ? allReviews.filter(r => r.rating <= 2) :
-                     allReviews.filter(r => r.rating === stars);
-    renderReviews(filtered);
+    
+    filteredReviews = stars === 0 ? allReviews :
+                      stars === 2 ? allReviews.filter(r => r.rating <= 2) :
+                      allReviews.filter(r => r.rating === stars);
+                      
+    currentPage = 0;
+    renderReviewsPage();
 }
 
-function renderReviews(reviews) {
+function changePageSize(select) {
+    pageSize = parseInt(select.value);
+    currentPage = 0;
+    renderReviewsPage();
+}
+
+function changePage(page) {
+    currentPage = page;
+    renderReviewsPage();
+}
+
+function renderReviewsPage() {
     const list  = document.getElementById('reviewList');
     const empty = document.getElementById('emptyFilter');
     list.innerHTML = '';
-    if (!reviews.length) { empty.classList.remove('d-none'); return; }
+    
+    if (!filteredReviews.length) { 
+        empty.classList.remove('d-none'); 
+        document.getElementById('paginationNav').innerHTML = '';
+        return; 
+    }
     empty.classList.add('d-none');
 
-    reviews.forEach(r => {
+    // Phân trang client-side
+    const start = currentPage * pageSize;
+    const end = Math.min(start + pageSize, filteredReviews.length);
+    const pageReviews = filteredReviews.slice(start, end);
+
+    pageReviews.forEach(r => {
         const initial = (r.customerName || 'K').charAt(0).toUpperCase();
         const starColor = r.rating >= 4 ? '#f59e0b' : r.rating === 3 ? '#84cc16' : '#ef4444';
+        const escReply = r.restaurantReply ? esc(r.restaurantReply).replace(/'/g, "\\'") : '';
+
         list.insertAdjacentHTML('beforeend', `
         <div class="col-md-6 col-xl-4">
         <div class="card review-card shadow-sm h-100">
@@ -194,7 +296,7 @@ function renderReviews(reviews) {
                 <div id="replyDisplay-${r.id}" class="bg-light p-3 rounded mt-2 border" style="border-color: #e2e8f0 !important;">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <p class="mb-0 text-muted" style="font-size: 0.8rem;"><strong>Phản hồi từ quán của bạn:</strong></p>
-                        <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none" onclick="editReplyForm(${r.id}, '${esc(r.restaurantReply).replace(/'/g, "\\'")}')" style="font-size: 0.75rem;"><i class="bi bi-pencil me-1"></i>Sửa</button>
+                        <button class="btn btn-link btn-sm p-0 text-primary text-decoration-none" onclick="editReplyForm(${r.id}, '${escReply}')" style="font-size: 0.75rem;"><i class="bi bi-pencil me-1"></i>Sửa</button>
                     </div>
                     <p class="mb-1 fst-italic text-secondary" style="font-size: 0.85rem;">${esc(r.restaurantReply)}</p>
                     <span class="text-muted" style="font-size: 0.75rem;">${fmtDate(r.repliedAt)}</span>
@@ -220,6 +322,43 @@ function renderReviews(reviews) {
         </div>
         </div>`);
     });
+
+    renderPagination();
+}
+
+function renderPagination() {
+    const navContainer = document.getElementById('paginationNav');
+    const totalPages = Math.ceil(filteredReviews.length / pageSize);
+    
+    if (totalPages <= 1) {
+        navContainer.innerHTML = '';
+        return;
+    }
+    
+    let html = '<ul class="pagination pagination-warning mb-0 gap-1">';
+    
+    // Nút trước
+    if (currentPage > 0) {
+        html += `<li class="page-item"><button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="changePage(${currentPage - 1})">← Trước</button></li>`;
+    } else {
+        html += `<li class="page-item disabled"><button class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled>← Trước</button></li>`;
+    }
+    
+    // Danh sách số trang
+    for (let i = 0; i < totalPages; i++) {
+        const isActive = i === currentPage ? 'btn-warning text-white' : 'btn-outline-secondary';
+        html += `<li class="page-item"><button class="btn ${isActive} btn-sm rounded-pill px-3" onclick="changePage(${i})">${i + 1}</button></li>`;
+    }
+    
+    // Nút sau
+    if (currentPage < totalPages - 1) {
+        html += `<li class="page-item"><button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="changePage(${currentPage + 1})">Sau →</button></li>`;
+    } else {
+        html += `<li class="page-item disabled"><button class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled>Sau →</button></li>`;
+    }
+    
+    html += '</ul>';
+    navContainer.innerHTML = html;
 }
 
 loadReviews();
