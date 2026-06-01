@@ -487,17 +487,17 @@ public class PaymentController {
             boolean success
     ) {
 
-        foodOrderRepository.findById(orderId)
-                .flatMap(paymentRepository::findByOrder)
-                .ifPresent(payment -> {
+        foodOrderRepository.findById(orderId).ifPresent(order -> {
+            paymentRepository.findByOrder(order).ifPresent(payment -> {
+                PaymentStatus newStatus = success
+                        ? PaymentStatus.COMPLETED
+                        : PaymentStatus.FAILED;
+                payment.setPaymentStatus(newStatus);
+                paymentRepository.save(payment);
 
-                    payment.setPaymentStatus(
-                            success
-                                    ? PaymentStatus.COMPLETED
-                                    : PaymentStatus.FAILED
-                    );
-
-                    paymentRepository.save(payment);
-                });
+                order.setPaymentStatus(newStatus.name());
+                foodOrderRepository.save(order);
+            });
+        });
     }
 }

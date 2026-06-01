@@ -55,6 +55,26 @@
             }
         }
 
+        function formatVND(n) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+        }
+
+        function paymentBadge(o) {
+            if (o.needsCollectCash) {
+                return `<div class="alert alert-danger py-2 px-3 mb-2 small mb-0 rounded-3 border-0">
+                    <i class="bi bi-cash-coin me-1"></i><strong>COD</strong> — Thu ${formatVND(o.amountToCollect || o.totalAmount)} khi giao
+                </div>`;
+            }
+            if (o.isPaidOnline) {
+                return `<div class="alert alert-success py-2 px-3 mb-2 small mb-0 rounded-3 border-0">
+                    <i class="bi bi-check-circle-fill me-1"></i>Đã thanh toán online
+                </div>`;
+            }
+            return `<div class="alert alert-warning py-2 px-3 mb-2 small mb-0 rounded-3 border-0">
+                <i class="bi bi-hourglass-split me-1"></i>Chưa thanh toán online
+            </div>`;
+        }
+
         function renderOrders(orders) {
             const list = document.getElementById('orderList');
             list.innerHTML = orders.map(o => {
@@ -94,6 +114,8 @@
                     <div class="bg-light rounded-3 p-2 mb-3">
                         <div class="small text-muted"><i class="bi bi-box-seam me-1"></i>Chi tiết: ${o.items ? o.items.join(', ') : '—'}</div>
                     </div>
+
+                    ${paymentBadge(o)}
 
                     <button class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm" onclick="acceptOrder(${o.id})">
                         <i class="bi bi-check2-circle me-1"></i> NHẬN ĐƠN NGAY

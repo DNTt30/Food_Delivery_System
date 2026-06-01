@@ -215,6 +215,7 @@ public class OrderService {
 
         // Lưu phương thức thanh toán vào FoodOrder
         finalOrder.setPaymentMethod(paymentMethodStr);
+        finalOrder.setPaymentStatus(PaymentStatus.PENDING.name());
         foodOrderRepository.save(finalOrder);
 
         // 🔔 Notify: Customer đã đặt đơn
@@ -356,6 +357,7 @@ public class OrderService {
         if (order.getStatus() != OrderStatus.DELIVERING)
             throw new RuntimeException("Đơn hàng không đang trong trạng thái giao");
         order.setStatus(OrderStatus.COMPLETED);
+        markCodPaymentCompletedIfNeeded(order);
         foodOrderRepository.save(order);
         driver.setAvailable(true);
         driverProfileRepository.save(driver);
@@ -397,6 +399,31 @@ public class OrderService {
 
     public List<FoodOrder> getDriverHistory(DriverProfile driver) {
         return foodOrderRepository.findByDriverOrderByOrderTimeDesc(driver);
+    }
+
+    private void markCodPaymentCompletedIfNeeded(FoodOrder order) {
+        paymentRepository.findByOrder(order).ifPresent(payment -> {
+            if (!isCashOnDelivery(order.getPaymentMethod(), payment.getPaymentMethod())) {
+                return;
+            }
+            if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                return;
+            }
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            payment.setTransactionDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+            order.setPaymentStatus(PaymentStatus.COMPLETED.name());
+        });
+    }
+
+    private boolean isCashOnDelivery(String method, PaymentMethod paymentMethodEnum) {
+        if (method != null) {
+            String normalized = method.trim().toUpperCase();
+            return "CASH".equals(normalized)
+                    || "COD".equals(normalized)
+                    || "CASH_ON_DELIVERY".equals(normalized);
+        }
+        return paymentMethodEnum == PaymentMethod.CASH_ON_DELIVERY;
     }
 
     /**
