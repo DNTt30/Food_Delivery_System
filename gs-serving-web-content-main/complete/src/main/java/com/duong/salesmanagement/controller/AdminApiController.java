@@ -296,6 +296,10 @@ public class AdminApiController {
         result.put("latitude", restaurant.getLatitude());
         result.put("longitude", restaurant.getLongitude());
 
+        Double revenue = foodOrderRepository.sumTotalAmountByRestaurantAndStatus(restaurant, OrderStatus.COMPLETED);
+        result.put("totalRevenue", revenue != null ? revenue : 0.0);
+        result.put("totalOrders", foodOrderRepository.findByRestaurant(restaurant).size());
+
         return ResponseEntity.ok(result);
     }
 

@@ -127,6 +127,8 @@
                                 <tr><td class="text-muted">Địa chỉ:</td><td id="rdAddress"></td></tr>
                                 <tr><td class="text-muted">Tọa độ:</td><td id="rdCoords"></td></tr>
                                 <tr><td class="text-muted">Trạng thái:</td><td id="rdStatus"></td></tr>
+                                <tr><td class="text-muted">Tổng đơn:</td><td id="rdTotalOrders" class="fw-semibold"></td></tr>
+                                <tr><td class="text-muted">Doanh thu:</td><td id="rdTotalRevenue" class="fw-bold text-success"></td></tr>
                             </table>
                         </div>
                     </div>
@@ -285,6 +287,8 @@
             document.getElementById('rdAddress').textContent = r.address || '—';
             document.getElementById('rdCoords').textContent = (data.latitude && data.longitude) ? `${data.latitude}, ${data.longitude}` : 'Chưa cập nhật';
             document.getElementById('rdStatus').innerHTML = r.open ? '<span class="badge bg-success">Đang mở</span>' : '<span class="badge bg-danger">Đóng cửa</span>';
+            document.getElementById('rdTotalOrders').textContent = (data.totalOrders || 0) + ' đơn';
+            document.getElementById('rdTotalRevenue').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.totalRevenue || 0);
 
             const revHtml = data.reviews.length ? data.reviews.map(rv => `
                 <div class="border-bottom py-2">
