@@ -1,15 +1,37 @@
 package com.duong.salesmanagement.service;
 
-import com.duong.salesmanagement.dto.OrderStatusNotification;
-import com.duong.salesmanagement.model.*;
-import com.duong.salesmanagement.repository.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.duong.salesmanagement.dto.OrderStatusNotification;
+import com.duong.salesmanagement.model.CustomerProfile;
+import com.duong.salesmanagement.model.DiscountType;
+import com.duong.salesmanagement.model.DriverProfile;
+import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.MenuItem;
+import com.duong.salesmanagement.model.OrderItem;
+import com.duong.salesmanagement.model.OrderStatus;
+import com.duong.salesmanagement.model.Payment;
+import com.duong.salesmanagement.model.PaymentMethod;
+import com.duong.salesmanagement.model.PaymentStatus;
+import com.duong.salesmanagement.model.RestaurantProfile;
+import com.duong.salesmanagement.model.Review;
+import com.duong.salesmanagement.model.Role;
+import com.duong.salesmanagement.model.User;
+import com.duong.salesmanagement.model.Voucher;
+import com.duong.salesmanagement.repository.DriverProfileRepository;
+import com.duong.salesmanagement.repository.FoodOrderRepository;
+import com.duong.salesmanagement.repository.MenuItemRepository;
+import com.duong.salesmanagement.repository.OrderItemRepository;
+import com.duong.salesmanagement.repository.PaymentRepository;
+import com.duong.salesmanagement.repository.RestaurantProfileRepository;
+import com.duong.salesmanagement.repository.ReviewRepository;
+import com.duong.salesmanagement.repository.VoucherRepository;
 
 @Service
 
@@ -26,6 +48,7 @@ public class OrderService implements IOrderService {
     private final GeocodingService geocodingService;
     private final RestaurantProfileRepository restaurantProfileRepository;
     private final IShippingCalculationService shippingCalculationService;
+    private final PaymentRepository paymentRepository;
 
     public OrderService(FoodOrderRepository foodOrderRepository,
                         OrderItemRepository orderItemRepository,
@@ -37,7 +60,8 @@ public class OrderService implements IOrderService {
                         NotificationService notificationService,
                         GeocodingService geocodingService,
                         RestaurantProfileRepository restaurantProfileRepository,
-                        IShippingCalculationService shippingCalculationService) {
+                        IShippingCalculationService shippingCalculationService,
+                        PaymentRepository paymentRepository) {
         this.foodOrderRepository = foodOrderRepository;
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
@@ -49,6 +73,7 @@ public class OrderService implements IOrderService {
         this.geocodingService = geocodingService;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.shippingCalculationService = shippingCalculationService;
+        this.paymentRepository = paymentRepository;
     }
 
     /**
@@ -75,7 +100,8 @@ public class OrderService implements IOrderService {
 
     @Transactional
     public FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
-                                 List<OrderItemRequest> itemRequests, String deliveryAddress, String voucherCode) {
+                                 List<OrderItemRequest> itemRequests, String deliveryAddress,
+                                 String voucherCode, String paymentMethodStr) {
         FoodOrder order = new FoodOrder();
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
@@ -175,6 +201,26 @@ public class OrderService implements IOrderService {
 
         savedOrder.setTotalAmount(totalAmount);
         FoodOrder finalOrder = foodOrderRepository.save(savedOrder);
+
+        // 💳 Tạo bản ghi Payment
+        PaymentMethod paymentMethod = PaymentMethod.CASH_ON_DELIVERY;
+        if ("VNPAY".equalsIgnoreCase(paymentMethodStr)) {
+            paymentMethod = PaymentMethod.VNPAY;
+        } else if ("MOMO".equalsIgnoreCase(paymentMethodStr)) {
+            paymentMethod = PaymentMethod.MOMO_E_WALLET;
+        }
+        Payment payment = new Payment();
+        payment.setOrder(finalOrder);
+        payment.setPaymentMethod(paymentMethod);
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setAmount(totalAmount);
+        payment.setTransactionDate(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        // Lưu phương thức thanh toán vào FoodOrder
+        finalOrder.setPaymentMethod(paymentMethodStr);
+        finalOrder.setPaymentStatus(PaymentStatus.PENDING.name());
+        foodOrderRepository.save(finalOrder);
 
         // 🔔 Notify: Customer đã đặt đơn
         notificationService.notifyOrderCreated(
@@ -324,6 +370,7 @@ public class OrderService implements IOrderService {
         if (order.getStatus() != OrderStatus.DELIVERING)
             throw new RuntimeException("Đơn hàng không đang trong trạng thái giao");
         order.setStatus(OrderStatus.COMPLETED);
+        markCodPaymentCompletedIfNeeded(order);
         foodOrderRepository.save(order);
 
         // Update soldCount for menu items
@@ -378,6 +425,31 @@ public class OrderService implements IOrderService {
 
     public List<FoodOrder> getDriverHistory(DriverProfile driver) {
         return foodOrderRepository.findByDriverOrderByOrderTimeDesc(driver);
+    }
+
+    private void markCodPaymentCompletedIfNeeded(FoodOrder order) {
+        paymentRepository.findByOrder(order).ifPresent(payment -> {
+            if (!isCashOnDelivery(order.getPaymentMethod(), payment.getPaymentMethod())) {
+                return;
+            }
+            if (payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                return;
+            }
+            payment.setPaymentStatus(PaymentStatus.COMPLETED);
+            payment.setTransactionDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+            order.setPaymentStatus(PaymentStatus.COMPLETED.name());
+        });
+    }
+
+    private boolean isCashOnDelivery(String method, PaymentMethod paymentMethodEnum) {
+        if (method != null) {
+            String normalized = method.trim().toUpperCase();
+            return "CASH".equals(normalized)
+                    || "COD".equals(normalized)
+                    || "CASH_ON_DELIVERY".equals(normalized);
+        }
+        return paymentMethodEnum == PaymentMethod.CASH_ON_DELIVERY;
     }
 
     /**

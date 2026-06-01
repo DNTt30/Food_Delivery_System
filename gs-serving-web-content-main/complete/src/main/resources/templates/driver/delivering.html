@@ -41,6 +41,13 @@
     animation: gps-pulse 1.5s infinite;
 }
 .gps-dot.error { background: #ef4444; }
+.gps-dot.warn { background: #f59e0b; }
+.gps-bar #gpsText { flex: 1; min-width: 0; }
+.gps-retry-btn {
+    flex-shrink: 0; border: none; background: none;
+    font-size: 0.72rem; font-weight: 700; color: #2563eb;
+    padding: 0; cursor: pointer; white-space: nowrap;
+}
 @keyframes gps-pulse {
     0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
     50%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
@@ -140,6 +147,27 @@
 #loading { text-align:center; padding: 60px 0; }
 .empty-box { text-align:center; padding: 60px 0; }
 .empty-box .icon { font-size: 3.5rem; }
+
+/* ─── Payment Status ──────────────────────── */
+.payment-banner {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 12px;
+    margin-bottom: 12px; font-size: 0.84rem;
+}
+.payment-banner .pay-icon { font-size: 1.35rem; line-height: 1; }
+.payment-banner .pay-title { font-weight: 700; margin-bottom: 2px; }
+.payment-banner .pay-amount { font-size: 1rem; font-weight: 800; }
+.payment-banner.collect { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.payment-banner.paid-online { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.payment-banner.pending-online { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+.payment-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.72rem; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; margin-bottom: 8px;
+}
+.payment-chip.collect { background: #fee2e2; color: #991b1b; }
+.payment-chip.paid { background: #dcfce7; color: #166534; }
+.payment-chip.pending { background: #ffedd5; color: #9a3412; }
 </style>
 
 <!-- Header -->
@@ -155,6 +183,7 @@
 <div class="gps-bar" id="gpsBar">
     <div class="gps-dot" id="gpsDot"></div>
     <span id="gpsText">GPS chưa kết nối</span>
+    <button type="button" id="gpsRetryBtn" class="gps-retry-btn d-none" onclick="retryGPS()">Bật GPS</button>
 </div>
 
 <!-- Loading -->
@@ -172,6 +201,9 @@
         Nhận đơn mới
     </a>
 </div>
+
+<!-- Payment Status -->
+<div id="paymentBanner" class="payment-banner d-none"></div>
 
 <!-- Phase Banner -->
 <div id="phaseBanner" class="phase-banner d-none">
@@ -211,6 +243,7 @@ let driverMap = null;
 let driverMarker = null;
 let routingCtrl = null;
 let gpsWatchId = null;
+let gpsOrderId = null;
 
 // ── Icons ──────────────────────────────────────────────────────────
 function makeIcon(url) {
@@ -224,7 +257,7 @@ async function loadActiveDeliveries() {
         window.location.href = '/common/auth';
         return;
     }
-    show('loading'); hide('emptyState'); hide('phaseBanner');
+    show('loading'); hide('emptyState'); hide('phaseBanner'); hide('paymentBanner');
     hide('map-wrapper'); hide('actionArea');
     document.getElementById('activeOrders').innerHTML = '';
 
@@ -240,6 +273,7 @@ async function loadActiveDeliveries() {
             stopGPS(); show('emptyState'); return;
         }
         currentOrder = orders[0];
+        renderPaymentBanner(currentOrder);
         renderCards(orders);
         initMap(currentOrder);
         renderPhase(currentOrder.status);
@@ -255,13 +289,62 @@ async function loadActiveDeliveries() {
     }
 }
 
+// ── Payment UI ─────────────────────────────────────────────────────
+function formatVND(n) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+}
+
+function paymentChipHtml(o) {
+    if (o.needsCollectCash) {
+        return `<span class="payment-chip collect"><i class="bi bi-cash-coin"></i> Thu tiền mặt</span>`;
+    }
+    if (o.isPaidOnline) {
+        return `<span class="payment-chip paid"><i class="bi bi-check-circle-fill"></i> Đã thanh toán</span>`;
+    }
+    return `<span class="payment-chip pending"><i class="bi bi-hourglass-split"></i> Chưa thanh toán</span>`;
+}
+
+function renderPaymentBanner(o) {
+    const el = document.getElementById('paymentBanner');
+    if (!o) { el.classList.add('d-none'); return; }
+
+    el.classList.remove('d-none', 'collect', 'paid-online', 'pending-online');
+
+    if (o.needsCollectCash) {
+        el.classList.add('collect');
+        el.innerHTML = `
+            <div class="pay-icon">💵</div>
+            <div>
+                <div class="pay-title">Cần thu tiền khi giao hàng</div>
+                <div class="pay-amount">${formatVND(o.amountToCollect || o.totalAmount)}</div>
+                <div style="font-size:.75rem;opacity:.85;margin-top:2px;">${esc(o.paymentStatusLabel || 'Thu tiền khi giao hàng')}</div>
+            </div>`;
+    } else if (o.isPaidOnline) {
+        el.classList.add('paid-online');
+        el.innerHTML = `
+            <div class="pay-icon">✅</div>
+            <div>
+                <div class="pay-title">Khách đã thanh toán online</div>
+                <div style="font-size:.75rem;opacity:.85;">Không cần thu tiền mặt</div>
+            </div>`;
+    } else {
+        el.classList.add('pending-online');
+        el.innerHTML = `
+            <div class="pay-icon">⚠️</div>
+            <div>
+                <div class="pay-title">Chưa thanh toán online</div>
+                <div style="font-size:.75rem;opacity:.85;">Nhắc khách thanh toán trước khi giao</div>
+            </div>`;
+    }
+}
+
 // ── Render cards ───────────────────────────────────────────────────
 function renderCards(orders) {
     document.getElementById('activeOrders').innerHTML = orders.map(o => {
-        const rLat = o.restaurantLat || 20.9626;
-        const rLng = o.restaurantLng || 105.7725;
-        const cLat = o.customerLat || 20.9700;
-        const cLng = o.customerLng || 105.7800;
+        const rLat = o.restaurantLat ?? 20.9626;
+        const rLng = o.restaurantLng ?? 105.7402;
+        const cLat = o.deliveryLat ?? 20.9685;
+        const cLng = o.deliveryLng ?? 105.7451;
         return `
     <div class="step-card">
         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -287,6 +370,7 @@ function renderCards(orders) {
         <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="step-label s2">② GIAO ĐẾN KHÁCH</span>
         </div>
+        ${paymentChipHtml(o)}
         <h6>${esc(o.customerName)}</h6>
         <div class="addr"><i class="bi bi-geo-alt-fill text-danger"></i>${esc(o.deliveryAddress)}</div>
         <div class="items-line"><i class="bi bi-box-seam text-muted me-1"></i>${(o.items||[]).join(', ')||'—'}</div>
@@ -301,8 +385,7 @@ function renderCards(orders) {
                 <i class="bi bi-chat-dots"></i>
             </button>
         </div>
-    </div>
-    `;
+    </div>`;
     }).join('<div style="border-top:1px dashed #e2e8f0;margin:4px 0 12px;"></div>');
 
     // Subscriptions chat
@@ -372,7 +455,7 @@ function focusDriver() {
 
 // ── GPS ────────────────────────────────────────────────────────────
 function updateDriverPosition(lat, lng, accuracy, orderId) {
-    if (accuracy) setGPS('active', `GPS hoạt động ±${Math.round(accuracy)}m`);
+    if (accuracy) setGPS('active', `GPS hoạt động ±${Math.round(accuracy)}m`, false);
     
     // Lưu tọa độ vào cache để lúc F5 trang hiện ra liền
     localStorage.setItem('driver_last_lat', lat);
@@ -408,40 +491,73 @@ function updateDriverPosition(lat, lng, accuracy, orderId) {
 }
 
 function startGPS(orderId) {
+    gpsOrderId = orderId;
     if (!navigator.geolocation) {
-        setGPS('error', 'GPS không được hỗ trợ'); return;
+        setGPS('error', 'Trình duyệt không hỗ trợ GPS', false);
+        return;
     }
     stopGPS();
-    setGPS('loading', 'Đang kết nối GPS...');
+    setGPS('loading', 'Đang kết nối GPS...', false);
+
+    const geoOptions = { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 };
 
     // 1. Vẽ ngay tọa độ cũ từ lần trước (nếu có) để tránh màn hình trắng khi F5
     const cachedLat = localStorage.getItem('driver_last_lat');
     const cachedLng = localStorage.getItem('driver_last_lng');
     if (cachedLat && cachedLng) {
-        updateDriverPosition(parseFloat(cachedLat), parseFloat(cachedLng), null, null); // Không gọi API
+        updateDriverPosition(parseFloat(cachedLat), parseFloat(cachedLng), null, null);
+        setGPS('warn', 'Đang dùng vị trí lần trước — bật GPS để cập nhật', true);
     }
 
-    // 2. Yêu cầu tọa độ hiện tại ngay lập tức (thường trả về nhanh hơn watch)
+    // 2. Yêu cầu tọa độ hiện tại
     navigator.geolocation.getCurrentPosition(pos => {
         updateDriverPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, orderId);
-    }, () => {}, { enableHighAccuracy: false, maximumAge: 10000, timeout: 10000 });
+    }, err => handleGpsError(err, !!cachedLat), geoOptions);
 
-    // 3. Bắt đầu lắng nghe sự di chuyển
+    // 3. Lắng nghe sự di chuyển
     gpsWatchId = navigator.geolocation.watchPosition(pos => {
         updateDriverPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy, orderId);
-    }, err => {
-        setGPS('error', `GPS lỗi: ${err.message}`);
-    }, { enableHighAccuracy: false, maximumAge: 10000, timeout: 30000 });
+    }, err => handleGpsError(err, !!cachedLat), geoOptions);
+}
+
+function retryGPS() {
+    if (gpsOrderId) startGPS(gpsOrderId);
+}
+
+function handleGpsError(err, hasCachedPosition) {
+    const code = err && err.code;
+    let msg;
+    let state = 'warn';
+
+    if (code === 1) {
+        msg = hasCachedPosition
+            ? 'Chưa cho phép vị trí — bản đồ vẫn xem được'
+            : 'Hãy cho phép truy cập vị trí trên trình duyệt';
+    } else if (code === 2) {
+        msg = 'Không xác định được vị trí — bật GPS trên máy';
+        state = 'error';
+    } else if (code === 3) {
+        msg = 'GPS phản hồi chậm — bấm Bật GPS thử lại';
+    } else {
+        msg = 'GPS tạm không khả dụng';
+    }
+    setGPS(state, msg, true);
 }
 
 function stopGPS() {
     if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
 }
 
-function setGPS(state, text) {
+function setGPS(state, text, showRetry) {
     const dot = document.getElementById('gpsDot');
-    dot.className = 'gps-dot' + (state === 'active' ? ' active' : state === 'error' ? ' error' : '');
+    let dotClass = 'gps-dot';
+    if (state === 'active') dotClass += ' active';
+    else if (state === 'error') dotClass += ' error';
+    else if (state === 'warn') dotClass += ' warn';
+    dot.className = dotClass;
     document.getElementById('gpsText').textContent = text;
+    const retryBtn = document.getElementById('gpsRetryBtn');
+    if (retryBtn) retryBtn.classList.toggle('d-none', !showRetry);
 }
 
 // ── Phase UI ───────────────────────────────────────────────────────
@@ -498,7 +614,11 @@ async function confirmPickedUp() {
 
 async function confirmComplete() {
     if (!currentOrder) return;
-    if (!confirm(`Xác nhận đã giao xong đơn hàng #${currentOrder.id}?`)) return;
+    let msg = `Xác nhận đã giao xong đơn hàng #${currentOrder.id}?`;
+    if (currentOrder.needsCollectCash) {
+        msg = `Bạn đã thu ${formatVND(currentOrder.amountToCollect || currentOrder.totalAmount)} từ khách chưa?\n\n` + msg;
+    }
+    if (!confirm(msg)) return;
     const btn = document.getElementById('btn-complete');
     btn.disabled = true; btn.textContent = '⏳ Đang xác nhận...';
     try {

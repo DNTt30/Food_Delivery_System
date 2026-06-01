@@ -81,19 +81,37 @@
                     <h6 class="fw-bold small mb-2"><i class="bi bi-credit-card me-2"></i>Thanh toán</h6>
                     <div class="d-flex flex-column gap-2 mb-3">
                         <label class="d-flex align-items-center gap-3 p-3 border rounded-3" style="cursor:pointer;">
-                            <input type="radio" name="paymentMethod" value="CASH" checked class="form-check-input flex-shrink-0">
+                            <input type="radio" name="paymentMethod" value="CASH" checked class="form-check-input flex-shrink-0" onchange="toggleWalletOptions()">
                             <div>
                                 <div class="fw-semibold small">💵 Tiền mặt (COD)</div>
                                 <div class="text-muted" style="font-size:0.75rem">Thanh toán khi nhận hàng</div>
                             </div>
                         </label>
                         <label class="d-flex align-items-center gap-3 p-3 border rounded-3" style="cursor:pointer;">
-                            <input type="radio" name="paymentMethod" value="WALLET" class="form-check-input flex-shrink-0">
+                            <input type="radio" name="paymentMethod" value="WALLET" class="form-check-input flex-shrink-0" onchange="toggleWalletOptions()">
                             <div>
                                 <div class="fw-semibold small">📱 Ví điện tử</div>
                                 <div class="text-muted" style="font-size:0.75rem">VNPay / MoMo</div>
                             </div>
                         </label>
+
+                        <!-- Sub-options for E-Wallet -->
+                        <div id="walletOptions" class="d-none ms-4 mt-1 mb-2 d-flex flex-column gap-2">
+                            <label class="d-flex align-items-center gap-3 p-2 border rounded-3" style="cursor:pointer; background-color: #f8f9fa;">
+                                <input type="radio" name="walletType" value="VNPAY" checked class="form-check-input flex-shrink-0">
+                                <div>
+                                    <div class="fw-semibold small" style="color: #005a9e;">🏦 VNPAY QR</div>
+                                    <div class="text-muted" style="font-size:0.75rem">Quét mã qua ứng dụng VNPAY</div>
+                                </div>
+                            </label>
+                            <label class="d-flex align-items-center gap-3 p-2 border rounded-3" style="cursor:pointer; background-color: #f8f9fa;">
+                                <input type="radio" name="walletType" value="MOMO" class="form-check-input flex-shrink-0">
+                                <div>
+                                    <div class="fw-semibold small" style="color: #a50064;">🟣 MoMo QR</div>
+                                    <div class="text-muted" style="font-size:0.75rem">Quét mã qua ứng dụng MoMo</div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Total -->
@@ -307,6 +325,16 @@
         renderCart();
     }
 
+    function toggleWalletOptions() {
+        const isWallet = document.querySelector('input[name="paymentMethod"]:checked').value === 'WALLET';
+        const walletOptions = document.getElementById('walletOptions');
+        if (isWallet) {
+            walletOptions.classList.remove('d-none');
+        } else {
+            walletOptions.classList.add('d-none');
+        }
+    }
+
     async function placeOrder() {
         const cart = getCart();
         if (!cart.length) return;
@@ -322,6 +350,11 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đặt hàng...';
 
+        let selectedPayment = document.querySelector('input[name="paymentMethod"]:checked').value;
+        if (selectedPayment === 'WALLET') {
+            selectedPayment = document.querySelector('input[name="walletType"]:checked').value;
+        }
+
         try {
             const res = await fetch('/api/customer/orders', {
                 method: 'POST',
@@ -330,14 +363,56 @@
                     restaurantId: parseInt(restaurantId),
                     items: cart.map(i => ({ menuItemId: i.id, quantity: i.qty })),
                     deliveryAddress: address,
-                    paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+                    paymentMethod: selectedPayment,
                     voucherCode: currentVoucherCode
                 })
             });
             const data = await res.json();
             if (res.ok) {
                 localStorage.removeItem(CART_KEY);
-                window.location.href = `/customer/tracking?orderId=${data.orderId}`;
+
+                if (selectedPayment === 'VNPAY') {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang chuyển sang VNPAY...';
+                    try {
+                        const payRes = await fetch('/api/payments/create-vnpay-payment?orderId=' + data.orderId, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        const payData = await payRes.json();
+                        if (payRes.ok && payData.paymentUrl) {
+                            window.location.href = payData.paymentUrl;
+                        } else {
+                            alert('Không thể tạo URL thanh toán VNPAY: ' + (payData.error || 'Lỗi không xác định'));
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+                        }
+                    } catch {
+                        alert('Lỗi kết nối tới VNPAY!');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+                    }
+                } else if (selectedPayment === 'MOMO') {
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang chuyển sang MoMo...';
+                    try {
+                        const payRes = await fetch('/api/payments/create-momo-payment?orderId=' + data.orderId, {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        const payData = await payRes.json();
+                        if (payRes.ok && payData.paymentUrl) {
+                            window.location.href = payData.paymentUrl;
+                        } else {
+                            alert('Không thể tạo URL thanh toán MoMo: ' + (payData.error || 'Lỗi không xác định'));
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+                        }
+                    } catch {
+                        alert('Lỗi kết nối tới MoMo!');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+                    }
+                } else {
+                    // COD: chuyển thẳng sang trang theo dõi
+                    window.location.href = `/customer/tracking?orderId=${data.orderId}`;
+                }
             } else {
                 alert(data.error || 'Đặt hàng thất bại!');
                 btn.disabled = false;

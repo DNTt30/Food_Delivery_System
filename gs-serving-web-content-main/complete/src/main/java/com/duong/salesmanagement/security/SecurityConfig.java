@@ -28,7 +28,22 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/auth/**", "/index.html", "/register.html", "/forgot-password.html", "/css/**", "/js/**", "/images/**", "/dashboard.html", "/", "/error", "/favicon.ico").permitAll()
+                .requestMatchers(
+        "/api/auth/**",
+        "/api/payments/**",
+        "/payment-result",
+        "/payment-failed",
+        "/index.html",
+        "/register.html",
+        "/forgot-password.html",
+        "/css/**",
+        "/js/**",
+        "/images/**",
+        "/dashboard.html",
+        "/",
+        "/error",
+        "/favicon.ico"
+).permitAll()
                 .requestMatchers("/api/upload/**").permitAll()
                 .requestMatchers("/ws/**").permitAll() // SockJS WebSocket handshake
                 .requestMatchers("/admin/**", "/customer/**", "/restaurant/**", "/driver/**", "/common/**").permitAll()

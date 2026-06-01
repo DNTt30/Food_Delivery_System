@@ -180,8 +180,24 @@
                             </div>
                             <p class="text-muted small mt-2 mb-2" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">${itemSummary || 'Không có món'}</p>
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <span class="fw-bold text-danger">${formatVND(o.totalAmount)}</span>
-                                <div class="d-flex gap-2">
+
+    <div>
+        <div class="fw-bold text-danger">${formatVND(o.totalAmount)}</div>
+
+        <small class="text-muted d-block mt-1">
+            ${(o.paymentMethod === 'COD' || o.paymentMethod === 'CASH' || o.paymentMethod === 'CASH_ON_DELIVERY')
+                ? '💵 Tiền mặt (COD) - Thanh toán khi nhận hàng'
+                : o.paymentMethod === 'VNPAY'
+                    ? '🏦 VNPAY QR - Thanh toán online'
+                    : (o.paymentMethod === 'MOMO' || o.paymentMethod === 'MOMO_E_WALLET')
+                        ? '🟣 MoMo QR - Thanh toán online'
+                        : o.paymentMethod
+                            ? '📱 Ví điện tử - ' + o.paymentMethod
+                            : '❓ Chưa xác định'}
+        </small>
+    </div>
+
+    <div class="d-flex gap-2">
                                     ${isActive ? `<a href="/customer/tracking?orderId=${o.id}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">Theo dõi</a>` : ''}
                                     ${isPending ? `<button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="cancelOrder(${o.id})">Hủy đơn</button>` : ''}
                                     ${isCompleted ? (o.isReviewed ? 

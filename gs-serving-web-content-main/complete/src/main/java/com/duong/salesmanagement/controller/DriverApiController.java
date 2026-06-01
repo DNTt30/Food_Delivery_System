@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,13 +20,16 @@ public class DriverApiController {
     private final UserRepository userRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final IOrderService orderService;
+    private final PaymentRepository paymentRepository;
 
     public DriverApiController(UserRepository userRepository,
                                DriverProfileRepository driverProfileRepository,
-                               IOrderService orderService) {
+                               IOrderService orderService,
+                               PaymentRepository paymentRepository) {
         this.userRepository = userRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.orderService = orderService;
+        this.paymentRepository = paymentRepository;
     }
 
     private DriverProfile getAuthenticatedDriver(Authentication authentication) {
@@ -186,7 +190,53 @@ public class DriverApiController {
         dto.customerPhone = o.getCustomer().getPhoneNumber();
         // RestaurantProfile chưa có field phoneNumber — để null (bổ sung sau nếu cần)
         dto.restaurantPhone = null;
+        enrichPaymentInfo(o, dto);
         return dto;
+    }
+
+    private void enrichPaymentInfo(FoodOrder order, DriverOrderDTO dto) {
+        Optional<Payment> paymentOpt = paymentRepository.findByOrder(order);
+        PaymentStatus status = PaymentStatus.PENDING;
+        PaymentMethod paymentMethodEnum = null;
+
+        if (paymentOpt.isPresent()) {
+            Payment payment = paymentOpt.get();
+            status = payment.getPaymentStatus();
+            paymentMethodEnum = payment.getPaymentMethod();
+        }
+
+        String method = order.getPaymentMethod();
+        if (method == null && paymentMethodEnum != null) {
+            method = paymentMethodEnum.name();
+        }
+
+        dto.paymentMethod = method;
+        dto.paymentStatus = status.name();
+
+        boolean isCod = isCashOnDelivery(method, paymentMethodEnum);
+        boolean isPaid = status == PaymentStatus.COMPLETED;
+
+        dto.needsCollectCash = isCod && !isPaid;
+        dto.isPaidOnline = !isCod && isPaid;
+        dto.amountToCollect = dto.needsCollectCash ? order.getTotalAmount() : null;
+        dto.paymentStatusLabel = buildPaymentStatusLabel(isCod, isPaid);
+    }
+
+    private boolean isCashOnDelivery(String method, PaymentMethod paymentMethodEnum) {
+        if (method != null) {
+            String normalized = method.trim().toUpperCase();
+            return "CASH".equals(normalized)
+                    || "COD".equals(normalized)
+                    || "CASH_ON_DELIVERY".equals(normalized);
+        }
+        return paymentMethodEnum == PaymentMethod.CASH_ON_DELIVERY;
+    }
+
+    private String buildPaymentStatusLabel(boolean isCod, boolean isPaid) {
+        if (isCod) {
+            return isPaid ? "Đã thu tiền mặt" : "Thu tiền khi giao hàng";
+        }
+        return isPaid ? "Khách đã thanh toán online" : "Chưa thanh toán online";
     }
 
     public static class DriverOrderDTO {
@@ -207,6 +257,12 @@ public class DriverApiController {
         // Số điện thoại
         public String customerPhone;
         public String restaurantPhone;
+        public String paymentMethod;
+        public String paymentStatus;
+        public String paymentStatusLabel;
+        public Boolean needsCollectCash;
+        public Boolean isPaidOnline;
+        public Double amountToCollect;
 
         public Double shippingFee;
 
