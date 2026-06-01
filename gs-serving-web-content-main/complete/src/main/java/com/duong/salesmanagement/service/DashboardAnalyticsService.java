@@ -1,6 +1,8 @@
 package com.duong.salesmanagement.service;
 
 import com.duong.salesmanagement.dto.DashboardStatisticsDTO;
+import com.duong.salesmanagement.dto.DashboardStatisticsDTO.BestSellerDTO;
+import com.duong.salesmanagement.dto.DashboardStatisticsDTO.SlowMovingItemDTO;
 import com.duong.salesmanagement.model.RestaurantProfile;
 import com.duong.salesmanagement.repository.DashboardAnalyticsRepository;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Service Implementation cho Dashboard Analytics
@@ -146,14 +149,15 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
                 restaurant.getId(), startDt, endDt, 5
         );
 
-        return results.stream().map((row, index) -> new BestSellerDTO(
+        AtomicInteger rank = new AtomicInteger(1);
+        return results.stream().map(row -> new BestSellerDTO(
                 ((Number) row[0]).longValue(),      // menuItemId
                 (String) row[1],                     // itemName
                 ((Number) row[2]).doubleValue(),     // itemPrice
                 row[3] != null ? ((Number) row[3]).intValue() : 0,  // soldCount
                 row[4] != null ? ((Number) row[4]).doubleValue() : 0.0,  // totalRevenue
                 (String) row[5],                     // imageUrl
-                index + 1                            // rank
+                rank.getAndIncrement()                            // rank
         )).collect(Collectors.toList()).toArray(new BestSellerDTO[0]);
     }
 
@@ -166,7 +170,8 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
                 restaurant.getId(), startDt, endDt, 5
         );
 
-        return results.stream().map((row, index) -> new SlowMovingItemDTO(
+        AtomicInteger rank = new AtomicInteger(1);
+        return results.stream().map(row -> new SlowMovingItemDTO(
                 ((Number) row[0]).longValue(),      // menuItemId
                 (String) row[1],                     // itemName
                 ((Number) row[2]).doubleValue(),     // itemPrice
@@ -174,7 +179,7 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
                 row[4] != null ? ((Number) row[4]).intValue() : 0,  // cancellationCount
                 row[5] != null ? ((Number) row[5]).doubleValue() : 0.0,  // cancellationRate
                 (String) row[6],                     // imageUrl
-                index + 1                            // rank
+                rank.getAndIncrement()                            // rank
         )).collect(Collectors.toList()).toArray(new SlowMovingItemDTO[0]);
     }
 

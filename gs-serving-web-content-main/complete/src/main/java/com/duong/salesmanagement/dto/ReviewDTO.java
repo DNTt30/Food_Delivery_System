@@ -51,16 +51,32 @@ public class ReviewDTO {
     // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public Long getOrderId() { return orderId; }
+    public void setOrderId(Long orderId) { this.orderId = orderId; }
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public Integer getRating() { return rating; }
     public void setRating(Integer rating) { this.rating = rating; }
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
+    public String getOriginalComment() { return originalComment; }
+    public void setOriginalComment(String originalComment) { this.originalComment = originalComment; }
+    public Boolean getHasInappropriateWords() { return hasInappropriateWords; }
+    public void setHasInappropriateWords(Boolean hasInappropriateWords) { this.hasInappropriateWords = hasInappropriateWords; }
     public List<String> getImageUrls() { return imageUrls; }
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public String getCreatedAtFormatted() { return createdAtFormatted; }
+    public void setCreatedAtFormatted(String createdAtFormatted) { this.createdAtFormatted = createdAtFormatted; }
     public String getRestaurantReply() { return restaurantReply; }
     public void setRestaurantReply(String restaurantReply) { this.restaurantReply = restaurantReply; }
+    public String getRepliedAt() { return repliedAt; }
+    public void setRepliedAt(String repliedAt) { this.repliedAt = repliedAt; }
+    public String getRepliedAtFormatted() { return repliedAtFormatted; }
+    public void setRepliedAtFormatted(String repliedAtFormatted) { this.repliedAtFormatted = repliedAtFormatted; }
     public Boolean getHasReply() { return hasReply; }
     public void setHasReply(Boolean hasReply) { this.hasReply = hasReply; }
+    public Integer getHelpfulCount() { return helpfulCount; }
+    public void setHelpfulCount(Integer helpfulCount) { this.helpfulCount = helpfulCount; }
 }

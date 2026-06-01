@@ -58,4 +58,20 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      */
     @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId GROUP BY r.rating ORDER BY r.rating DESC")
     List<Object[]> getRatingDistribution(@Param("restaurantId") Long restaurantId);
+
+    /**
+     * Tìm review của một đơn hàng cụ thể (dùng bởi CustomerApiController)
+     */
+    java.util.Optional<Review> findByOrder(com.duong.salesmanagement.model.FoodOrder order);
+    
+    /**
+     * Kiểm tra đơn hàng đã được review chưa (dùng bởi OrderService)
+     */
+    boolean existsByOrder(com.duong.salesmanagement.model.FoodOrder order);
+    
+    /**
+     * Đếm số review của một nhà hàng (fix lỗi logic của ReviewService)
+     */
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId")
+    Long countByRestaurantId(@Param("restaurantId") Long restaurantId);
 }

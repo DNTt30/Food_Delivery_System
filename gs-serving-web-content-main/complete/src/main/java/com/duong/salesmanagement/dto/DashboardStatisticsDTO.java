@@ -122,18 +122,46 @@ public class DashboardStatisticsDTO {
     public void setGrowthTrendIcon(String growthTrendIcon) { this.growthTrendIcon = growthTrendIcon; }
     public String getGrowthTrendColor() { return growthTrendColor; }
     public void setGrowthTrendColor(String growthTrendColor) { this.growthTrendColor = growthTrendColor; }
+    public Long getCurrentPeriodOrders() { return currentPeriodOrders; }
+    public void setCurrentPeriodOrders(Long currentPeriodOrders) { this.currentPeriodOrders = currentPeriodOrders; }
+    public Long getPreviousPeriodOrders() { return previousPeriodOrders; }
+    public void setPreviousPeriodOrders(Long previousPeriodOrders) { this.previousPeriodOrders = previousPeriodOrders; }
+    public Double getOrderGrowthPercent() { return orderGrowthPercent; }
+    public void setOrderGrowthPercent(Double orderGrowthPercent) { this.orderGrowthPercent = orderGrowthPercent; }
+    public String getOrderTrendIcon() { return orderTrendIcon; }
+    public void setOrderTrendIcon(String orderTrendIcon) { this.orderTrendIcon = orderTrendIcon; }
+    public String getOrderTrendColor() { return orderTrendColor; }
+    public void setOrderTrendColor(String orderTrendColor) { this.orderTrendColor = orderTrendColor; }
+    public Long getCompletedOrders() { return completedOrders; }
+    public void setCompletedOrders(Long completedOrders) { this.completedOrders = completedOrders; }
+    public Long getCancelledOrders() { return cancelledOrders; }
+    public void setCancelledOrders(Long cancelledOrders) { this.cancelledOrders = cancelledOrders; }
+    public Double getCompletionRate() { return completionRate; }
+    public void setCompletionRate(Double completionRate) { this.completionRate = completionRate; }
+    public Long getMenuCount() { return menuCount; }
+    public void setMenuCount(Long menuCount) { this.menuCount = menuCount; }
+    public Double getAvgRating() { return avgRating; }
+    public void setAvgRating(Double avgRating) { this.avgRating = avgRating; }
     public List<BestSellerDTO> getTopFiveBestSellers() { return topFiveBestSellers; }
     public void setTopFiveBestSellers(List<BestSellerDTO> topFiveBestSellers) { this.topFiveBestSellers = topFiveBestSellers; }
     public List<SlowMovingItemDTO> getSlowMovingItems() { return slowMovingItems; }
     public void setSlowMovingItems(List<SlowMovingItemDTO> slowMovingItems) { this.slowMovingItems = slowMovingItems; }
     public List<Map<String, Object>> getChartDataCurrent() { return chartDataCurrent; }
     public void setChartDataCurrent(List<Map<String, Object>> chartDataCurrent) { this.chartDataCurrent = chartDataCurrent; }
+    public List<Map<String, Object>> getChartDataPrevious() { return chartDataPrevious; }
+    public void setChartDataPrevious(List<Map<String, Object>> chartDataPrevious) { this.chartDataPrevious = chartDataPrevious; }
     public LocalDate getPeriodStartDate() { return periodStartDate; }
     public void setPeriodStartDate(LocalDate periodStartDate) { this.periodStartDate = periodStartDate; }
     public LocalDate getPeriodEndDate() { return periodEndDate; }
     public void setPeriodEndDate(LocalDate periodEndDate) { this.periodEndDate = periodEndDate; }
+    public LocalDate getPreviousPeriodStartDate() { return previousPeriodStartDate; }
+    public void setPreviousPeriodStartDate(LocalDate previousPeriodStartDate) { this.previousPeriodStartDate = previousPeriodStartDate; }
+    public LocalDate getPreviousPeriodEndDate() { return previousPeriodEndDate; }
+    public void setPreviousPeriodEndDate(LocalDate previousPeriodEndDate) { this.previousPeriodEndDate = previousPeriodEndDate; }
     public String getPeriodLabel() { return periodLabel; }
     public void setPeriodLabel(String periodLabel) { this.periodLabel = periodLabel; }
     public Boolean getIsOpen() { return isOpen; }
     public void setIsOpen(Boolean isOpen) { this.isOpen = isOpen; }
+    public Integer getActiveOrders() { return activeOrders; }
+    public void setActiveOrders(Integer activeOrders) { this.activeOrders = activeOrders; }
 }
