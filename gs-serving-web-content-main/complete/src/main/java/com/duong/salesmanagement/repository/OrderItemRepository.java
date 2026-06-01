@@ -22,4 +22,11 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
            "GROUP BY o.menuItem.id, o.menuItem.name, o.menuItem.restaurant.restaurantName " +
            "ORDER BY totalSold DESC")
     List<Object[]> findTopSellingProducts(@Param("status") OrderStatus status, Pageable pageable);
+
+    @Query("SELECT o.menuItem.id, o.menuItem.name, SUM(o.quantity) as totalSold, o.menuItem.restaurant.restaurantName " +
+           "FROM OrderItem o " +
+           "WHERE o.order.status = :status AND o.order.orderTime >= :start AND o.order.orderTime <= :end " +
+           "GROUP BY o.menuItem.id, o.menuItem.name, o.menuItem.restaurant.restaurantName " +
+           "ORDER BY totalSold DESC")
+    List<Object[]> findTopSellingProductsByDateRange(@Param("status") OrderStatus status, @Param("start") java.time.LocalDateTime start, @Param("end") java.time.LocalDateTime end, Pageable pageable);
 }

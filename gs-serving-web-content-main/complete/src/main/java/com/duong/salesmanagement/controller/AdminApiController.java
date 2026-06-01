@@ -52,18 +52,49 @@ public class AdminApiController {
 
     // UC-19: Thống kê hệ thống
     @GetMapping("/stats")
-    public ResponseEntity<?> getStats(Authentication authentication) {
+    public ResponseEntity<?> getStats(Authentication authentication, @RequestParam(defaultValue = "all") String range) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         long totalUsers = userRepository.count();
         long totalRestaurants = restaurantProfileRepository.count();
-        long totalOrders = foodOrderRepository.count();
-        long pendingOrders = foodOrderRepository.countByStatus(OrderStatus.PENDING);
-        long preparingOrders = foodOrderRepository.countByStatus(OrderStatus.PREPARING);
-        long deliveringOrders = foodOrderRepository.countByStatus(OrderStatus.DELIVERING);
-        long completedOrders = foodOrderRepository.countByStatus(OrderStatus.COMPLETED);
         
-        Double revenueOpt = foodOrderRepository.sumTotalAmountByStatus(OrderStatus.COMPLETED);
+        long totalOrders, pendingOrders, preparingOrders, deliveringOrders, completedOrders;
+        Double revenueOpt;
+        List<Object[]> topItems;
+        
+        if ("all".equalsIgnoreCase(range)) {
+            totalOrders = foodOrderRepository.count();
+            pendingOrders = foodOrderRepository.countByStatus(OrderStatus.PENDING);
+            preparingOrders = foodOrderRepository.countByStatus(OrderStatus.PREPARING);
+            deliveringOrders = foodOrderRepository.countByStatus(OrderStatus.DELIVERING);
+            completedOrders = foodOrderRepository.countByStatus(OrderStatus.COMPLETED);
+            revenueOpt = foodOrderRepository.sumTotalAmountByStatus(OrderStatus.COMPLETED);
+            topItems = orderItemRepository.findTopSellingProducts(OrderStatus.COMPLETED, org.springframework.data.domain.PageRequest.of(0, 5));
+        } else {
+            java.time.LocalDateTime start;
+            java.time.LocalDateTime end = java.time.LocalDateTime.now();
+            java.time.LocalDate today = java.time.LocalDate.now();
+            if ("today".equalsIgnoreCase(range)) {
+                start = today.atStartOfDay();
+            } else if ("week".equalsIgnoreCase(range)) {
+                start = today.minusDays(today.getDayOfWeek().getValue() - 1).atStartOfDay();
+            } else if ("month".equalsIgnoreCase(range)) {
+                start = today.withDayOfMonth(1).atStartOfDay();
+            } else if ("year".equalsIgnoreCase(range)) {
+                start = today.withDayOfYear(1).atStartOfDay();
+            } else {
+                start = today.atStartOfDay(); // fallback
+            }
+
+            totalOrders = foodOrderRepository.countByOrderTimeBetween(start, end);
+            pendingOrders = foodOrderRepository.countByStatusAndOrderTimeBetween(OrderStatus.PENDING, start, end);
+            preparingOrders = foodOrderRepository.countByStatusAndOrderTimeBetween(OrderStatus.PREPARING, start, end);
+            deliveringOrders = foodOrderRepository.countByStatusAndOrderTimeBetween(OrderStatus.DELIVERING, start, end);
+            completedOrders = foodOrderRepository.countByStatusAndOrderTimeBetween(OrderStatus.COMPLETED, start, end);
+            revenueOpt = foodOrderRepository.sumTotalAmountByStatusAndDateRange(OrderStatus.COMPLETED, start, end);
+            topItems = orderItemRepository.findTopSellingProductsByDateRange(OrderStatus.COMPLETED, start, end, org.springframework.data.domain.PageRequest.of(0, 5));
+        }
+        
         double totalRevenue = revenueOpt != null ? revenueOpt : 0.0;
 
         java.util.Map<String, Object> stats = new java.util.LinkedHashMap<>();
@@ -76,7 +107,6 @@ public class AdminApiController {
         stats.put("completedOrders", completedOrders);
         stats.put("totalRevenue", totalRevenue);
 
-        List<Object[]> topItems = orderItemRepository.findTopSellingProducts(OrderStatus.COMPLETED, org.springframework.data.domain.PageRequest.of(0, 5));
         List<java.util.Map<String, Object>> topProducts = topItems.stream().map(obj -> {
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", obj[0]);

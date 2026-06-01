@@ -34,4 +34,11 @@ public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
 
     @Query("SELECT SUM(o.totalAmount) FROM FoodOrder o WHERE o.status = :status")
     Double sumTotalAmountByStatus(@Param("status") OrderStatus status);
+
+    long countByOrderTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    long countByStatusAndOrderTimeBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT SUM(o.totalAmount) FROM FoodOrder o WHERE o.status = :status AND o.orderTime >= :start AND o.orderTime <= :end")
+    Double sumTotalAmountByStatusAndDateRange(@Param("status") OrderStatus status, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }

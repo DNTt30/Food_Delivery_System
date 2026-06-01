@@ -11,9 +11,18 @@
     <div>
         <small class="text-muted" id="lastUpdated">Đang tải dữ liệu...</small>
     </div>
-    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadDashboard()">
-        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
-    </button>
+    <div class="d-flex gap-2 align-items-center">
+        <select class="form-select form-select-sm rounded-pill px-3 fw-bold text-secondary border-secondary" id="timeRangeFilter" onchange="loadDashboard()" style="width: auto; cursor: pointer; box-shadow: none;">
+            <option value="today">Hôm nay</option>
+            <option value="week">Tuần này</option>
+            <option value="month">Tháng này</option>
+            <option value="year">Năm nay</option>
+            <option value="all" selected>Toàn thời gian</option>
+        </select>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="loadDashboard()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+        </button>
+    </div>
 </div>
 
 <!-- KPI Cards -->
@@ -177,8 +186,9 @@
     }
 
     async function loadDashboard() {
+        const range = document.getElementById('timeRangeFilter') ? document.getElementById('timeRangeFilter').value : 'all';
         try {
-            const res = await fetch('/api/admin/stats', {
+            const res = await fetch('/api/admin/stats?range=' + range, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
