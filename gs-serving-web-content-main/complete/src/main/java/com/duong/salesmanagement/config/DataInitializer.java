@@ -110,55 +110,72 @@ public class DataInitializer {
                     foodOrderRepository.save(order);
                 }
 
-                // 7. Seed rich realistic data for "restaurant" (The Coffee House) if it doesn't have menu items
-                if (menuItemRepository.findByRestaurant(restProfile).isEmpty()) {
+                // 7. Seed rich realistic data for "restaurant" (The Coffee House) if it doesn't have enough reviews
+                if (reviewRepository.count() < 10) {
                     System.out.println("🌱 Seeding menu items, orders, and reviews for The Coffee House...");
                     
-                    // Create Menu Items
-                    MenuItem m1 = new MenuItem();
-                    m1.setRestaurant(restProfile);
-                    m1.setName("Cà Phê Sữa Đá");
-                    m1.setDescription("Cà phê hạt pha phin đậm đà kết hợp sữa đặc.");
-                    m1.setPrice(29000.0);
-                    m1.setAvailable(true);
-                    m1.setSoldCount(125);
-                    m1 = menuItemRepository.save(m1);
+                    // Create Menu Items or retrieve existing ones
+                    java.util.List<MenuItem> existingItems = menuItemRepository.findByRestaurant(restProfile);
                     
-                    MenuItem m2 = new MenuItem();
-                    m2.setRestaurant(restProfile);
-                    m2.setName("Trà Đào Cam Sả");
-                    m2.setDescription("Trà đào thơm ngon, mát lạnh kết hợp lát đào và cam tươi.");
-                    m2.setPrice(39000.0);
-                    m2.setAvailable(true);
-                    m2.setSoldCount(98);
-                    m2 = menuItemRepository.save(m2);
+                    MenuItem m1 = existingItems.stream().filter(m -> m.getName().equals("Cà Phê Sữa Đá")).findFirst().orElse(null);
+                    if (m1 == null) {
+                        m1 = new MenuItem();
+                        m1.setRestaurant(restProfile);
+                        m1.setName("Cà Phê Sữa Đá");
+                        m1.setDescription("Cà phê hạt pha phin đậm đà kết hợp sữa đặc.");
+                        m1.setPrice(29000.0);
+                        m1.setAvailable(true);
+                        m1.setSoldCount(125);
+                        m1 = menuItemRepository.save(m1);
+                    }
                     
-                    MenuItem m3 = new MenuItem();
-                    m3.setRestaurant(restProfile);
-                    m3.setName("Bánh Mì Thịt Nướng");
-                    m3.setDescription("Bánh mì giòn kẹp thịt nướng xiên thơm ngon.");
-                    m3.setPrice(25000.0);
-                    m3.setAvailable(true);
-                    m3.setSoldCount(84);
-                    m3 = menuItemRepository.save(m3);
+                    MenuItem m2 = existingItems.stream().filter(m -> m.getName().equals("Trà Đào Cam Sả")).findFirst().orElse(null);
+                    if (m2 == null) {
+                        m2 = new MenuItem();
+                        m2.setRestaurant(restProfile);
+                        m2.setName("Trà Đào Cam Sả");
+                        m2.setDescription("Trà đào thơm ngon, mát lạnh kết hợp lát đào và cam tươi.");
+                        m2.setPrice(39000.0);
+                        m2.setAvailable(true);
+                        m2.setSoldCount(98);
+                        m2 = menuItemRepository.save(m2);
+                    }
                     
-                    MenuItem m4 = new MenuItem();
-                    m4.setRestaurant(restProfile);
-                    m4.setName("Cà Phê Đen Đá");
-                    m4.setDescription("Cà phê đen nguyên chất pha phin.");
-                    m4.setPrice(22000.0);
-                    m4.setAvailable(true);
-                    m4.setSoldCount(60);
-                    m4 = menuItemRepository.save(m4);
+                    MenuItem m3 = existingItems.stream().filter(m -> m.getName().equals("Bánh Mì Thịt Nướng")).findFirst().orElse(null);
+                    if (m3 == null) {
+                        m3 = new MenuItem();
+                        m3.setRestaurant(restProfile);
+                        m3.setName("Bánh Mì Thịt Nướng");
+                        m3.setDescription("Bánh mì giòn kẹp thịt nướng xiên thơm ngon.");
+                        m3.setPrice(25000.0);
+                        m3.setAvailable(true);
+                        m3.setSoldCount(84);
+                        m3 = menuItemRepository.save(m3);
+                    }
                     
-                    MenuItem m5 = new MenuItem();
-                    m5.setRestaurant(restProfile);
-                    m5.setName("Bánh Croissant Bơ Tỏi");
-                    m5.setDescription("Bánh sừng bò ngập vị bơ tỏi thơm lừng.");
-                    m5.setPrice(35000.0);
-                    m5.setAvailable(true);
-                    m5.setSoldCount(12);
-                    m5 = menuItemRepository.save(m5);
+                    MenuItem m4 = existingItems.stream().filter(m -> m.getName().equals("Cà Phê Đen Đá")).findFirst().orElse(null);
+                    if (m4 == null) {
+                        m4 = new MenuItem();
+                        m4.setRestaurant(restProfile);
+                        m4.setName("Cà Phê Đen Đá");
+                        m4.setDescription("Cà phê đen nguyên chất pha phin.");
+                        m4.setPrice(22000.0);
+                        m4.setAvailable(true);
+                        m4.setSoldCount(60);
+                        m4 = menuItemRepository.save(m4);
+                    }
+                    
+                    MenuItem m5 = existingItems.stream().filter(m -> m.getName().equals("Bánh Croissant Bơ Tỏi")).findFirst().orElse(null);
+                    if (m5 == null) {
+                        m5 = new MenuItem();
+                        m5.setRestaurant(restProfile);
+                        m5.setName("Bánh Croissant Bơ Tỏi");
+                        m5.setDescription("Bánh sừng bò ngập vị bơ tỏi thơm lừng.");
+                        m5.setPrice(35000.0);
+                        m5.setAvailable(true);
+                        m5.setSoldCount(12);
+                        m5 = menuItemRepository.save(m5);
+                    }
 
                     // Create Orders and OrderItems over the past 14 days
                     java.time.LocalDateTime nowTime = java.time.LocalDateTime.now();
