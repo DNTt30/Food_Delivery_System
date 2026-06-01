@@ -38,7 +38,7 @@ public class FoodOrder {
     private DriverProfile driver;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 32)
     private OrderStatus status;
 
     private Double totalAmount;

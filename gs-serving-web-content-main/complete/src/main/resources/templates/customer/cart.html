@@ -328,49 +328,58 @@
             });
             const data = await res.json();
             if (res.ok) {
-                localStorage.removeItem(CART_KEY);
+                const orderId = data.orderId;
+
+                async function cancelUnpaidAndRestore() {
+                    try {
+                        await fetch(`/api/customer/orders/${orderId}/cancel-unpaid`, {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                    } catch { /* ignore */ }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
+                }
 
                 if (selectedPayment === 'VNPAY') {
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang chuyển sang VNPAY...';
                     try {
-                        const payRes = await fetch('/api/payments/create-vnpay-payment?orderId=' + data.orderId, {
+                        const payRes = await fetch('/api/payments/create-vnpay-payment?orderId=' + orderId, {
                             headers: { 'Authorization': 'Bearer ' + token }
                         });
                         const payData = await payRes.json();
                         if (payRes.ok && payData.paymentUrl) {
+                            localStorage.removeItem(CART_KEY);
                             window.location.href = payData.paymentUrl;
                         } else {
+                            await cancelUnpaidAndRestore();
                             alert('Không thể tạo URL thanh toán VNPAY: ' + (payData.error || 'Lỗi không xác định'));
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
                         }
                     } catch {
+                        await cancelUnpaidAndRestore();
                         alert('Lỗi kết nối tới VNPAY!');
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
                     }
                 } else if (selectedPayment === 'MOMO') {
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang chuyển sang MoMo...';
                     try {
-                        const payRes = await fetch('/api/payments/create-momo-payment?orderId=' + data.orderId, {
+                        const payRes = await fetch('/api/payments/create-momo-payment?orderId=' + orderId, {
                             headers: { 'Authorization': 'Bearer ' + token }
                         });
                         const payData = await payRes.json();
                         if (payRes.ok && payData.paymentUrl) {
+                            localStorage.removeItem(CART_KEY);
                             window.location.href = payData.paymentUrl;
                         } else {
+                            await cancelUnpaidAndRestore();
                             alert('Không thể tạo URL thanh toán MoMo: ' + (payData.error || 'Lỗi không xác định'));
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
                         }
                     } catch {
+                        await cancelUnpaidAndRestore();
                         alert('Lỗi kết nối tới MoMo!');
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
                     }
                 } else {
-                    // COD: chuyển thẳng sang trang theo dõi
-                    window.location.href = `/customer/tracking?orderId=${data.orderId}`;
+                    localStorage.removeItem(CART_KEY);
+                    window.location.href = `/customer/tracking?orderId=${orderId}`;
                 }
             } else {
                 alert(data.error || 'Đặt hàng thất bại!');

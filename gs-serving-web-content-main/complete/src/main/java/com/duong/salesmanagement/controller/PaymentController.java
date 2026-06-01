@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.duong.salesmanagement.config.VNPAYConfig;
 import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.OrderStatus;
 import com.duong.salesmanagement.model.PaymentStatus;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
+import com.duong.salesmanagement.service.OrderService;
 import com.duong.salesmanagement.util.PaymentUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,16 +41,19 @@ public class PaymentController {
     private final VNPAYConfig vnpayConfig;
     private final FoodOrderRepository foodOrderRepository;
     private final PaymentRepository paymentRepository;
+    private final OrderService orderService;
 
     public PaymentController(
             VNPAYConfig vnpayConfig,
             FoodOrderRepository foodOrderRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            OrderService orderService
     ) {
 
         this.vnpayConfig = vnpayConfig;
         this.foodOrderRepository = foodOrderRepository;
         this.paymentRepository = paymentRepository;
+        this.orderService = orderService;
     }
 
     /**
@@ -75,6 +80,11 @@ public class PaymentController {
         }
 
         FoodOrder order = orderOpt.get();
+
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Đơn hàng không ở trạng thái chờ thanh toán"));
+        }
 
         // amount = VND * 100
         long amount = (long) (
@@ -497,6 +507,12 @@ public class PaymentController {
 
                 order.setPaymentStatus(newStatus.name());
                 foodOrderRepository.save(order);
+
+                if (success) {
+                    orderService.activateOrderAfterOnlinePayment(orderId);
+                } else {
+                    orderService.cancelUnpaidOnlineOrder(orderId);
+                }
             });
         });
     }

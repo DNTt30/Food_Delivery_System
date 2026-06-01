@@ -156,10 +156,14 @@ public class CustomerApiController {
 
         try {
             FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.voucherCode, request.paymentMethod);
+            boolean requiresPayment = order.getStatus() == com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT;
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Đặt hàng thành công!",
+                    "message", requiresPayment
+                            ? "Vui lòng hoàn tất thanh toán để xác nhận đơn hàng"
+                            : "Đặt hàng thành công!",
                     "orderId", order.getId(),
-                    "totalAmount", order.getTotalAmount()
+                    "totalAmount", order.getTotalAmount(),
+                    "requiresPayment", requiresPayment
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -179,6 +183,19 @@ public class CustomerApiController {
             "discountType", voucher.getDiscountType().name(),
             "discountValue", voucher.getDiscountValue()
         ));
+    }
+
+    /** Hủy đơn online khi chưa thanh toán (VD: không tạo được URL VNPAY) */
+    @PostMapping("/orders/{id}/cancel-unpaid")
+    public ResponseEntity<?> cancelUnpaidOrder(Authentication authentication, @PathVariable Long id) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        try {
+            orderService.cancelUnpaidOnlineOrder(id, customer);
+            return ResponseEntity.ok(Map.of("message", "Đã hủy đơn chờ thanh toán"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // UC-10: Lịch sử & theo dõi đơn hàng
@@ -225,7 +242,8 @@ public class CustomerApiController {
         if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         FoodOrder order = orderService.getOrderById(id).orElse(null);
-        if (order == null || !order.getCustomer().getId().equals(customer.getId()))
+        if (order == null || !order.getCustomer().getId().equals(customer.getId())
+                || !orderService.isVisibleInCustomerOrderHistory(order))
             return ResponseEntity.notFound().build();
 
         List<OrderItemDTO> items = order.getOrderItems() == null ? List.of() :

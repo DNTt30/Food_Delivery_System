@@ -106,7 +106,8 @@ public class OrderService {
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
         order.setOrderTime(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
+        boolean onlinePayment = isOnlinePaymentMethod(paymentMethodStr);
+        order.setStatus(onlinePayment ? OrderStatus.AWAITING_PAYMENT : OrderStatus.PENDING);
         order.setDeliveryAddress(deliveryAddress);
 
         // Geolocation Snapshot Logic
@@ -218,16 +219,70 @@ public class OrderService {
         finalOrder.setPaymentStatus(PaymentStatus.PENDING.name());
         foodOrderRepository.save(finalOrder);
 
-        // 🔔 Notify: Customer đã đặt đơn
-        notificationService.notifyOrderCreated(
-                customer.getUser(), finalOrder.getId(),
-                restaurant.getRestaurantName());
-        // 🔔 Notify: Restaurant có đơn mới
-        notificationService.notifyNewOrderForRestaurant(
-                restaurant.getUser(), finalOrder.getId(),
-                customer.getUser().getFullName());
+        // Chỉ thông báo khi đơn đã xác nhận (COD hoặc online đã thanh toán)
+        if (!onlinePayment) {
+            notifyOrderPlaced(finalOrder, customer, restaurant);
+        }
 
         return finalOrder;
+    }
+
+    private boolean isOnlinePaymentMethod(String paymentMethodStr) {
+        if (paymentMethodStr == null) return false;
+        String m = paymentMethodStr.trim().toUpperCase();
+        return "VNPAY".equals(m) || "MOMO".equals(m) || "MOMO_E_WALLET".equals(m) || "WALLET".equals(m);
+    }
+
+    private void notifyOrderPlaced(FoodOrder order, CustomerProfile customer, RestaurantProfile restaurant) {
+        notificationService.notifyOrderCreated(
+                customer.getUser(), order.getId(), restaurant.getRestaurantName());
+        notificationService.notifyNewOrderForRestaurant(
+                restaurant.getUser(), order.getId(), customer.getUser().getFullName());
+    }
+
+    /** Sau khi VNPAY/MoMo thành công — chuyển sang PENDING và báo nhà hàng */
+    @Transactional
+    public void activateOrderAfterOnlinePayment(Long orderId) {
+        FoodOrder order = foodOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+            return;
+        }
+        order.setStatus(OrderStatus.PENDING);
+        order.setPaymentStatus(PaymentStatus.COMPLETED.name());
+        foodOrderRepository.save(order);
+        broadcastOrderStatus(order);
+        notifyOrderPlaced(order, order.getCustomer(), order.getRestaurant());
+    }
+
+    /** Thanh toán online thất bại hoặc khách hủy — hủy đơn ẩn */
+    @Transactional
+    public void cancelUnpaidOnlineOrder(Long orderId) {
+        foodOrderRepository.findById(orderId).ifPresent(order -> {
+            if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+                return;
+            }
+            order.setStatus(OrderStatus.CANCELLED);
+            order.setPaymentStatus(PaymentStatus.FAILED.name());
+            foodOrderRepository.save(order);
+            paymentRepository.findByOrder(order).ifPresent(payment -> {
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
+            });
+        });
+    }
+
+    @Transactional
+    public void cancelUnpaidOnlineOrder(Long orderId, CustomerProfile customer) {
+        FoodOrder order = foodOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        if (!order.getCustomer().getId().equals(customer.getId())) {
+            throw new RuntimeException("Không có quyền hủy đơn hàng này");
+        }
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+            throw new RuntimeException("Đơn hàng không ở trạng thái chờ thanh toán");
+        }
+        cancelUnpaidOnlineOrder(orderId);
     }
 
     @Transactional
@@ -377,7 +432,22 @@ public class OrderService {
     }
 
     public List<FoodOrder> getCustomerOrders(CustomerProfile customer) {
-        return foodOrderRepository.findByCustomerOrderByOrderTimeDesc(customer);
+        return foodOrderRepository.findByCustomerOrderByOrderTimeDesc(customer).stream()
+                .filter(this::isVisibleInCustomerOrderHistory)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /** Ẩn đơn online chưa thanh toán (kể cả đơn cũ trước khi có AWAITING_PAYMENT) */
+    public boolean isVisibleInCustomerOrderHistory(FoodOrder order) {
+        if (order.getStatus() == OrderStatus.AWAITING_PAYMENT) {
+            return false;
+        }
+        if (!isOnlinePaymentMethod(order.getPaymentMethod())) {
+            return true;
+        }
+        return paymentRepository.findByOrder(order)
+                .map(p -> p.getPaymentStatus() == PaymentStatus.COMPLETED)
+                .orElse(false);
     }
 
     public Optional<FoodOrder> getOrderById(Long orderId) {
@@ -462,7 +532,9 @@ public class OrderService {
 
     public List<FoodOrder> getOrdersByUser(User user) {
         if (user == null) return java.util.Collections.emptyList();
-        return foodOrderRepository.findByCustomer_User_Id(user.getId());
+        return foodOrderRepository.findByCustomer_User_Id(user.getId()).stream()
+                .filter(this::isVisibleInCustomerOrderHistory)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public static class OrderItemRequest {

@@ -36,7 +36,8 @@ public class CustomerViewController {
             // Lấy các đơn hàng thực tế của User
             activeOrders = orderService.getOrdersByUser(user).stream()
                 .filter(o -> o.getStatus() != com.duong.salesmanagement.model.OrderStatus.COMPLETED 
-                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.CANCELLED)
+                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.CANCELLED
+                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT)
                 .collect(java.util.stream.Collectors.toList());
         } else {
             // Nếu chưa login (test), lấy toàn bộ đơn hàng đang Delivering/Preparing
@@ -63,6 +64,10 @@ public class CustomerViewController {
         
         if (orderOpt.isPresent()) {
             FoodOrder order = orderOpt.get();
+
+            if (order.getStatus() == com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT) {
+                return "redirect:/customer/cart?error=payment_required&orderId=" + orderId;
+            }
             
             // 2. Kiểm tra quyền (Nếu có user thì check, nếu không có user thì cho qua để test)
             if (user != null && !orderService.hasPermissionToTrackOrder(orderId, user)) {
