@@ -1,0 +1,241 @@
+/* ===== Dashboard Analytics CSS ===== */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding-top: 20px;
+}
+
+.card {
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+/* ===== METRIC CARDS ===== */
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #95a5a6;
+    font-weight: 500;
+}
+
+.growth-indicator {
+    font-size: 3rem;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.growth-indicator.positive {
+    color: #27ae60;
+}
+
+.growth-indicator.negative {
+    color: #e74c3c;
+}
+
+.text-success {
+    color: #27ae60 !important;
+}
+
+.text-danger {
+    color: #e74c3c !important;
+}
+
+/* ===== BUTTONS ===== */
+.btn-outline-primary {
+    border: 2px solid #3498db;
+    color: #3498db;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3498db;
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-outline-primary.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.btn-success {
+    background-color: #27ae60;
+    border-color: #27ae60;
+}
+
+.btn-success:hover {
+    background-color: #229954;
+    border-color: #229954;
+}
+
+/* ===== CHART CONTAINER ===== */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+/* ===== TABLE STYLING ===== */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    font-weight: 600;
+    border: none;
+    padding: 12px 8px;
+}
+
+.table tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    padding: 10px 8px;
+    color: #34495e;
+}
+
+.rank-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+.rank-badge.gold {
+    background: linear-gradient(135deg, #f39c12, #d68910);
+}
+
+.rank-badge.silver {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+}
+
+.rank-badge.bronze {
+    background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+/* ===== ALERT STYLING ===== */
+.alert {
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #f39c12;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* ===== DATE PICKER SECTION ===== */
+.date-picker-section {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.date-picker-section .btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ===== LOADING STATE ===== */
+.skeleton {
+    background: linear-gradient(90deg, #ecf0f1 25%, #bdc3c7 50%, #ecf0f1 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 1.8rem;
+    }
+
+    .metric-value {
+        font-size: 1.8rem;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .btn-outline-primary {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
