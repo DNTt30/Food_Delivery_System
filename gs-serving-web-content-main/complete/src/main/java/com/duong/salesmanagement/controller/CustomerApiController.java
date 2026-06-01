@@ -1,7 +1,6 @@
 package com.duong.salesmanagement.controller;
 
-import com.duong.salesmanagement.model.*;
-import com.duong.salesmanagement.repository.*;
+
 import com.duong.salesmanagement.service.IOrderService;
 import com.duong.salesmanagement.service.IShippingCalculationService;
 import com.duong.salesmanagement.service.OrderService;
