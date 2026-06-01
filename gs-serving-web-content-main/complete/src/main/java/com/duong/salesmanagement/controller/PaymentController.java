@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.duong.salesmanagement.config.VNPAYConfig;
 import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.OrderStatus;
 import com.duong.salesmanagement.model.PaymentStatus;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
