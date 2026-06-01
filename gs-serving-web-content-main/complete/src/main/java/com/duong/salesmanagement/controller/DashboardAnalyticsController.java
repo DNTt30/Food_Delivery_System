@@ -105,6 +105,28 @@ public class DashboardAnalyticsController {
      * GET /api/restaurant/analytics/custom?startDate=2026-01-01&endDate=2026-06-01
      * Thống kê tùy chọn khoảng thời gian
      */
+    private LocalDate parseDateFlexible(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ngày không được để trống");
+        }
+        dateStr = dateStr.trim();
+        if (dateStr.contains("/")) {
+            String[] parts = dateStr.split("/");
+            if (parts[0].length() == 4) { // YYYY/MM/DD
+                return LocalDate.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+            } else if (parts[2].length() == 4) { // MM/DD/YYYY or DD/MM/YYYY
+                int m = Integer.parseInt(parts[0]);
+                int d = Integer.parseInt(parts[1]);
+                if (m > 12) {
+                    m = Integer.parseInt(parts[1]);
+                    d = Integer.parseInt(parts[0]);
+                }
+                return LocalDate.of(Integer.parseInt(parts[2]), m, d);
+            }
+        }
+        return LocalDate.parse(dateStr);
+    }
+
     @GetMapping("/custom")
     public ResponseEntity<?> getCustomRange(Authentication auth,
                                            @RequestParam("startDate") String startDateStr,
@@ -113,8 +135,8 @@ public class DashboardAnalyticsController {
         if (restaurant == null) return unauthorized();
 
         try {
-            LocalDate startDate = LocalDate.parse(startDateStr);
-            LocalDate endDate = LocalDate.parse(endDateStr);
+            LocalDate startDate = parseDateFlexible(startDateStr);
+            LocalDate endDate = parseDateFlexible(endDateStr);
             
             if (startDate.isAfter(endDate)) {
                 return ResponseEntity.badRequest()
@@ -124,8 +146,9 @@ public class DashboardAnalyticsController {
             DashboardStatisticsDTO stats = analyticsService.getStatisticsByDateRange(restaurant, startDate, endDate);
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Format ngày không hợp lệ. Sử dụng YYYY-MM-DD"));
+                    .body(Map.of("error", "Lỗi: " + e.getClass().getSimpleName() + " - " + e.getMessage()));
         }
     }
 
@@ -141,8 +164,8 @@ public class DashboardAnalyticsController {
         if (restaurant == null) return unauthorized();
 
         try {
-            LocalDate startDate = startDateStr != null ? LocalDate.parse(startDateStr) : LocalDate.now().withDayOfMonth(1);
-            LocalDate endDate = endDateStr != null ? LocalDate.parse(endDateStr) : LocalDate.now();
+            LocalDate startDate = startDateStr != null ? parseDateFlexible(startDateStr) : LocalDate.now().withDayOfMonth(1);
+            LocalDate endDate = endDateStr != null ? parseDateFlexible(endDateStr) : LocalDate.now();
             
             DashboardStatisticsDTO.BestSellerDTO[] bestSellers = analyticsService.getTopBestSellers(restaurant, startDate, endDate);
             
@@ -151,6 +174,7 @@ public class DashboardAnalyticsController {
             response.put("count", bestSellers.length);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Lỗi: " + e.getMessage()));
         }
@@ -168,8 +192,8 @@ public class DashboardAnalyticsController {
         if (restaurant == null) return unauthorized();
 
         try {
-            LocalDate startDate = startDateStr != null ? LocalDate.parse(startDateStr) : LocalDate.now().withDayOfMonth(1);
-            LocalDate endDate = endDateStr != null ? LocalDate.parse(endDateStr) : LocalDate.now();
+            LocalDate startDate = startDateStr != null ? parseDateFlexible(startDateStr) : LocalDate.now().withDayOfMonth(1);
+            LocalDate endDate = endDateStr != null ? parseDateFlexible(endDateStr) : LocalDate.now();
             
             DashboardStatisticsDTO.SlowMovingItemDTO[] slowItems = analyticsService.getSlowMovingItems(restaurant, startDate, endDate);
             
@@ -178,6 +202,7 @@ public class DashboardAnalyticsController {
             response.put("count", slowItems.length);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Lỗi: " + e.getMessage()));
         }

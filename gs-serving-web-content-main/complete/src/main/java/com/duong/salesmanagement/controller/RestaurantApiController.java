@@ -275,9 +275,16 @@ public class RestaurantApiController {
 
         List<FoodOrder> orders;
         if ("ACTIVE".equalsIgnoreCase(status)) {
-            // Chỉ PENDING + PREPARING
+            // Chỉ lấy PENDING, PREPARING, DELIVERING và đơn hàng của ngày hôm nay
+            LocalDateTime todayStart = LocalDate.now().atStartOfDay();
             orders = foodOrderRepository.findByRestaurantOrderByOrderTimeDesc(restaurant).stream()
-                    .filter(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.PREPARING)
+                    .filter(o -> {
+                        OrderStatus s = o.getStatus();
+                        if (s == OrderStatus.PENDING || s == OrderStatus.PREPARING || s == OrderStatus.DELIVERING) {
+                            return true;
+                        }
+                        return o.getOrderTime() != null && !o.getOrderTime().isBefore(todayStart);
+                    })
                     .collect(Collectors.toList());
         } else if ("ALL".equalsIgnoreCase(status)) {
             orders = foodOrderRepository.findByRestaurantOrderByOrderTimeDesc(restaurant);

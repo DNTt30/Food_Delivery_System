@@ -114,14 +114,14 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
     @Override
     public DashboardStatisticsDTO getStatisticsThisWeek(RestaurantProfile restaurant) {
         LocalDate now = LocalDate.now();
-        LocalDate startOfWeek = now.minusDays(now.getDayOfWeek().getValue() - 1);
+        LocalDate startOfWeek = now.minusDays(6); // 7 days including today
         return getStatisticsByDateRange(restaurant, startOfWeek, now);
     }
 
     @Override
     public DashboardStatisticsDTO getStatisticsThisMonth(RestaurantProfile restaurant) {
         LocalDate now = LocalDate.now();
-        LocalDate startOfMonth = now.withDayOfMonth(1);
+        LocalDate startOfMonth = now.minusDays(29); // 30 days including today
         return getStatisticsByDateRange(restaurant, startOfMonth, now);
     }
 
@@ -154,9 +154,9 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
                 ((Number) row[0]).longValue(),      // menuItemId
                 (String) row[1],                     // itemName
                 ((Number) row[2]).doubleValue(),     // itemPrice
-                row[3] != null ? ((Number) row[3]).intValue() : 0,  // soldCount
-                row[4] != null ? ((Number) row[4]).doubleValue() : 0.0,  // totalRevenue
-                (String) row[5],                     // imageUrl
+                row[4] != null ? ((Number) row[4]).intValue() : 0,  // soldCount
+                row[5] != null ? ((Number) row[5]).doubleValue() : 0.0,  // totalRevenue
+                (String) row[3],                     // imageUrl
                 rank.getAndIncrement()                            // rank
         )).collect(Collectors.toList()).toArray(new BestSellerDTO[0]);
     }
@@ -175,10 +175,10 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
                 ((Number) row[0]).longValue(),      // menuItemId
                 (String) row[1],                     // itemName
                 ((Number) row[2]).doubleValue(),     // itemPrice
-                row[3] != null ? ((Number) row[3]).intValue() : 0,  // soldCount
-                row[4] != null ? ((Number) row[4]).intValue() : 0,  // cancellationCount
-                row[5] != null ? ((Number) row[5]).doubleValue() : 0.0,  // cancellationRate
-                (String) row[6],                     // imageUrl
+                row[4] != null ? ((Number) row[4]).intValue() : 0,  // soldCount
+                row[5] != null ? ((Number) row[5]).intValue() : 0,  // cancellationCount
+                row[6] != null ? ((Number) row[6]).doubleValue() : 0.0,  // cancellationRate
+                (String) row[3],                     // imageUrl
                 rank.getAndIncrement()                            // rank
         )).collect(Collectors.toList()).toArray(new SlowMovingItemDTO[0]);
     }
@@ -201,13 +201,33 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
     private List<Map<String, Object>> getDailyRevenueChartData(Long restaurantId, LocalDateTime startDate, LocalDateTime endDate) {
         List<Object[]> results = analyticsRepository.findDailyRevenueByRestaurant(restaurantId, startDate, endDate);
         
-        return results.stream().map(row -> {
+        Map<String, Object[]> resultMap = new HashMap<>();
+        for (Object[] row : results) {
+            String dateStr = row[0] != null ? row[0].toString() : "";
+            resultMap.put(dateStr, row);
+        }
+
+        List<Map<String, Object>> fullChartData = new ArrayList<>();
+        LocalDate start = startDate.toLocalDate();
+        LocalDate end = endDate.toLocalDate();
+
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            String dateStr = date.toString();
             Map<String, Object> point = new LinkedHashMap<>();
-            point.put("date", row[0] != null ? row[0].toString() : "");
-            point.put("revenue", row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
-            point.put("orders", row[2] != null ? ((Number) row[2]).longValue() : 0L);
-            return point;
-        }).collect(Collectors.toList());
+            point.put("date", dateStr);
+            
+            if (resultMap.containsKey(dateStr)) {
+                Object[] row = resultMap.get(dateStr);
+                point.put("revenue", row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
+                point.put("orders", row[2] != null ? ((Number) row[2]).longValue() : 0L);
+            } else {
+                point.put("revenue", 0.0);
+                point.put("orders", 0L);
+            }
+            fullChartData.add(point);
+        }
+
+        return fullChartData;
     }
 
     /**
@@ -215,17 +235,16 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
      */
     private String formatDateRangeLabel(LocalDate startDate, LocalDate endDate) {
         LocalDate now = LocalDate.now();
-        LocalDate startOfWeek = now.minusDays(now.getDayOfWeek().getValue() - 1);
-        LocalDate startOfMonth = now.withDayOfMonth(1);
         LocalDate startOfYear = now.withDayOfYear(1);
+        YearMonth previousMonth = YearMonth.now().minusMonths(1);
 
-        if (startDate.equals(startOfWeek) && endDate.equals(now)) {
-            return "Tuần này";
-        } else if (startDate.equals(startOfMonth) && endDate.equals(now)) {
-            return "Tháng này";
+        if (startDate.equals(now.minusDays(6)) && endDate.equals(now)) {
+            return "7 ngày qua";
+        } else if (startDate.equals(now.minusDays(29)) && endDate.equals(now)) {
+            return "30 ngày qua";
         } else if (startDate.equals(startOfYear) && endDate.equals(now)) {
             return "Năm nay";
-        } else if (startDate.getMonthValue() == now.getMonthValue() - 1) {
+        } else if (startDate.equals(previousMonth.atDay(1)) && endDate.equals(previousMonth.atEndOfMonth())) {
             return "Tháng trước";
         } else {
             return startDate + " đến " + endDate;

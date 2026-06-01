@@ -209,32 +209,13 @@ function formatTrackingPhase(phase) {
 async function loadOrders(){
     if(currentTab !== 'PROCESSING') return;
     try{
-        const res=await fetch(`/api/restaurant/orders?status=ALL`,{headers:{'Authorization':'Bearer '+token}});
+        const res=await fetch(`/api/restaurant/orders?status=ACTIVE`,{headers:{'Authorization':'Bearer '+token}});
         if(res.status===401||res.status===403){window.location.href='/common/auth';return;}
         if(!res.ok) throw new Error('Network response was not ok');
         
         let data=await res.json();
         
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const d = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${y}-${m}-${d}`;
-
-        allOrders = data.filter(o => {
-            if (o.status === 'COMPLETED' || o.status === 'CANCELLED') {
-                const dt = o.orderTime;
-                let dateStr = "";
-                if (Array.isArray(dt)) {
-                    dateStr = `${dt[0]}-${String(dt[1]).padStart(2,'0')}-${String(dt[2]).padStart(2,'0')}`;
-                } else if (dt) {
-                    const od = new Date(dt);
-                    dateStr = `${od.getFullYear()}-${String(od.getMonth() + 1).padStart(2, '0')}-${String(od.getDate()).padStart(2, '0')}`;
-                }
-                return dateStr === todayStr;
-            }
-            return true;
-        });
+        allOrders = data;
 
         renderKanban(allOrders);
         filterOrders();
