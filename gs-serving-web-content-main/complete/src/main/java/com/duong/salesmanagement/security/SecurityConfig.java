@@ -31,7 +31,8 @@ public class SecurityConfig {
                 .requestMatchers(
         "/api/auth/**",
         "/api/payments/**",
-        "/payment_result.html",
+        "/payment-result",
+        "/payment-failed",
         "/index.html",
         "/register.html",
         "/forgot-password.html",

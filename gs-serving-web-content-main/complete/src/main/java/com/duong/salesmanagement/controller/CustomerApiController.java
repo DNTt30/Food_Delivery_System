@@ -1,17 +1,37 @@
 package com.duong.salesmanagement.controller;
 
-import com.duong.salesmanagement.model.*;
-import com.duong.salesmanagement.repository.*;
-import com.duong.salesmanagement.service.OrderService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.duong.salesmanagement.model.CustomerProfile;
+import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.MenuItem;
+import com.duong.salesmanagement.model.RestaurantProfile;
+import com.duong.salesmanagement.model.Review;
+import com.duong.salesmanagement.model.Role;
+import com.duong.salesmanagement.model.User;
+import com.duong.salesmanagement.model.Voucher;
+import com.duong.salesmanagement.repository.CustomerProfileRepository;
+import com.duong.salesmanagement.repository.MenuItemRepository;
+import com.duong.salesmanagement.repository.RestaurantProfileRepository;
+import com.duong.salesmanagement.repository.ReviewRepository;
+import com.duong.salesmanagement.repository.UserRepository;
+import com.duong.salesmanagement.repository.VoucherRepository;
+import com.duong.salesmanagement.service.OrderService;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -191,7 +211,8 @@ public class CustomerApiController {
                     items,
                     isReviewed,
                     reviewRating,
-                    reviewComment
+                    reviewComment,
+                    o.getPaymentMethod()
             );
         }).collect(Collectors.toList());
 
@@ -233,7 +254,8 @@ public class CustomerApiController {
                 items,
                 isReviewed,
                 reviewRating,
-                reviewComment
+                reviewComment,
+                order.getPaymentMethod()
         );
         return ResponseEntity.ok(dto);
     }
@@ -340,16 +362,18 @@ public class CustomerApiController {
         public boolean isReviewed;
         public Integer reviewRating;
         public String reviewComment;
+        public String paymentMethod;
 
         public OrderSummaryDTO(Long id, String restaurantName, String restaurantImage, String status,
                                Double totalAmount, String orderTime, String deliveryAddress, List<OrderItemDTO> items,
-                               boolean isReviewed, Integer reviewRating, String reviewComment) {
+                               boolean isReviewed, Integer reviewRating, String reviewComment, String paymentMethod) {
             this.id = id; this.restaurantName = restaurantName; this.restaurantImage = restaurantImage;
             this.status = status; this.totalAmount = totalAmount; this.orderTime = orderTime;
             this.deliveryAddress = deliveryAddress; this.items = items;
             this.isReviewed = isReviewed;
             this.reviewRating = reviewRating;
             this.reviewComment = reviewComment;
+            this.paymentMethod = paymentMethod;
         }
     }
 
@@ -360,8 +384,8 @@ public class CustomerApiController {
         public OrderDetailDTO(Long id, String restaurantName, String status, Double totalAmount,
                               String orderTime, String deliveryAddress, String driverName,
                               String driverPhone, List<OrderItemDTO> items, boolean isReviewed, 
-                              Integer reviewRating, String reviewComment) {
-            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items, isReviewed, reviewRating, reviewComment);
+                              Integer reviewRating, String reviewComment, String paymentMethod) {
+            super(id, restaurantName, null, status, totalAmount, orderTime, deliveryAddress, items, isReviewed, reviewRating, reviewComment, paymentMethod);
             this.driverName = driverName;
             this.driverPhone = driverPhone;
         }

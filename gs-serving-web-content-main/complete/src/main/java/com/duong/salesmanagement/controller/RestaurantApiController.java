@@ -374,7 +374,8 @@ public class RestaurantApiController {
                 o.getOrderTime() != null ? o.getOrderTime().toString() : null,
                 driverName,
                 driverPhone,
-                trackingPhase
+                trackingPhase,
+                o.getPaymentMethod()
         );
     }
 
@@ -541,16 +542,19 @@ public class RestaurantApiController {
         public String driverName;
         public String driverPhone;
         public String trackingPhase; // Phase mới nhất từ GPS log
+        public String paymentMethod;
 
         public OrderDTO(Long id, String customerName, String customerPhone,
                         List<OrderItemDTO> items, String status, Double totalAmount,
                         String deliveryAddress, String orderTime,
-                        String driverName, String driverPhone, String trackingPhase) {
+                        String driverName, String driverPhone, String trackingPhase,
+                        String paymentMethod) {
             this.id = id; this.customerName = customerName; this.customerPhone = customerPhone;
             this.items = items; this.status = status; this.totalAmount = totalAmount;
             this.deliveryAddress = deliveryAddress; this.orderTime = orderTime;
             this.driverName = driverName; this.driverPhone = driverPhone;
             this.trackingPhase = trackingPhase;
+            this.paymentMethod = paymentMethod;
         }
     }
 

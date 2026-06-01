@@ -1,15 +1,37 @@
 package com.duong.salesmanagement.service;
 
-import com.duong.salesmanagement.dto.OrderStatusNotification;
-import com.duong.salesmanagement.model.*;
-import com.duong.salesmanagement.repository.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.duong.salesmanagement.dto.OrderStatusNotification;
+import com.duong.salesmanagement.model.CustomerProfile;
+import com.duong.salesmanagement.model.DiscountType;
+import com.duong.salesmanagement.model.DriverProfile;
+import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.MenuItem;
+import com.duong.salesmanagement.model.OrderItem;
+import com.duong.salesmanagement.model.OrderStatus;
+import com.duong.salesmanagement.model.Payment;
+import com.duong.salesmanagement.model.PaymentMethod;
+import com.duong.salesmanagement.model.PaymentStatus;
+import com.duong.salesmanagement.model.RestaurantProfile;
+import com.duong.salesmanagement.model.Review;
+import com.duong.salesmanagement.model.Role;
+import com.duong.salesmanagement.model.User;
+import com.duong.salesmanagement.model.Voucher;
+import com.duong.salesmanagement.repository.DriverProfileRepository;
+import com.duong.salesmanagement.repository.FoodOrderRepository;
+import com.duong.salesmanagement.repository.MenuItemRepository;
+import com.duong.salesmanagement.repository.OrderItemRepository;
+import com.duong.salesmanagement.repository.PaymentRepository;
+import com.duong.salesmanagement.repository.RestaurantProfileRepository;
+import com.duong.salesmanagement.repository.ReviewRepository;
+import com.duong.salesmanagement.repository.VoucherRepository;
 
 @Service
 @SuppressWarnings("null")
@@ -180,6 +202,8 @@ public class OrderService {
         PaymentMethod paymentMethod = PaymentMethod.CASH_ON_DELIVERY;
         if ("VNPAY".equalsIgnoreCase(paymentMethodStr)) {
             paymentMethod = PaymentMethod.VNPAY;
+        } else if ("MOMO".equalsIgnoreCase(paymentMethodStr)) {
+            paymentMethod = PaymentMethod.MOMO_E_WALLET;
         }
         Payment payment = new Payment();
         payment.setOrder(finalOrder);
@@ -188,6 +212,10 @@ public class OrderService {
         payment.setAmount(totalAmount);
         payment.setTransactionDate(LocalDateTime.now());
         paymentRepository.save(payment);
+
+        // Lưu phương thức thanh toán vào FoodOrder
+        finalOrder.setPaymentMethod(paymentMethodStr);
+        foodOrderRepository.save(finalOrder);
 
         // 🔔 Notify: Customer đã đặt đơn
         notificationService.notifyOrderCreated(

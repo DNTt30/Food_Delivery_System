@@ -314,7 +314,7 @@ public class PaymentController {
                                 : "fail";
 
                 response.sendRedirect(
-                        "/payment_result.html?status="
+                        "/payment-result?status="
                                 + status
                                 + "&orderId="
                                 + orderId
@@ -323,14 +323,14 @@ public class PaymentController {
             } else {
 
                 response.sendRedirect(
-                        "/payment_result.html?status=fail"
+                        "/payment-result?status=fail"
                 );
             }
 
         } else {
 
             response.sendRedirect(
-                    "/payment_result.html?status=fail"
+                    "/payment-result?status=fail"
             );
         }
     }

@@ -499,7 +499,63 @@ async function showTracking(orderId){
             <p class="section-divider">🍽 Món ăn</p>
             <table class="table table-sm mb-0"><thead><tr><th>Món</th><th class="text-center">SL</th><th class="text-end">Giá</th><th class="text-end">T.Tiền</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
-            <tfoot><tr><td colspan="3" class="text-end fw-bold">Tổng</td><td class="text-end fw-bold text-danger">${fmtVND(o.totalAmount)}</td></tr></tfoot></table>
+            <tfoot>
+<tr>
+    <td colspan="3" class="text-end fw-bold">Tổng</td>
+    <td class="text-end fw-bold text-danger">
+        ${fmtVND(o.totalAmount)}
+    </td>
+</tr>
+
+<tr>
+    <td colspan="4" class="pt-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold">
+                <i class="bi bi-credit-card me-1"></i>
+                Phương thức thanh toán:
+            </span>
+
+            ${
+                (o.paymentMethod === 'COD' || o.paymentMethod === 'CASH' || o.paymentMethod === 'CASH_ON_DELIVERY')
+                ? `
+                    <span class="badge bg-success">
+                        💵 Tiền mặt (COD)
+                    </span>
+                  `
+                : o.paymentMethod === 'VNPAY'
+                    ? `
+                        <span class="badge bg-primary">
+                            🏦 VNPAY QR
+                        </span>
+                      `
+                    : (o.paymentMethod === 'MOMO' || o.paymentMethod === 'MOMO_E_WALLET')
+                        ? `
+                            <span class="badge" style="background:#ae2070;">
+                                🟣 MoMo QR
+                            </span>
+                          `
+                        : `
+                            <span class="badge bg-secondary">
+                                ${o.paymentMethod || 'Chưa xác định'}
+                            </span>
+                          `
+            }
+        </div>
+
+        <div class="small text-muted mt-2">
+            ${
+                (o.paymentMethod === 'COD' || o.paymentMethod === 'CASH' || o.paymentMethod === 'CASH_ON_DELIVERY')
+                ? 'Thanh toán khi nhận hàng'
+                : o.paymentMethod === 'VNPAY'
+                    ? 'Thanh toán online qua VNPAY QR'
+                    : (o.paymentMethod === 'MOMO' || o.paymentMethod === 'MOMO_E_WALLET')
+                        ? 'Thanh toán online qua MoMo QR'
+                        : o.paymentMethod || ''
+            }
+        </div>
+    </td>
+</tr>
+</tfoot></table>
           </div>
           ${o.status==='PENDING'?`<div class="col-12 d-flex gap-2 justify-content-end border-top pt-3">
             <button class="btn btn-success rounded-pill px-4" onclick="updateStatus(${o.id},'PREPARING')"><i class="bi bi-check-lg me-1"></i>Xác nhận & Nấu</button>

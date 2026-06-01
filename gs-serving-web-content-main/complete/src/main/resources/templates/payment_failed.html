@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh toán thất bại</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body{
+            background:#f4f6f9;
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+        }
+
+        .container{
+            width:500px;
+            background:white;
+            border-radius:15px;
+            padding:40px;
+            text-align:center;
+            box-shadow:0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .icon{
+            width:100px;
+            height:100px;
+            margin:auto;
+            border-radius:50%;
+            background:#ffebee;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            margin-bottom:20px;
+        }
+
+        .icon span{
+            font-size:60px;
+            color:#e53935;
+            font-weight:bold;
+        }
+
+        h1{
+            color:#e53935;
+            margin-bottom:15px;
+        }
+
+        p{
+            color:#666;
+            line-height:1.6;
+            margin-bottom:25px;
+        }
+
+        .btn{
+            display:inline-block;
+            text-decoration:none;
+            padding:12px 25px;
+            border-radius:8px;
+            margin:5px;
+            transition:0.3s;
+        }
+
+        .btn-home{
+            background:#1976d2;
+            color:white;
+        }
+
+        .btn-home:hover{
+            background:#1565c0;
+        }
+
+        .btn-order{
+            background:#ff9800;
+            color:white;
+        }
+
+        .btn-order:hover{
+            background:#f57c00;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="icon">
+        <span>✖</span>
+    </div>
+
+    <h1>Thanh toán thất bại</h1>
+
+    <p>
+        Rất tiếc, giao dịch của bạn không thành công hoặc đã bị hủy.
+        <br>
+        Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
+    </p>
+
+    <a href="/customer/orders.html" class="btn btn-order">
+        Xem đơn hàng
+    </a>
+
+    <a href="/" class="btn btn-home">
+        Về trang chủ
+    </a>
+
+</div>
+
+</body>
+</html>
