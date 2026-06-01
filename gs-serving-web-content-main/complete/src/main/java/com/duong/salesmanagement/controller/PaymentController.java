@@ -496,6 +496,11 @@ public class PaymentController {
                 paymentRepository.save(payment);
 
                 order.setPaymentStatus(newStatus.name());
+                if (success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                    order.setStatus(OrderStatus.PENDING);
+                } else if (!success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                    order.setStatus(OrderStatus.CANCELLED);
+                }
                 foodOrderRepository.save(order);
             });
         });

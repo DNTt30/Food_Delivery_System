@@ -297,6 +297,10 @@ public class RestaurantApiController {
             }
         }
 
+        orders = orders.stream()
+                .filter(o -> o.getStatus() != OrderStatus.PENDING_PAYMENT)
+                .collect(Collectors.toList());
+
         List<OrderDTO> dtos = orders.stream().map(this::toOrderDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }

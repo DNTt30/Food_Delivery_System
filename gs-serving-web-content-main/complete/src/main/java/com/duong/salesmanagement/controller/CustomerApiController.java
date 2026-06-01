@@ -248,7 +248,9 @@ public class CustomerApiController {
         CustomerProfile customer = getAuthenticatedCustomer(authentication);
         if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-        List<FoodOrder> orders = orderService.getCustomerOrders(customer);
+        List<FoodOrder> orders = orderService.getCustomerOrders(customer).stream()
+                .filter(o -> o.getStatus() != OrderStatus.PENDING_PAYMENT)
+                .collect(Collectors.toList());
         List<OrderSummaryDTO> dtos = orders.stream().map(o -> {
             List<OrderItemDTO> items = o.getOrderItems() == null ? List.of() :
                     o.getOrderItems().stream().map(oi -> new OrderItemDTO(

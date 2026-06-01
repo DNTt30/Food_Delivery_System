@@ -106,7 +106,16 @@ public class OrderService implements IOrderService {
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
         order.setOrderTime(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
+        try {
+            PaymentMethod pm = PaymentMethod.valueOf(paymentMethodStr);
+            if (pm == PaymentMethod.VNPAY || pm == PaymentMethod.MOMO || pm == PaymentMethod.MOMO_E_WALLET) {
+                order.setStatus(OrderStatus.PENDING_PAYMENT);
+            } else {
+                order.setStatus(OrderStatus.PENDING);
+            }
+        } catch (Exception e) {
+            order.setStatus(OrderStatus.PENDING);
+        }
         order.setDeliveryAddress(deliveryAddress);
 
         // Geolocation Snapshot Logic
