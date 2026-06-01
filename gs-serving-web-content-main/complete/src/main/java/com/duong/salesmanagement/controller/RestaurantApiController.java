@@ -3,6 +3,7 @@ package com.duong.salesmanagement.controller;
 import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
 import com.duong.salesmanagement.service.IOrderService;
+import com.duong.salesmanagement.service.ProfanityFilterService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,7 @@ public class RestaurantApiController {
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
     private final IOrderService orderService;
+    private final ProfanityFilterService profanityFilterService;
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
     private final com.duong.salesmanagement.service.NotificationService notificationService;
 
@@ -46,7 +48,8 @@ public class RestaurantApiController {
                                    ReviewRepository reviewRepository,
                                    IOrderService orderService,
                                    com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository,
-                                   com.duong.salesmanagement.service.NotificationService notificationService) {
+                                   com.duong.salesmanagement.service.NotificationService notificationService,
+                                   ProfanityFilterService profanityFilterService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -56,6 +59,7 @@ public class RestaurantApiController {
         this.orderService = orderService;
         this.trackingLocationRepository = trackingLocationRepository;
         this.notificationService = notificationService;
+        this.profanityFilterService = profanityFilterService;
     }
 
     // ================================================================
@@ -490,16 +494,29 @@ public class RestaurantApiController {
     // 5. REVIEW MANAGEMENT
     // ================================================================
 
-    /** GET /api/restaurant/reviews — Danh sách đánh giá */
+    /**
+     * GET /api/restaurant/reviews?page=0&size=10&sort=newest|rating
+     * Danh sách đánh giá có phân trang (tích hợp từ Quân)
+     */
     @GetMapping("/reviews")
-    public ResponseEntity<?> getReviews(Authentication auth) {
+    public ResponseEntity<?> getReviews(Authentication auth,
+                                        @RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "10") int size,
+                                        @RequestParam(defaultValue = "newest") String sort) {
         RestaurantProfile restaurant = getAuthenticatedRestaurant(auth);
         if (restaurant == null) return unauthorized();
 
-        List<Review> reviews = reviewRepository.findByRestaurant(restaurant);
+        Pageable pageable = PageRequest.of(page, Math.min(size, 50));
+        Page<Review> reviewPage;
+        if ("rating".equalsIgnoreCase(sort)) {
+            reviewPage = reviewRepository.findByRestaurantOrderByRatingDesc(restaurant, pageable);
+        } else {
+            reviewPage = reviewRepository.findByRestaurantOrderByCreatedAtDesc(restaurant, pageable);
+        }
+
         Double avg = reviewRepository.avgRatingByRestaurant(restaurant);
 
-        List<ReviewDTO> dtos = reviews.stream().map(r -> new ReviewDTO(
+        List<ReviewDTO> dtos = reviewPage.getContent().stream().map(r -> new ReviewDTO(
                 r.getId(),
                 r.getOrder().getId(),
                 r.getOrder().getCustomer().getUser().getFullName(),
@@ -511,11 +528,15 @@ public class RestaurantApiController {
                 r.getRepliedAt() != null ? r.getRepliedAt().toString() : null
         )).collect(Collectors.toList());
 
-        return ResponseEntity.ok(Map.of(
-                "reviews", dtos,
-                "avgRating", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0,
-                "totalReviews", dtos.size()
-        ));
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("reviews", dtos);
+        response.put("avgRating", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+        response.put("totalReviews", reviewPage.getTotalElements());
+        response.put("currentPage", reviewPage.getNumber());
+        response.put("totalPages", reviewPage.getTotalPages());
+        response.put("hasNext", reviewPage.hasNext());
+        response.put("hasPrevious", reviewPage.hasPrevious());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reviews/{id}/reply")
@@ -538,6 +559,9 @@ public class RestaurantApiController {
         if (replyText == null || replyText.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Nội dung phản hồi không được bỏ trống"));
         }
+
+        // Lọc từ ngữ thô tục trong phản hồi (tích hợp từ Quân)
+        replyText = profanityFilterService.filterProfanity(replyText);
 
         review.setRestaurantReply(replyText);
         review.setRepliedAt(LocalDateTime.now());
