@@ -14,18 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.duong.salesmanagement.model.CustomerProfile;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.MenuItem;
@@ -40,7 +28,6 @@ import com.duong.salesmanagement.repository.RestaurantProfileRepository;
 import com.duong.salesmanagement.repository.ReviewRepository;
 import com.duong.salesmanagement.repository.UserRepository;
 import com.duong.salesmanagement.repository.VoucherRepository;
-import com.duong.salesmanagement.service.OrderService;
 
 @RestController
 @RequestMapping("/api/customer")
