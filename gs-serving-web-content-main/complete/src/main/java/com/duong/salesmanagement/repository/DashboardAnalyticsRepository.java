@@ -73,7 +73,7 @@ public interface DashboardAnalyticsRepository extends JpaRepository<MenuItem, Lo
      */
     @Query(value = """
         SELECT DATE(o.order_time) as orderDate,
-               SUM(o.total_amount - o.shipping_fee) as revenue,
+               SUM(COALESCE(o.total_amount, 0) - COALESCE(o.shipping_fee, 0)) as revenue,
                COUNT(o.id) as orderCount
         FROM food_orders o
         WHERE o.restaurant_id = :restaurantId

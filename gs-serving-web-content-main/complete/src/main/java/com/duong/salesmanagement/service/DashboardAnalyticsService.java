@@ -203,9 +203,9 @@ public class DashboardAnalyticsService implements IDashboardAnalyticsService {
         
         return results.stream().map(row -> {
             Map<String, Object> point = new LinkedHashMap<>();
-            point.put("date", row[0].toString());
-            point.put("revenue", ((Number) row[1]).doubleValue());
-            point.put("orders", ((Number) row[2]).longValue());
+            point.put("date", row[0] != null ? row[0].toString() : "");
+            point.put("revenue", row[1] != null ? ((Number) row[1]).doubleValue() : 0.0);
+            point.put("orders", row[2] != null ? ((Number) row[2]).longValue() : 0L);
             return point;
         }).collect(Collectors.toList());
     }
