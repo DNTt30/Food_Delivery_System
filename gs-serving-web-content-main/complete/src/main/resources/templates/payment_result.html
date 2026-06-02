@@ -157,35 +157,40 @@ body{
 
     <div class="info-row">
         <span>Trạng thái</span>
-        <span class="badge-paid">
+        <span th:if="${status == 'success'}" class="badge-paid">
             <i class="bi bi-check-circle-fill me-1"></i>
             Đã thanh toán
         </span>
+        <span th:if="${status != 'success'}" class="badge-paid" style="background:#fef2f2; color:#dc2626;">
+            <i class="bi bi-x-circle-fill me-1"></i>
+            Chưa thanh toán
+        </span>
     </div>
 
-    <div class="alert alert-custom text-center mt-4">
-
-        <h6 class="mb-2">
-            🛵 Đơn hàng đang được xử lý
-        </h6>
-
+    <div th:if="${status == 'success'}" class="alert alert-custom text-center mt-4">
+        <h6 class="mb-2">🛵 Đơn hàng đang được xử lý</h6>
         Tự động chuyển sang trang theo dõi sau
-
-        <span id="countdown" class="countdown">5</span>
-
-        giây...
-
+        <span id="countdown" class="countdown">5</span> giây...
+    </div>
+    <div th:if="${status != 'success'}" class="alert alert-danger text-center mt-4 border-danger">
+        <h6 class="mb-2">❌ Thanh toán chưa hoàn tất</h6>
+        Tự động chuyển sang trang lịch sử đơn hàng sau
+        <span id="countdownFail" class="countdown text-danger">5</span> giây...
     </div>
 
     <div class="d-grid gap-2">
 
-        <a id="trackingBtn"
+        <a th:if="${status == 'success'}" id="trackingBtn"
            th:href="@{/customer/tracking(orderId=${orderId})}"
            class="btn btn-success btn-lg track-btn">
-
             <i class="bi bi-geo-alt-fill me-2"></i>
             Theo dõi đơn hàng ngay
-
+        </a>
+        <a th:if="${status != 'success'}"
+           href="/customer/orders"
+           class="btn btn-danger btn-lg track-btn">
+            <i class="bi bi-clock-history me-2"></i>
+            Xem lịch sử đơn hàng
         </a>
 
         <a href="/customer/home"
@@ -209,22 +214,22 @@ let sec = 5;
 /* Thymeleaf render giá trị thực */
 const orderId = /*[[${orderId}]]*/ 0;
 
-const countdownEl = document.getElementById("countdown");
+const statusStr = /*[[${status}]]*/ 'success';
+
+const countdownEl = statusStr === 'success' ? document.getElementById("countdown") : document.getElementById("countdownFail");
 
 const timer = setInterval(() => {
-
     sec--;
-
     countdownEl.textContent = sec;
 
     if(sec <= 0){
-
         clearInterval(timer);
-
-        window.location.href =
-            "/customer/tracking?orderId=" + orderId;
+        if (statusStr === 'success') {
+            window.location.href = "/customer/tracking?orderId=" + orderId;
+        } else {
+            window.location.href = "/customer/orders";
+        }
     }
-
 },1000);
 
 </script>
