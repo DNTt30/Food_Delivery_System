@@ -16,13 +16,13 @@ import java.util.List;
 public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
     List<FoodOrder> findByRestaurant(RestaurantProfile restaurant);
 
-    @EntityGraph(attributePaths = {"orderItems", "orderItems.menuItem", "customer"})
-    List<FoodOrder> findByRestaurantOrderByOrderTimeDesc(RestaurantProfile restaurant);
+    @Query("SELECT DISTINCT o FROM FoodOrder o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.menuItem LEFT JOIN FETCH o.customer WHERE o.restaurant = :r ORDER BY o.orderTime DESC")
+    List<FoodOrder> findByRestaurantOrderByOrderTimeDesc(@Param("r") RestaurantProfile restaurant);
 
     Page<FoodOrder> findByRestaurant(RestaurantProfile restaurant, Pageable pageable);
 
-    @EntityGraph(attributePaths = {"orderItems", "orderItems.menuItem", "restaurant"})
-    List<FoodOrder> findByCustomerOrderByOrderTimeDesc(CustomerProfile customer);
+    @Query("SELECT DISTINCT o FROM FoodOrder o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.menuItem LEFT JOIN FETCH o.restaurant WHERE o.customer = :c ORDER BY o.orderTime DESC")
+    List<FoodOrder> findByCustomerOrderByOrderTimeDesc(@Param("c") CustomerProfile customer);
 
     List<FoodOrder> findByDriverOrderByOrderTimeDesc(DriverProfile driver);
     List<FoodOrder> findByStatus(OrderStatus status);

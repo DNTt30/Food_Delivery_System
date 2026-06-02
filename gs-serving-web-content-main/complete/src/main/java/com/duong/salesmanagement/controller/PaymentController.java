@@ -25,6 +25,7 @@ import com.duong.salesmanagement.model.OrderStatus;
 import com.duong.salesmanagement.model.PaymentStatus;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
+import com.duong.salesmanagement.service.NotificationService;
 import com.duong.salesmanagement.util.PaymentUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,16 +41,19 @@ public class PaymentController {
     private final VNPAYConfig vnpayConfig;
     private final FoodOrderRepository foodOrderRepository;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     public PaymentController(
             VNPAYConfig vnpayConfig,
             FoodOrderRepository foodOrderRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            NotificationService notificationService
     ) {
 
         this.vnpayConfig = vnpayConfig;
         this.foodOrderRepository = foodOrderRepository;
         this.paymentRepository = paymentRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -499,6 +503,16 @@ public class PaymentController {
                 order.setPaymentStatus(newStatus.name());
                 if (success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
                     order.setStatus(OrderStatus.PENDING);
+                    
+                    // 🔔 Notify: Customer đã thanh toán thành công
+                    notificationService.notifyOrderCreated(
+                            order.getCustomer().getUser(), order.getId(),
+                            order.getRestaurant().getRestaurantName());
+                    // 🔔 Notify: Restaurant có đơn mới đã thanh toán
+                    notificationService.notifyNewOrderForRestaurant(
+                            order.getRestaurant().getUser(), order.getId(),
+                            order.getCustomer().getUser().getFullName());
+                            
                 } else if (!success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
                     order.setStatus(OrderStatus.CANCELLED);
                 }

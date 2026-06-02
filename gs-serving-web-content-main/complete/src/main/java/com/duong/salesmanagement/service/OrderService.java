@@ -231,14 +231,16 @@ public class OrderService implements IOrderService {
         finalOrder.setPaymentStatus(PaymentStatus.PENDING.name());
         foodOrderRepository.save(finalOrder);
 
-        // 🔔 Notify: Customer đã đặt đơn
-        notificationService.notifyOrderCreated(
-                customer.getUser(), finalOrder.getId(),
-                restaurant.getRestaurantName());
-        // 🔔 Notify: Restaurant có đơn mới
-        notificationService.notifyNewOrderForRestaurant(
-                restaurant.getUser(), finalOrder.getId(),
-                customer.getUser().getFullName());
+        // 🔔 Notify: Customer đã đặt đơn (chỉ khi không phải chờ thanh toán online)
+        if (finalOrder.getStatus() != OrderStatus.PENDING_PAYMENT) {
+            notificationService.notifyOrderCreated(
+                    customer.getUser(), finalOrder.getId(),
+                    restaurant.getRestaurantName());
+            // 🔔 Notify: Restaurant có đơn mới
+            notificationService.notifyNewOrderForRestaurant(
+                    restaurant.getUser(), finalOrder.getId(),
+                    customer.getUser().getFullName());
+        }
 
         return finalOrder;
     }
