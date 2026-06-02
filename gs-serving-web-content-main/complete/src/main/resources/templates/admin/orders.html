@@ -14,36 +14,44 @@
     </div>
     <div class="d-flex gap-2 flex-wrap">
         <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportCSV()">
-            <i class="bi bi-download me-1"></i>Xuất CSV
+            <i class="bi bi-download me-1"></i>Xuất CSV trang này
         </button>
-        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="loadOrders()">
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="goToPage(0)">
             <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
         </button>
     </div>
 </div>
 
-<!-- KPI mini cards -->
-<div class="row g-3 mb-4" id="kpiRow">
+<!-- KPI mini cards (từ stats chung) -->
+<div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#fff8e1,#fff)">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100"
+             style="background:linear-gradient(135deg,#fff8e1,#fff); cursor:pointer"
+             onclick="quickFilter('PENDING')">
             <div class="fs-4 fw-bold text-warning" id="kpiPending">—</div>
             <div class="text-muted small">⏳ Chờ xác nhận</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#eff6ff,#fff)">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100"
+             style="background:linear-gradient(135deg,#eff6ff,#fff); cursor:pointer"
+             onclick="quickFilter('PREPARING')">
             <div class="fs-4 fw-bold text-primary" id="kpiPreparing">—</div>
             <div class="text-muted small">🍳 Đang nấu</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#f0fdf4,#fff)">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100"
+             style="background:linear-gradient(135deg,#f0fdf4,#fff); cursor:pointer"
+             onclick="quickFilter('DELIVERING')">
             <div class="fs-4 fw-bold text-success" id="kpiDelivering">—</div>
             <div class="text-muted small">🛵 Đang giao</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#f5f3ff,#fff)">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100"
+             style="background:linear-gradient(135deg,#f5f3ff,#fff); cursor:pointer"
+             onclick="quickFilter('COMPLETED')">
             <div class="fs-4 fw-bold" style="color:#7c3aed" id="kpiCompleted">—</div>
             <div class="text-muted small">✅ Hoàn thành</div>
         </div>
@@ -51,103 +59,140 @@
 </div>
 
 <!-- Filters -->
-<div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+<div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
     <div class="d-flex gap-2 flex-wrap align-items-center">
-        <div class="input-group" style="max-width:280px;">
+        <div class="input-group" style="max-width:260px;">
             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Tìm ID, khách, nhà hàng..." oninput="filterOrders()">
+            <input type="text" id="searchInput" class="form-control border-start-0"
+                   placeholder="Tìm ID đơn hàng..." oninput="handleSearch()">
         </div>
-        <select class="form-select" style="max-width:170px;" id="statusFilter" onchange="filterOrders()">
+        <select class="form-select" style="max-width:175px;" id="statusFilter" onchange="goToPage(0)">
             <option value="all">Tất cả trạng thái</option>
-            <option value="PENDING">Chờ xác nhận</option>
-            <option value="PREPARING">Đang nấu</option>
-            <option value="DELIVERING">Đang giao</option>
-            <option value="COMPLETED">Hoàn thành</option>
-            <option value="CANCELLED">Đã hủy</option>
+            <option value="PENDING">⏳ Chờ xác nhận</option>
+            <option value="PREPARING">🍳 Đang nấu</option>
+            <option value="DELIVERING">🛵 Đang giao</option>
+            <option value="COMPLETED">✅ Hoàn thành</option>
+            <option value="CANCELLED">❌ Đã hủy</option>
         </select>
-        <select class="form-select" style="max-width:160px;" id="daysFilter" onchange="loadOrders()">
+        <select class="form-select" style="max-width:155px;" id="daysFilter" onchange="goToPage(0)">
             <option value="7">7 ngày qua</option>
             <option value="30" selected>30 ngày qua</option>
             <option value="90">90 ngày qua</option>
             <option value="365">Năm nay</option>
-            <option value="0">Tất cả</option>
+            <option value="0">Tất cả thời gian</option>
         </select>
-        <select class="form-select" style="max-width:160px;" id="paymentFilter" onchange="filterOrders()">
-            <option value="all">Tất cả TT</option>
-            <option value="CASH_ON_DELIVERY">Tiền mặt</option>
-            <option value="VNPAY">VNPay</option>
-            <option value="MOMO_E_WALLET">MoMo</option>
+        <select class="form-select" style="max-width:130px;" id="sizeFilter" onchange="goToPage(0)">
+            <option value="10" selected>10 / trang</option>
+            <option value="20">20 / trang</option>
+            <option value="50">50 / trang</option>
         </select>
+        <!-- Info text -->
+        <span class="text-muted small ms-auto" id="resultInfo"></span>
     </div>
 </div>
 
-<!-- Loading -->
-<div id="loading" class="text-center py-5">
-    <div class="spinner-border text-danger"></div>
-    <p class="text-muted mt-2">Đang tải đơn hàng...</p>
+<!-- Loading skeleton -->
+<div id="loading">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+        <div class="p-3">
+            <div class="skeleton-row" style="height:40px;border-radius:8px;background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200%;animation:shimmer 1.2s infinite;margin-bottom:10px;" th:each="i : ${#numbers.sequence(1,5)}"></div>
+            <div class="skeleton-row" style="height:40px;border-radius:8px;background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200%;animation:shimmer 1.2s infinite;margin-bottom:10px;"></div>
+            <div class="skeleton-row" style="height:40px;border-radius:8px;background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200%;animation:shimmer 1.2s infinite;margin-bottom:10px;"></div>
+            <div class="skeleton-row" style="height:40px;border-radius:8px;background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200%;animation:shimmer 1.2s infinite;margin-bottom:10px;"></div>
+            <div class="skeleton-row" style="height:40px;border-radius:8px;background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200%;animation:shimmer 1.2s infinite;"></div>
+        </div>
+    </div>
+    <div class="text-center text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang tải từ server...</div>
 </div>
+<style>
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
 
 <!-- Table -->
 <div id="ordersTable" class="d-none">
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="d-flex justify-content-between align-items-center px-4 pt-3 pb-2">
+        <div class="d-flex justify-content-between align-items-center px-4 pt-3 pb-2 border-bottom">
             <h6 class="fw-bold mb-0"><i class="bi bi-table me-2 text-danger"></i>Danh sách đơn hàng</h6>
             <span class="badge bg-danger-subtle text-danger border border-danger" id="orderCount">0 đơn</span>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0" style="font-size:.875rem;">
+                <thead style="background:#f8f9fa;">
                     <tr>
-                        <th class="ps-4" style="font-size:.78rem;color:#6c757d;">ID</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Khách hàng</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Nhà hàng</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Tài xế</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Số tiền</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Thanh toán</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Trạng thái</th>
-                        <th style="font-size:.78rem;color:#6c757d;">Thời gian</th>
+                        <th class="ps-4 fw-semibold" style="color:#6c757d;font-size:.78rem;">ID</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Khách hàng</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Nhà hàng</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Tài xế</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Số tiền</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Thanh toán</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Trạng thái</th>
+                        <th class="fw-semibold" style="color:#6c757d;font-size:.78rem;">Thời gian</th>
                     </tr>
                 </thead>
                 <tbody id="ordersBody"></tbody>
             </table>
         </div>
+
+        <!-- Pagination Footer -->
+        <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top bg-white">
+            <div class="text-muted small" id="pageInfo">Trang 1 / 1</div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0 gap-1" id="paginationBar"></ul>
+            </nav>
+        </div>
     </div>
 </div>
 
-<!-- Empty -->
+<!-- Empty state -->
 <div id="emptyState" class="text-center py-5 d-none">
     <div style="font-size:4rem">📋</div>
     <h5 class="fw-bold mt-2">Không có đơn hàng nào</h5>
-    <p class="text-muted">Thử thay đổi bộ lọc để xem kết quả khác.</p>
+    <p class="text-muted">Thử thay đổi bộ lọc hoặc mốc thời gian.</p>
 </div>
 
-<script>
+<script th:inline="none">
     const token = localStorage.getItem('jwt_token');
     if (!token) window.location.href = '/common/auth';
 
-    let allOrders = [];
+    let currentPage = 0;
+    let totalPages = 0;
+    let totalElements = 0;
+    let lastData = [];
+    let searchTimer = null;
 
     const STATUS_MAP = {
-        'PENDING':   { label: 'Chờ xác nhận', cls: 'bg-warning-subtle text-warning border border-warning' },
-        'PREPARING': { label: 'Đang nấu',     cls: 'bg-primary-subtle text-primary border border-primary' },
-        'DELIVERING':{ label: 'Đang giao',    cls: 'bg-info-subtle text-info border border-info' },
-        'COMPLETED': { label: 'Hoàn thành',   cls: 'bg-success-subtle text-success border border-success' },
-        'CANCELLED': { label: 'Đã hủy',       cls: 'bg-danger-subtle text-danger border border-danger' }
+        'PENDING':    { label: 'Chờ XN',     cls: 'bg-warning-subtle text-warning border border-warning' },
+        'PREPARING':  { label: 'Đang nấu',   cls: 'bg-primary-subtle text-primary border border-primary' },
+        'DELIVERING': { label: 'Đang giao',  cls: 'bg-info-subtle text-info border border-info' },
+        'COMPLETED':  { label: 'Hoàn thành', cls: 'bg-success-subtle text-success border border-success' },
+        'CANCELLED':  { label: 'Đã hủy',     cls: 'bg-danger-subtle text-danger border border-danger' }
     };
     const PAY_MAP = {
-        'CASH_ON_DELIVERY': { label: '💵 COD',  cls: 'bg-secondary-subtle text-secondary' },
-        'VNPAY':            { label: '🏦 VNPay', cls: 'bg-primary-subtle text-primary' },
-        'MOMO_E_WALLET':    { label: '🟣 MoMo',  cls: 'bg-pink-subtle text-purple' }
+        'CASH_ON_DELIVERY': { icon: '💵', label: 'COD' },
+        'VNPAY':            { icon: '🏦', label: 'VNPay' },
+        'MOMO_E_WALLET':    { icon: '🟣', label: 'MoMo' }
     };
 
-    function formatVND(n) {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    function fmt(n) { return new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(n||0); }
+    function fmtTime(s) {
+        if (!s) return '—';
+        const d = new Date(s);
+        return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     }
 
-    function formatTime(str) {
-        if (!str) return '—';
-        const d = new Date(str);
-        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    function quickFilter(status) {
+        document.getElementById('statusFilter').value = status;
+        goToPage(0);
+    }
+
+    function handleSearch() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => goToPage(0), 400); // debounce 400ms
+    }
+
+    async function goToPage(page) {
+        currentPage = page;
+        await loadOrders();
     }
 
     async function loadOrders() {
@@ -155,47 +200,64 @@
         document.getElementById('ordersTable').classList.add('d-none');
         document.getElementById('emptyState').classList.add('d-none');
 
-        const days = document.getElementById('daysFilter').value;
+        const status  = document.getElementById('statusFilter').value;
+        const days    = document.getElementById('daysFilter').value;
+        const size    = document.getElementById('sizeFilter').value;
+        const search  = document.getElementById('searchInput').value.trim();
+
+        // Build URL - search theo ID nếu là số, dùng client filter nếu là text
+        const url = `/api/admin/orders?status=${status}&days=${days}&page=${currentPage}&size=${size}`;
+
         try {
-            const res = await fetch(`/api/admin/orders?days=${days}`, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
+            const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
-            allOrders = await res.json();
+            const data = await res.json();
+
+            totalPages    = data.totalPages || 1;
+            totalElements = data.totalElements || 0;
+            lastData      = data.content || [];
+
             document.getElementById('loading').classList.add('d-none');
-            updateKPIs();
-            filterOrders();
+
+            // Client-side text filter (chỉ lọc trên trang hiện tại — nhẹ)
+            let visible = lastData;
+            if (search) {
+                const q = search.toLowerCase();
+                visible = lastData.filter(o =>
+                    String(o.id).includes(q) ||
+                    (o.customerName||'').toLowerCase().includes(q) ||
+                    (o.restaurantName||'').toLowerCase().includes(q) ||
+                    (o.driverName||'').toLowerCase().includes(q)
+                );
+            }
+
+            renderOrders(visible);
+            renderPagination();
+            updateKPIFromPage(data);
+
         } catch(e) {
-            document.getElementById('loading').innerHTML = '<div class="text-danger py-4 text-center"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+            document.getElementById('loading').innerHTML =
+                '<div class="text-danger text-center py-5"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối server</div>';
         }
     }
 
-    function updateKPIs() {
-        document.getElementById('kpiPending').textContent   = allOrders.filter(o => o.status === 'PENDING').length;
-        document.getElementById('kpiPreparing').textContent = allOrders.filter(o => o.status === 'PREPARING').length;
-        document.getElementById('kpiDelivering').textContent= allOrders.filter(o => o.status === 'DELIVERING').length;
-        document.getElementById('kpiCompleted').textContent = allOrders.filter(o => o.status === 'COMPLETED').length;
-    }
-
-    function filterOrders() {
-        const q = document.getElementById('searchInput').value.toLowerCase();
-        const status = document.getElementById('statusFilter').value;
-        const pay = document.getElementById('paymentFilter').value;
-
-        let filtered = allOrders;
-        if (q) filtered = filtered.filter(o =>
-            String(o.id).includes(q) ||
-            (o.customerName || '').toLowerCase().includes(q) ||
-            (o.restaurantName || '').toLowerCase().includes(q) ||
-            (o.driverName || '').toLowerCase().includes(q));
-        if (status !== 'all') filtered = filtered.filter(o => o.status === status);
-        if (pay !== 'all') filtered = filtered.filter(o => o.paymentMethod === pay);
-
-        renderOrders(filtered);
+    function updateKPIFromPage(data) {
+        // Cập nhật KPI dùng totalElements của từng trạng thái — gọi thêm API nhẹ 1 lần
+        fetch('/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(r => r.json()).then(d => {
+                document.getElementById('kpiPending').textContent   = d.pendingOrders   || 0;
+                document.getElementById('kpiPreparing').textContent = d.preparingOrders || 0;
+                document.getElementById('kpiDelivering').textContent= d.deliveringOrders|| 0;
+                document.getElementById('kpiCompleted').textContent = d.completedOrders || 0;
+            }).catch(()=>{});
     }
 
     function renderOrders(orders) {
-        document.getElementById('orderCount').textContent = orders.length + ' đơn';
+        const size = parseInt(document.getElementById('sizeFilter').value);
+        document.getElementById('resultInfo').textContent =
+            `${totalElements.toLocaleString('vi-VN')} đơn · Trang ${currentPage+1}/${totalPages}`;
+        document.getElementById('orderCount').textContent = totalElements.toLocaleString('vi-VN') + ' đơn';
+
         if (!orders.length) {
             document.getElementById('ordersTable').classList.add('d-none');
             document.getElementById('emptyState').classList.remove('d-none');
@@ -204,40 +266,100 @@
         document.getElementById('emptyState').classList.add('d-none');
         document.getElementById('ordersTable').classList.remove('d-none');
 
-        document.getElementById('ordersBody').innerHTML = orders.map(o => {
+        document.getElementById('ordersBody').innerHTML = orders.map((o, idx) => {
             const st = STATUS_MAP[o.status] || { label: o.status, cls: 'bg-secondary-subtle text-secondary' };
-            const pm = PAY_MAP[o.paymentMethod] || { label: o.paymentMethod || '—', cls: 'bg-light text-dark' };
-            return `<tr>
-                <td class="ps-4 fw-bold text-danger">#${o.id}</td>
-                <td>
-                    <div class="fw-semibold small">${o.customerName || '—'}</div>
-                    <div class="text-muted" style="font-size:.72rem;">${o.customerUsername || ''}</div>
+            const pm = PAY_MAP[o.paymentMethod] || { icon: '💰', label: o.paymentMethod || '—' };
+            const rowNum = currentPage * size + idx + 1;
+            return `<tr style="transition:background .15s">
+                <td class="ps-4">
+                    <span class="text-muted small me-1">${rowNum}.</span>
+                    <span class="fw-bold text-danger">#${o.id}</span>
                 </td>
-                <td><small class="fw-semibold">${o.restaurantName || '—'}</small></td>
-                <td><small class="${o.driverName ? 'text-success fw-semibold' : 'text-muted'}">${o.driverName || 'Chưa có'}</small></td>
-                <td class="fw-bold text-success">${formatVND(o.totalAmount)}</td>
-                <td><span class="badge ${pm.cls} rounded-pill">${pm.label}</span></td>
+                <td>
+                    <div class="fw-semibold" style="font-size:.85rem;">${o.customerName||'—'}</div>
+                    <div class="text-muted" style="font-size:.72rem;">${o.customerUsername||''}</div>
+                </td>
+                <td><small class="fw-semibold">${o.restaurantName||'—'}</small></td>
+                <td><small class="${o.driverName ? 'text-success fw-semibold' : 'text-muted'}">${o.driverName||'Chưa có'}</small></td>
+                <td class="fw-bold text-success" style="white-space:nowrap;">${fmt(o.totalAmount)}</td>
+                <td>
+                    <span class="badge bg-light text-dark border" style="font-size:.72rem;">
+                        ${pm.icon} ${pm.label}
+                    </span>
+                </td>
                 <td><span class="badge ${st.cls} rounded-pill">${st.label}</span></td>
-                <td><small class="text-muted">${formatTime(o.orderTime)}</small></td>
+                <td><small class="text-muted">${fmtTime(o.orderTime)}</small></td>
             </tr>`;
         }).join('');
+
+        document.getElementById('pageInfo').textContent =
+            `Trang ${currentPage+1} / ${totalPages} · ${totalElements.toLocaleString('vi-VN')} đơn`;
+    }
+
+    function renderPagination() {
+        const bar = document.getElementById('paginationBar');
+        if (totalPages <= 1) { bar.innerHTML = ''; return; }
+
+        let html = '';
+        // Prev
+        html += `<li class="page-item ${currentPage===0?'disabled':''}">
+            <button class="page-link rounded" onclick="goToPage(${currentPage-1})" ${currentPage===0?'disabled':''}>
+                <i class="bi bi-chevron-left"></i>
+            </button></li>`;
+
+        // Smart page numbers: show max 7 buttons
+        const range = buildPageRange(currentPage, totalPages);
+        range.forEach(p => {
+            if (p === '...') {
+                html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+            } else {
+                html += `<li class="page-item ${p===currentPage?'active':''}">
+                    <button class="page-link rounded" onclick="goToPage(${p})"
+                        style="${p===currentPage?'background:#dc3545;border-color:#dc3545;':''}">
+                        ${p+1}
+                    </button></li>`;
+            }
+        });
+
+        // Next
+        html += `<li class="page-item ${currentPage>=totalPages-1?'disabled':''}">
+            <button class="page-link rounded" onclick="goToPage(${currentPage+1})" ${currentPage>=totalPages-1?'disabled':''}>
+                <i class="bi bi-chevron-right"></i>
+            </button></li>`;
+
+        bar.innerHTML = html;
+    }
+
+    function buildPageRange(cur, total) {
+        if (total <= 7) return Array.from({length:total},(_,i)=>i);
+        const pages = [];
+        pages.push(0);
+        if (cur > 2) pages.push('...');
+        for (let i = Math.max(1, cur-1); i <= Math.min(total-2, cur+1); i++) pages.push(i);
+        if (cur < total-3) pages.push('...');
+        pages.push(total-1);
+        return pages;
     }
 
     function exportCSV() {
-        const rows = [['ID','Khách hàng','Nhà hàng','Tài xế','Số tiền','Thanh toán','Trạng thái','Thời gian']];
-        allOrders.forEach(o => rows.push([
-            o.id, o.customerName, o.restaurantName, o.driverName||'', o.totalAmount,
-            o.paymentMethod, o.status, o.orderTime
+        if (!lastData.length) return;
+        const rows = [['STT','ID','Khách hàng','Nhà hàng','Tài xế','Số tiền','Thanh toán','Trạng thái','Thời gian']];
+        const size = parseInt(document.getElementById('sizeFilter').value);
+        lastData.forEach((o,i) => rows.push([
+            currentPage*size+i+1, o.id, o.customerName||'', o.restaurantName||'',
+            o.driverName||'', o.totalAmount||0,
+            o.paymentMethod||'', o.status||'', o.orderTime||''
         ]));
-        const csv = rows.map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-        const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+        const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'don_hang_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.download = `don_hang_trang${currentPage+1}_${new Date().toISOString().slice(0,10)}.csv`;
         a.click();
     }
 
-    loadOrders();
+    // Init
+    goToPage(0);
 </script>
 </main>
 </body>

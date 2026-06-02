@@ -34,6 +34,12 @@ public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
     List<FoodOrder> findByOrderTimeAfterOrderByOrderTimeDesc(LocalDateTime since);
     List<FoodOrder> findByStatusAndOrderTimeAfterOrderByOrderTimeDesc(OrderStatus status, LocalDateTime since);
 
+    // Pageable versions for admin orders page
+    org.springframework.data.domain.Page<FoodOrder> findByStatusNot(OrderStatus status, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<FoodOrder> findByStatus(OrderStatus status, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<FoodOrder> findByOrderTimeAfterAndStatusNot(LocalDateTime since, OrderStatus status, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<FoodOrder> findByStatusAndOrderTimeAfter(OrderStatus status, LocalDateTime since, org.springframework.data.domain.Pageable pageable);
+
     List<FoodOrder> findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(
             RestaurantProfile restaurant, LocalDateTime from, LocalDateTime to);
 

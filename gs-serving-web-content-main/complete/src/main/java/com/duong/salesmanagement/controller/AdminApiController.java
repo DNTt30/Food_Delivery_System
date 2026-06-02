@@ -149,6 +149,7 @@ public class AdminApiController {
         stats.put("recentOrders", recentOrderDTOs);
 
         return ResponseEntity.ok(stats);
+    }
 
     // UC-17: Quản lý tài khoản người dùng
     @GetMapping("/users")
@@ -341,6 +342,72 @@ public class AdminApiController {
         return ResponseEntity.ok(result);
     }
 
+    // Quản lý đơn hàng toàn hệ thống (có phân trang)
+    @GetMapping("/orders")
+    public ResponseEntity<?> getAllOrders(
+            Authentication authentication,
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        java.time.LocalDateTime since = days > 0 && days <= 365
+                ? java.time.LocalDateTime.now().minusDays(days) : null;
+
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size,
+                        org.springframework.data.domain.Sort.by("orderTime").descending());
+
+        org.springframework.data.domain.Page<FoodOrder> pageResult;
+
+        if ("all".equalsIgnoreCase(status)) {
+            if (since != null)
+                pageResult = foodOrderRepository.findByOrderTimeAfterAndStatusNot(
+                        since, OrderStatus.PENDING_PAYMENT, pageable);
+            else
+                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.PENDING_PAYMENT, pageable);
+        } else {
+            try {
+                OrderStatus os = OrderStatus.valueOf(status.toUpperCase());
+                if (since != null)
+                    pageResult = foodOrderRepository.findByStatusAndOrderTimeAfter(os, since, pageable);
+                else
+                    pageResult = foodOrderRepository.findByStatus(os, pageable);
+            } catch (IllegalArgumentException e) {
+                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.PENDING_PAYMENT, pageable);
+            }
+        }
+
+        List<java.util.Map<String, Object>> content = pageResult.getContent().stream()
+            .map(o -> {
+                java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("id", o.getId());
+                m.put("customerName", o.getCustomer().getUser().getFullName());
+                m.put("customerUsername", o.getCustomer().getUser().getUsername());
+                m.put("restaurantName", o.getRestaurant().getRestaurantName());
+                m.put("driverName", o.getDriver() != null ? o.getDriver().getUser().getFullName() : null);
+                m.put("totalAmount", o.getTotalAmount());
+                m.put("status", o.getStatus().name());
+                m.put("paymentMethod", o.getPaymentMethod());
+                m.put("paymentStatus", o.getPaymentStatus());
+                m.put("deliveryAddress", o.getDeliveryAddress());
+                m.put("orderTime", o.getOrderTime() != null ? o.getOrderTime().toString() : "");
+                return m;
+            }).collect(Collectors.toList());
+
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("content", content);
+        response.put("totalElements", pageResult.getTotalElements());
+        response.put("totalPages", pageResult.getTotalPages());
+        response.put("currentPage", pageResult.getNumber());
+        response.put("pageSize", pageResult.getSize());
+        response.put("hasNext", pageResult.hasNext());
+        response.put("hasPrevious", pageResult.hasPrevious());
+
+        return ResponseEntity.ok(response);
+    }
+
     // UC-20: Quản lý mã khuyến mãi
     @GetMapping("/vouchers")
     public ResponseEntity<?> getAllVouchers(Authentication authentication) {
@@ -402,7 +469,6 @@ public class AdminApiController {
         m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENT");
         m.put("expiryDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : null);
         m.put("active", v.isActive());
-        m.put("description", v.getDescription());
         m.put("restaurantName", v.getRestaurant() != null ? v.getRestaurant().getRestaurantName() : null);
         m.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);
         return m;
