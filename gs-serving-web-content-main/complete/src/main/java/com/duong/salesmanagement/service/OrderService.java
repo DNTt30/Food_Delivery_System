@@ -317,6 +317,18 @@ public class OrderService {
             throw new RuntimeException("Không có quyền hủy đơn hàng này");
         if (order.getStatus() != OrderStatus.PENDING)
             throw new RuntimeException("Chỉ có thể hủy đơn hàng đang chờ xác nhận");
+
+        // Check if payment was online and completed - trigger refund
+        paymentRepository.findByOrder(order).ifPresent(payment -> {
+            if (isOnlinePaymentMethod(order.getPaymentMethod()) &&
+                payment.getPaymentStatus() == PaymentStatus.COMPLETED) {
+                // Mark payment as refunded
+                payment.setPaymentStatus(PaymentStatus.REFUNDED);
+                paymentRepository.save(payment);
+                order.setPaymentStatus(PaymentStatus.REFUNDED.name());
+            }
+        });
+
         order.setStatus(OrderStatus.CANCELLED);
         foodOrderRepository.save(order);
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket

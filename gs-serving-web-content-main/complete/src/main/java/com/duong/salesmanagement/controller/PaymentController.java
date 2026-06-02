@@ -516,4 +516,59 @@ public class PaymentController {
             });
         });
     }
+
+    /**
+     * Hoàn tiền cho đơn hàng đã thanh toán online
+     */
+    @GetMapping("/refund")
+    public ResponseEntity<?> refundPayment(
+            @RequestParam("orderId") Long orderId
+    ) {
+        Optional<FoodOrder> orderOpt = foodOrderRepository.findById(orderId);
+
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Không tìm thấy đơn hàng"));
+        }
+
+        FoodOrder order = orderOpt.get();
+
+        // Check if payment exists and is completed
+        Optional<com.duong.salesmanagement.model.Payment> paymentOpt =
+                paymentRepository.findByOrder(order);
+
+        if (paymentOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Không tìm thấy thông tin thanh toán"));
+        }
+
+        com.duong.salesmanagement.model.Payment payment = paymentOpt.get();
+
+        if (payment.getPaymentStatus() != PaymentStatus.COMPLETED) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Chỉ có thể hoàn tiền cho giao dịch đã thành công"));
+        }
+
+        // Check if payment method is online
+        if (payment.getPaymentMethod() != com.duong.salesmanagement.model.PaymentMethod.VNPAY &&
+            payment.getPaymentMethod() != com.duong.salesmanagement.model.PaymentMethod.MOMO_E_WALLET) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Chỉ hỗ trợ hoàn tiền cho thanh toán online (VNPAY, MoMo)"));
+        }
+
+        // Mark payment as refunded
+        payment.setPaymentStatus(PaymentStatus.REFUNDED);
+        paymentRepository.save(payment);
+
+        order.setPaymentStatus(PaymentStatus.REFUNDED.name());
+        foodOrderRepository.save(order);
+
+        log.info("Đã hoàn tiền cho đơn hàng {}: {}", orderId, payment.getPaymentMethod());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Đã yêu cầu hoàn tiền thành công",
+                "orderId", orderId,
+                "refundAmount", payment.getAmount()
+        ));
+    }
 }

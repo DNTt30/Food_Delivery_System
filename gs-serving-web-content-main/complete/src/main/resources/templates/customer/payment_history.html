@@ -18,6 +18,7 @@
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="filterPayments('COMPLETED', this)">Thành công</button>
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PENDING" onclick="filterPayments('PENDING', this)">Đang xử lý</button>
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="FAILED" onclick="filterPayments('FAILED', this)">Thất bại</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="REFUNDED" onclick="filterPayments('REFUNDED', this)">Đã hoàn tiền</button>
     </div>
 
     <!-- Loading -->
@@ -45,6 +46,7 @@
 .status-COMPLETED { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
 .status-PENDING { background: #fff8e1; color: #d97706; border-left: 4px solid #f59e0b; }
 .status-FAILED { background: #fef2f2; color: #dc2626; border-left: 4px solid #ef4444; }
+.status-REFUNDED { background: #eff6ff; color: #1d4ed8; border-left: 4px solid #3b82f6; }
 </style>
 
 <script>
@@ -56,7 +58,8 @@
     const STATUS_LABELS = {
         COMPLETED: '✅ Thành công',
         PENDING: '⏳ Đang xử lý',
-        FAILED: '❌ Thất bại'
+        FAILED: '❌ Thất bại',
+        REFUNDED: '💰 Đã hoàn tiền'
     };
 
     const PAYMENT_METHOD_LABELS = {
