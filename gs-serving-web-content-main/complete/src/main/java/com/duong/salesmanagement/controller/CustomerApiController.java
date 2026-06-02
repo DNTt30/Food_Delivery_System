@@ -194,6 +194,32 @@ public class CustomerApiController {
         }
     }
 
+    // Lấy danh sách Voucher có thể áp dụng
+    @GetMapping("/vouchers/available")
+    public ResponseEntity<?> getAvailableVouchers(@RequestParam(required = false) Long restaurantId) {
+        List<Voucher> vouchers;
+        java.time.LocalDate today = java.time.LocalDate.now();
+        if (restaurantId != null) {
+            vouchers = voucherRepository.findAvailableVouchers(restaurantId, today);
+        } else {
+            vouchers = voucherRepository.findGlobalAvailableVouchers(today);
+        }
+        
+        List<Map<String, Object>> result = vouchers.stream().map(v -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("code", v.getCode());
+            map.put("discountType", v.getDiscountType().name());
+            map.put("discountValue", v.getDiscountValue());
+            map.put("expirationDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : "");
+            map.put("isGlobal", v.getRestaurant() == null);
+            map.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);
+            map.put("restaurantName", v.getRestaurant() != null ? v.getRestaurant().getRestaurantName() : "Hệ thống");
+            return map;
+        }).collect(Collectors.toList());
+        
+        return ResponseEntity.ok(result);
+    }
+
     // Kiểm tra Voucher
     @GetMapping("/vouchers/check")
     public ResponseEntity<?> checkVoucher(@RequestParam String code, 

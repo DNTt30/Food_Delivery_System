@@ -69,7 +69,10 @@
 
                     <!-- Voucher -->
                     <div class="border rounded-3 p-3 mb-3 bg-light">
-                        <h6 class="fw-bold small mb-2"><i class="bi bi-ticket-perforated me-2 text-warning"></i>Mã giảm giá</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold small mb-0"><i class="bi bi-ticket-perforated me-2 text-warning"></i>Khuyến mãi</h6>
+                            <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill" onclick="showVoucherModal()">Kho Voucher</button>
+                        </div>
                         <div class="input-group input-group-sm">
                             <input type="text" id="voucherCode" class="form-control" placeholder="Nhập mã voucher">
                             <button class="btn btn-warning fw-bold" onclick="applyVoucher()">Áp dụng</button>
@@ -143,6 +146,25 @@
     </div>
 </div>
 
+</div>
+
+<!-- Voucher Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-ticket-perforated-fill text-warning me-2"></i>Kho Voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="voucherList" class="d-flex flex-column gap-3">
+                    <div class="text-center text-muted small py-4">Đang tải voucher...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script>
     const token = localStorage.getItem('jwt_token');
@@ -196,7 +218,69 @@
     // Bind event to calculate on blur
     document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('deliveryAddress').addEventListener('blur', calculateShipping);
+        loadAvailableVouchers();
     });
+
+    let availableVouchers = [];
+    let voucherModalInstance = null;
+
+    async function loadAvailableVouchers() {
+        try {
+            const res = await fetch(`/api/customer/vouchers/available?restaurantId=${restaurantId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                availableVouchers = await res.json();
+            }
+        } catch(e) { console.error('Failed to load vouchers', e); }
+    }
+
+    function showVoucherModal() {
+        if (!voucherModalInstance) voucherModalInstance = new bootstrap.Modal(document.getElementById('voucherModal'));
+        renderVoucherList();
+        voucherModalInstance.show();
+    }
+
+    function renderVoucherList() {
+        const listEl = document.getElementById('voucherList');
+        if (!availableVouchers.length) {
+            listEl.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-emoji-frown fs-1 d-block mb-2"></i>Không có mã giảm giá nào phù hợp</div>';
+            return;
+        }
+
+        let html = '';
+        availableVouchers.forEach(v => {
+            const desc = v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${formatVND(v.discountValue)}`;
+            const badgeClass = v.isGlobal ? 'bg-danger' : 'bg-warning text-dark';
+            const badgeText = v.isGlobal ? 'Toàn hệ thống' : 'Quán tặng';
+            html += `
+            <div class="card border border-warning shadow-sm rounded-3">
+                <div class="card-body d-flex align-items-center gap-3 p-3">
+                    <div class="bg-warning bg-opacity-10 rounded text-warning d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                        <i class="bi bi-ticket-perforated fs-2"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge ${badgeClass} small" style="font-size:0.65rem">${badgeText}</span>
+                        </div>
+                        <h6 class="fw-bold mb-1 text-dark">${desc}</h6>
+                        <small class="text-muted d-block mb-1">Mã: <span class="fw-bold text-dark">${v.code}</span></small>
+                        <small class="text-muted" style="font-size: 0.7rem"><i class="bi bi-clock-history me-1"></i>HSD: ${v.expirationDate || 'Không giới hạn'}</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3" onclick="selectVoucher('${v.code}')">Dùng ngay</button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        listEl.innerHTML = html;
+    }
+
+    function selectVoucher(code) {
+        document.getElementById('voucherCode').value = code;
+        if (voucherModalInstance) voucherModalInstance.hide();
+        applyVoucher();
+    }
 
     function renderCart() {
         const cart = getCart();

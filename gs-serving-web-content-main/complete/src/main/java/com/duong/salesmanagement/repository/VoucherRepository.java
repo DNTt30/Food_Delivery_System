@@ -14,4 +14,10 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     List<Voucher> findByIsActiveTrue();
     List<Voucher> findByRestaurant(RestaurantProfile restaurant);
     List<Voucher> findByRestaurantIsNull();
+
+    @org.springframework.data.jpa.repository.Query("SELECT v FROM Voucher v WHERE v.isActive = true AND (v.expirationDate IS NULL OR v.expirationDate >= :currentDate) AND (v.restaurant IS NULL OR v.restaurant.id = :restaurantId)")
+    List<Voucher> findAvailableVouchers(@org.springframework.data.repository.query.Param("restaurantId") Long restaurantId, @org.springframework.data.repository.query.Param("currentDate") java.time.LocalDate currentDate);
+
+    @org.springframework.data.jpa.repository.Query("SELECT v FROM Voucher v WHERE v.isActive = true AND (v.expirationDate IS NULL OR v.expirationDate >= :currentDate) AND v.restaurant IS NULL")
+    List<Voucher> findGlobalAvailableVouchers(@org.springframework.data.repository.query.Param("currentDate") java.time.LocalDate currentDate);
 }
