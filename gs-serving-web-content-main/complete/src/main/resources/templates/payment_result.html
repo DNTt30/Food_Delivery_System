@@ -187,7 +187,7 @@ body{
             Theo dõi đơn hàng ngay
         </a>
         <a th:if="${status != 'success'}"
-           href="/customer/orders"
+           href="/customer/history"
            class="btn btn-danger btn-lg track-btn">
             <i class="bi bi-clock-history me-2"></i>
             Xem lịch sử đơn hàng
@@ -227,7 +227,7 @@ const timer = setInterval(() => {
         if (statusStr === 'success') {
             window.location.href = "/customer/tracking?orderId=" + orderId;
         } else {
-            window.location.href = "/customer/orders";
+            window.location.href = "/customer/history";
         }
     }
 },1000);
