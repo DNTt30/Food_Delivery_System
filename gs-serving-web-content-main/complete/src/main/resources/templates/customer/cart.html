@@ -81,7 +81,7 @@
                     <h6 class="fw-bold small mb-2"><i class="bi bi-credit-card me-2"></i>Thanh toán</h6>
                     <div class="d-flex flex-column gap-2 mb-3">
                         <label class="d-flex align-items-center gap-3 p-3 border rounded-3" style="cursor:pointer;">
-                            <input type="radio" name="paymentMethod" value="CASH" checked class="form-check-input flex-shrink-0" onchange="toggleWalletOptions()">
+                            <input type="radio" name="paymentMethod" value="CASH_ON_DELIVERY" checked class="form-check-input flex-shrink-0" onchange="toggleWalletOptions()">
                             <div>
                                 <div class="fw-semibold small">💵 Tiền mặt (COD)</div>
                                 <div class="text-muted" style="font-size:0.75rem">Thanh toán khi nhận hàng</div>
@@ -105,7 +105,7 @@
                                 </div>
                             </label>
                             <label class="d-flex align-items-center gap-3 p-2 border rounded-3" style="cursor:pointer; background-color: #f8f9fa;">
-                                <input type="radio" name="walletType" value="MOMO" class="form-check-input flex-shrink-0">
+                                <input type="radio" name="walletType" value="MOMO_E_WALLET" class="form-check-input flex-shrink-0">
                                 <div>
                                     <div class="fw-semibold small" style="color: #a50064;">🟣 MoMo QR</div>
                                     <div class="text-muted" style="font-size:0.75rem">Quét mã qua ứng dụng MoMo</div>
@@ -390,7 +390,7 @@
                         btn.disabled = false;
                         btn.innerHTML = '<i class="bi bi-bag-check-fill me-2"></i>Đặt hàng ngay';
                     }
-                } else if (selectedPayment === 'MOMO') {
+                } else if (selectedPayment === 'MOMO_E_WALLET') {
                     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang chuyển sang MoMo...';
                     try {
                         const payRes = await fetch('/api/payments/create-momo-payment?orderId=' + data.orderId, {
