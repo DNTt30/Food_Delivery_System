@@ -41,12 +41,12 @@
 
 <style>
 .tab-btn.active { background: #212529 !important; color: white !important; border-color: #212529 !important; }
-.payment-card { transition: box-shadow 0.2s; }
-.payment-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
-.status-COMPLETED { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
-.status-PENDING { background: #fff8e1; color: #d97706; border-left: 4px solid #f59e0b; }
-.status-FAILED { background: #fef2f2; color: #dc2626; border-left: 4px solid #ef4444; }
-.status-REFUNDED { background: #eff6ff; color: #1d4ed8; border-left: 4px solid #3b82f6; }
+.transaction-row { transition: background-color 0.2s; cursor: default; }
+.transaction-row:hover { background-color: #f8f9fa; }
+.status-COMPLETED { background: #dcfce7; color: #166534; }
+.status-PENDING { background: #fef3c7; color: #92400e; }
+.status-FAILED { background: #fee2e2; color: #991b1b; }
+.status-REFUNDED { background: #dbeafe; color: #1e40af; }
 </style>
 
 <script>
@@ -56,18 +56,18 @@
     let allPayments = [];
 
     const STATUS_LABELS = {
-        COMPLETED: '✅ Thành công',
-        PENDING: '⏳ Đang xử lý',
-        FAILED: '❌ Thất bại',
-        REFUNDED: '💰 Đã hoàn tiền'
+        COMPLETED: 'Thành công',
+        PENDING: 'Đang xử lý',
+        FAILED: 'Thất bại',
+        REFUNDED: 'Đã hoàn tiền'
     };
 
     const PAYMENT_METHOD_LABELS = {
-        VNPAY: '🏦 VNPAY QR',
-        MOMO: '🟣 MoMo QR',
-        COD: '💵 Tiền mặt (COD)',
-        CASH: '💵 Tiền mặt (COD)',
-        CASH_ON_DELIVERY: '💵 Tiền mặt (COD)'
+        VNPAY: 'VNPAY',
+        MOMO: 'Ví MoMo',
+        COD: 'Tiền mặt',
+        CASH: 'Tiền mặt',
+        CASH_ON_DELIVERY: 'Tiền mặt'
     };
 
     function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
@@ -110,42 +110,50 @@
         }
         empty.classList.add('d-none');
         el.classList.remove('d-none');
-        el.innerHTML = '';
-
+        
+        let html = '<div class="list-group list-group-flush bg-white rounded-4 shadow-sm overflow-hidden">';
+        
         payments.forEach(p => {
-            const img = p.restaurantImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop';
+            let iconHtml = '';
+            let amountPrefix = '- ';
+            let amountColor = 'text-dark';
+            let titlePrefix = 'Thanh toán';
+            
+            if (p.paymentStatus === 'REFUNDED') {
+                amountPrefix = '+ ';
+                amountColor = 'text-success';
+                titlePrefix = 'Hoàn tiền';
+                iconHtml = '<div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-arrow-down-left text-success fs-5"></i></div>';
+            } else if (p.paymentMethod === 'VNPAY') {
+                iconHtml = '<div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-bank2 text-primary fs-5"></i></div>';
+            } else if (p.paymentMethod === 'MOMO' || p.paymentMethod === 'MOMO_E_WALLET') {
+                iconHtml = '<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: #fee2e2;"><i class="bi bi-wallet2 text-danger fs-5"></i></div>';
+            } else {
+                iconHtml = '<div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;"><i class="bi bi-cash-stack text-secondary fs-5"></i></div>';
+            }
 
-            el.insertAdjacentHTML('beforeend', `
-            <div class="card border-0 shadow-sm rounded-4 mb-3 payment-card overflow-hidden">
-                <div class="card-body p-4">
-                    <div class="d-flex gap-3 align-items-start">
-                        <img src="${img}" class="rounded-3 flex-shrink-0" style="width:64px;height:64px;object-fit:cover;"
-                             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop'">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                <div>
-                                    <h6 class="fw-bold mb-0">${p.restaurantName}</h6>
-                                    <small class="text-muted">${formatDate(p.transactionDate || p.orderTime)}</small>
-                                </div>
-                                <span class="badge rounded-pill px-3 py-2 status-${p.paymentStatus} fw-semibold"
-                                      style="font-size:0.78rem;">${STATUS_LABELS[p.paymentStatus] || p.paymentStatus}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
-                                <div>
-                                    <div class="fw-bold text-danger">${formatVND(p.amount)}</div>
-                                    <small class="text-muted d-block mt-1">
-                                        ${PAYMENT_METHOD_LABELS[p.paymentMethod] || p.paymentMethod}
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    <small class="text-muted">Mã đơn: #${p.orderId}</small>
-                                </div>
-                            </div>
-                        </div>
+            html += `
+            <div class="list-group-item p-3 border-bottom d-flex align-items-center gap-3 transaction-row border-0" style="border-bottom: 1px solid #f1f5f9 !important;">
+                ${iconHtml}
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
+                        <h6 class="fw-bold mb-0 text-truncate" style="font-size: 0.95rem;">${titlePrefix}: ${p.restaurantName || 'Hệ thống'}</h6>
+                        <span class="fw-bold ${amountColor} flex-shrink-0" style="font-size: 0.95rem;">${amountPrefix}${formatVND(p.amount)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted" style="font-size: 0.8rem;">${formatDate(p.transactionDate || p.orderTime)}</small>
+                        <span class="badge rounded-pill status-${p.paymentStatus} fw-normal" style="font-size: 0.7rem; padding: 0.4em 0.7em;">${STATUS_LABELS[p.paymentStatus] || p.paymentStatus}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-receipt me-1"></i>Đơn #${p.orderId}</small>
+                        <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-credit-card-2-front me-1"></i>${PAYMENT_METHOD_LABELS[p.paymentMethod] || p.paymentMethod}</small>
                     </div>
                 </div>
-            </div>`);
+            </div>`;
         });
+        
+        html += '</div>';
+        el.innerHTML = html;
     }
 </script>
 
