@@ -139,7 +139,7 @@ public class AdminApiController {
         stats.put("revenueByDay", revenueByDay);
 
         // Recent 5 orders
-        List<FoodOrder> recentOrders = foodOrderRepository.findTop5ByStatusNotOrderByOrderTimeDesc(OrderStatus.PENDING_PAYMENT);
+        List<FoodOrder> recentOrders = foodOrderRepository.findTop5ByStatusNotOrderByOrderTimeDesc(OrderStatus.AWAITING_PAYMENT);
         List<java.util.Map<String, Object>> recentOrderDTOs = recentOrders.stream().map(o -> {
             java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("id", o.getId());
@@ -369,9 +369,9 @@ public class AdminApiController {
         if ("all".equalsIgnoreCase(status)) {
             if (since != null)
                 pageResult = foodOrderRepository.findByOrderTimeAfterAndStatusNot(
-                        since, OrderStatus.PENDING_PAYMENT, pageable);
+                        since, OrderStatus.AWAITING_PAYMENT, pageable);
             else
-                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.PENDING_PAYMENT, pageable);
+                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.AWAITING_PAYMENT, pageable);
         } else {
             try {
                 OrderStatus os = OrderStatus.valueOf(status.toUpperCase());
@@ -380,7 +380,7 @@ public class AdminApiController {
                 else
                     pageResult = foodOrderRepository.findByStatus(os, pageable);
             } catch (IllegalArgumentException e) {
-                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.PENDING_PAYMENT, pageable);
+                pageResult = foodOrderRepository.findByStatusNot(OrderStatus.AWAITING_PAYMENT, pageable);
             }
         }
 
