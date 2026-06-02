@@ -101,6 +101,7 @@ public class OrderService implements IOrderService {
     @Transactional
     public FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
                                  List<OrderItemRequest> itemRequests, String deliveryAddress,
+                                 Double providedLat, Double providedLng,
                                  String voucherCode, String paymentMethodStr) {
         FoodOrder order = new FoodOrder();
         order.setCustomer(customer);
@@ -141,10 +142,16 @@ public class OrderService implements IOrderService {
         boolean isProfileAddress = customer.getDeliveryAddress() != null && 
                                    customer.getDeliveryAddress().trim().equalsIgnoreCase(deliveryAddress.trim());
                                    
-        if (isProfileAddress && customer.getLatitude() != null && customer.getLongitude() != null) {
+        if (providedLat != null && providedLng != null) {
+            // Priority 1: Exact coordinates from frontend map
+            order.setDeliveryLat(providedLat);
+            order.setDeliveryLng(providedLng);
+        } else if (isProfileAddress && customer.getLatitude() != null && customer.getLongitude() != null) {
+            // Priority 2: Customer Profile coordinates
             order.setDeliveryLat(customer.getLatitude());
             order.setDeliveryLng(customer.getLongitude());
         } else {
+            // Priority 3: Fallback to Backend Geocoding
             java.util.Map<String, Double> deliveryCoords = geocodingService.getCoordinates(deliveryAddress);
             if (deliveryCoords != null) {
                 order.setDeliveryLat(deliveryCoords.get("lat"));

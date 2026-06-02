@@ -183,7 +183,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Nhà hàng hiện đang đóng cửa"));
 
         try {
-            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.voucherCode, request.paymentMethod);
+            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.deliveryLat, request.deliveryLng, request.voucherCode, request.paymentMethod);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", "Đặt hàng thành công!",
                     "orderId", order.getId(),
@@ -258,13 +258,26 @@ public class CustomerApiController {
         if (rest == null) return ResponseEntity.badRequest().build();
         
         double fee = 15000.0; // default base fee
-        if (rest.getLatitude() != null && rest.getLongitude() != null && address != null && !address.isBlank()) {
-            Map<String, Double> coords = geocodingService.getCoordinates(address);
-            if (coords != null) {
+        Double lat = null, lng = null;
+        try {
+            if (body.get("lat") != null) lat = Double.valueOf(body.get("lat").toString());
+            if (body.get("lng") != null) lng = Double.valueOf(body.get("lng").toString());
+        } catch (Exception e) {}
+
+        if (rest.getLatitude() != null && rest.getLongitude() != null) {
+            if (lat != null && lng != null) {
                 double dist = shippingCalculationService.calculateDistance(
-                    rest.getLatitude(), rest.getLongitude(), coords.get("lat"), coords.get("lng")
+                    rest.getLatitude(), rest.getLongitude(), lat, lng
                 );
                 fee = shippingCalculationService.calculateShippingFee(dist);
+            } else if (address != null && !address.isBlank()) {
+                Map<String, Double> coords = geocodingService.getCoordinates(address);
+                if (coords != null) {
+                    double dist = shippingCalculationService.calculateDistance(
+                        rest.getLatitude(), rest.getLongitude(), coords.get("lat"), coords.get("lng")
+                    );
+                    fee = shippingCalculationService.calculateShippingFee(dist);
+                }
             }
         }
         return ResponseEntity.ok(Map.of("shippingFee", fee));
@@ -499,6 +512,8 @@ public class CustomerApiController {
         public String deliveryAddress;
         public String paymentMethod;
         public String voucherCode;
+        public Double deliveryLat;
+        public Double deliveryLng;
     }
 
     public static class ReviewRequest {

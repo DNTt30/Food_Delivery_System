@@ -201,58 +201,63 @@
     let mapInstance = null;
     let mapMarker = null;
     let mapModalInstance = null;
+    let selectedLat = null;
+    let selectedLng = null;
 
     function showMapModal() {
-        if (!mapModalInstance) mapModalInstance = new bootstrap.Modal(document.getElementById('mapModal'));
-        mapModalInstance.show();
+        const modalEl = document.getElementById('mapModal');
+        if (!mapModalInstance) {
+            mapModalInstance = new bootstrap.Modal(modalEl);
+            modalEl.addEventListener('shown.bs.modal', function () {
+                if (!mapInstance) {
+                    // Default center (Hanoi)
+                    const defaultLat = 21.028511;
+                    const defaultLng = 105.804817;
 
-        // Initialize map after modal is shown to ensure correct sizing
-        setTimeout(() => {
-            if (!mapInstance) {
-                // Default center (Hanoi)
-                const defaultLat = 21.028511;
-                const defaultLng = 105.804817;
+                    mapInstance = L.map('mapContainer').setView([defaultLat, defaultLng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(mapInstance);
 
-                mapInstance = L.map('mapContainer').setView([defaultLat, defaultLng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(mapInstance);
+                    mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
 
-                mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
-
-                // Try to get user's current location
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(pos => {
-                        const lat = pos.coords.latitude;
-                        const lng = pos.coords.longitude;
-                        mapInstance.setView([lat, lng], 16);
-                        mapMarker.setLatLng([lat, lng]);
-                        fetchAddressFromCoords(lat, lng);
-                    }, () => {
+                    // Try to get user's current location
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(pos => {
+                            const lat = pos.coords.latitude;
+                            const lng = pos.coords.longitude;
+                            mapInstance.setView([lat, lng], 16);
+                            mapMarker.setLatLng([lat, lng]);
+                            fetchAddressFromCoords(lat, lng);
+                        }, () => {
+                            fetchAddressFromCoords(defaultLat, defaultLng);
+                        });
+                    } else {
                         fetchAddressFromCoords(defaultLat, defaultLng);
+                    }
+
+                    // Event listener for marker drag end
+                    mapMarker.on('dragend', function(e) {
+                        const pos = mapMarker.getLatLng();
+                        fetchAddressFromCoords(pos.lat, pos.lng);
+                    });
+
+                    // Event listener for map click
+                    mapInstance.on('click', function(e) {
+                        mapMarker.setLatLng(e.latlng);
+                        fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
                     });
                 } else {
-                    fetchAddressFromCoords(defaultLat, defaultLng);
+                    mapInstance.invalidateSize();
                 }
-
-                // Event listener for marker drag end
-                mapMarker.on('dragend', function(e) {
-                    const pos = mapMarker.getLatLng();
-                    fetchAddressFromCoords(pos.lat, pos.lng);
-                });
-
-                // Event listener for map click
-                mapInstance.on('click', function(e) {
-                    mapMarker.setLatLng(e.latlng);
-                    fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
-                });
-            } else {
-                mapInstance.invalidateSize();
-            }
-        }, 300);
+            });
+        }
+        mapModalInstance.show();
     }
 
     async function fetchAddressFromCoords(lat, lng) {
+        selectedLat = lat;
+        selectedLng = lng;
         document.getElementById('mapSelectedAddress').value = 'Đang tải...';
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`);
@@ -312,10 +317,15 @@
         }
         
         try {
+            const reqBody = { restaurantId: parseInt(restaurantId), deliveryAddress: address };
+            if (selectedLat !== null && selectedLng !== null) {
+                reqBody.lat = selectedLat;
+                reqBody.lng = selectedLng;
+            }
             const res = await fetch('/api/customer/orders/estimate-shipping', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ restaurantId: parseInt(restaurantId), deliveryAddress: address })
+                body: JSON.stringify(reqBody)
             });
             if (res.ok) {
                 const data = await res.json();
@@ -331,7 +341,12 @@
 
     // Bind event to calculate on blur
     document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('deliveryAddress').addEventListener('blur', calculateShipping);
+        document.getElementById('deliveryAddress').addEventListener('blur', function() {
+            // If they manually type, clear exact coordinates to force geocoding
+            selectedLat = null;
+            selectedLng = null;
+            calculateShipping();
+        });
         loadAvailableVouchers();
     });
 
@@ -554,16 +569,22 @@
         }
 
         try {
+            const reqBody = {
+                restaurantId: parseInt(restaurantId),
+                items: cart.map(i => ({ menuItemId: i.id, quantity: i.qty })),
+                deliveryAddress: address,
+                paymentMethod: selectedPayment,
+                voucherCode: currentVoucherCode
+            };
+            if (selectedLat !== null && selectedLng !== null) {
+                reqBody.deliveryLat = selectedLat;
+                reqBody.deliveryLng = selectedLng;
+            }
+
             const res = await fetch('/api/customer/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({
-                    restaurantId: parseInt(restaurantId),
-                    items: cart.map(i => ({ menuItemId: i.id, quantity: i.qty })),
-                    deliveryAddress: address,
-                    paymentMethod: selectedPayment,
-                    voucherCode: currentVoucherCode
-                })
+                body: JSON.stringify(reqBody)
             });
             const data = await res.json();
             if (res.ok) {
