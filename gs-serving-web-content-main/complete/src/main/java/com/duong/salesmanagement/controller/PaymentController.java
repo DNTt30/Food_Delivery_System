@@ -510,7 +510,7 @@ public class PaymentController {
                 paymentRepository.save(payment);
 
                 order.setPaymentStatus(newStatus.name());
-                if (success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                if (success && order.getStatus() == OrderStatus.AWAITING_PAYMENT) {
                     order.setStatus(OrderStatus.PENDING);
                     
                     // 🔔 Notify: Customer đã thanh toán thành công
@@ -522,7 +522,7 @@ public class PaymentController {
                             order.getRestaurant().getUser(), order.getId(),
                             order.getCustomer().getUser().getFullName());
                             
-                } else if (!success && order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+                } else if (!success && order.getStatus() == OrderStatus.AWAITING_PAYMENT) {
                     order.setStatus(OrderStatus.CANCELLED);
                 }
                 foodOrderRepository.save(order);
