@@ -5,16 +5,16 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MomoConfig {
-    @Value("${momo.partner-code}")
+    @Value("${momo.partner-code:MOMO_TEST}")
     private String partnerCode;
 
-    @Value("${momo.access-key}")
+    @Value("${momo.access-key:MOMO_ACCESS_KEY}")
     private String accessKey;
 
-    @Value("${momo.secret-key}")
+    @Value("${momo.secret-key:MOMO_SECRET_KEY}")
     private String secretKey;
 
-    @Value("${momo.endpoint}")
+    @Value("${momo.endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
     private String endpoint;
 
     public String getPartnerCode() { return partnerCode; }
