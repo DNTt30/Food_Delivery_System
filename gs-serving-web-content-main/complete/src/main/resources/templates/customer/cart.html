@@ -174,23 +174,37 @@
 
 <!-- Map Modal -->
 <div class="modal fade" id="mapModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 720px;">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold"><i class="bi bi-map-fill text-danger me-2"></i>Chọn địa chỉ trên bản đồ</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Kéo thả ghim màu đỏ đến vị trí giao hàng mong muốn.</p>
-                <div id="mapContainer" style="height: 400px; width: 100%; border-radius: 12px; overflow: hidden;" class="mb-3 border"></div>
+            <div class="modal-body pt-2">
+                <!-- Search bar -->
+                <div class="input-group mb-2">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="mapSearchInput" class="form-control border-start-0 ps-0"
+                           placeholder="Tìm kiếm địa chỉ... (Enter để tìm)">
+                    <button class="btn btn-outline-danger" type="button" onclick="searchMapAddress()">
+                        <i class="bi bi-search"></i> Tìm
+                    </button>
+                </div>
+                <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Nhấn Enter, bấm "Tìm", hoặc click/kéo ghim trên bản đồ.</p>
+                <!-- Map -->
+                <div id="mapContainer" style="height: 420px; width: 100%; border-radius: 12px; overflow: hidden; position: relative;" class="mb-2 border"></div>
+                <!-- Result address (editable) -->
                 <div class="input-group">
                     <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill text-danger"></i></span>
-                    <input type="text" id="mapSelectedAddress" class="form-control" placeholder="Đang xác định địa chỉ...">
+                    <input type="text" id="mapSelectedAddress" class="form-control"
+                           placeholder="Địa chỉ được chọn sẽ hiện ở đây...">
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
                 <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger fw-bold rounded-pill" onclick="confirmMapAddress()">Xác nhận địa chỉ này</button>
+                <button type="button" class="btn btn-danger fw-bold rounded-pill" onclick="confirmMapAddress()">
+                    <i class="bi bi-check-circle me-1"></i>Xác nhận địa chỉ này
+                </button>
             </div>
         </div>
     </div>
@@ -210,18 +224,18 @@
             mapModalInstance = new bootstrap.Modal(modalEl);
             modalEl.addEventListener('shown.bs.modal', function () {
                 if (!mapInstance) {
-                    // Default center (Hanoi)
                     const defaultLat = 21.028511;
                     const defaultLng = 105.804817;
 
-                    mapInstance = L.map('mapContainer').setView([defaultLat, defaultLng], 15);
+                    mapInstance = L.map('mapContainer', { zoomControl: true }).setView([defaultLat, defaultLng], 15);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors'
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
                     }).addTo(mapInstance);
 
                     mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
 
-                    // Try to get user's current location
+                    // Get user location
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(pos => {
                             const lat = pos.coords.latitude;
@@ -229,32 +243,58 @@
                             mapInstance.setView([lat, lng], 16);
                             mapMarker.setLatLng([lat, lng]);
                             fetchAddressFromCoords(lat, lng);
-                        }, () => {
-                            fetchAddressFromCoords(defaultLat, defaultLng);
-                        });
+                        }, () => fetchAddressFromCoords(defaultLat, defaultLng));
                     } else {
                         fetchAddressFromCoords(defaultLat, defaultLng);
                     }
 
-                    // Event listener for marker drag end
-                    mapMarker.on('dragend', function(e) {
+                    mapMarker.on('dragend', function() {
                         const pos = mapMarker.getLatLng();
                         fetchAddressFromCoords(pos.lat, pos.lng);
                     });
 
-                    // Event listener for map click
                     mapInstance.on('click', function(e) {
                         mapMarker.setLatLng(e.latlng);
                         fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
                     });
-                    
-                    setTimeout(() => mapInstance.invalidateSize(), 100);
-                } else {
-                    setTimeout(() => mapInstance.invalidateSize(), 100);
+
+                    // Bind Enter key on search input
+                    document.getElementById('mapSearchInput').addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') { e.preventDefault(); searchMapAddress(); }
+                    });
                 }
+                // Always fix tile rendering after show
+                setTimeout(() => mapInstance.invalidateSize(), 50);
+                setTimeout(() => mapInstance.invalidateSize(), 300);
             });
         }
         mapModalInstance.show();
+    }
+
+    async function searchMapAddress() {
+        const query = document.getElementById('mapSearchInput').value.trim();
+        if (!query) return;
+        const searchBtn = document.querySelector('#mapModal .btn-outline-danger');
+        searchBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        searchBtn.disabled = true;
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=vi`);
+            const results = await res.json();
+            if (results && results.length > 0) {
+                const lat = parseFloat(results[0].lat);
+                const lng = parseFloat(results[0].lon);
+                mapInstance.setView([lat, lng], 17);
+                mapMarker.setLatLng([lat, lng]);
+                fetchAddressFromCoords(lat, lng);
+            } else {
+                document.getElementById('mapSelectedAddress').value = 'Không tìm thấy địa chỉ "' + query + '". Vui lòng thử lại.';
+            }
+        } catch(e) {
+            document.getElementById('mapSelectedAddress').value = 'Lỗi kết nối khi tìm kiếm.';
+        } finally {
+            searchBtn.innerHTML = '<i class="bi bi-search"></i> Tìm';
+            searchBtn.disabled = false;
+        }
     }
 
     async function fetchAddressFromCoords(lat, lng) {
