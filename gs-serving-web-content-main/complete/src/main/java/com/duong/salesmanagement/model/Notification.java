@@ -61,6 +61,10 @@ public class Notification {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** ID của chiến dịch Broadcast (nếu có) để phục vụ việc sửa/xóa hàng loạt */
+    @Column(name = "broadcast_log_id")
+    private Long broadcastLogId;
+
     // ── Constructors ───────────────────────────────────────────────────────
 
     public Notification() {}
@@ -101,4 +105,7 @@ public class Notification {
 
     public LocalDateTime getCreatedAt()            { return createdAt; }
     public void setCreatedAt(LocalDateTime t)      { this.createdAt = t; }
+
+    public Long getBroadcastLogId()                { return broadcastLogId; }
+    public void setBroadcastLogId(Long id)         { this.broadcastLogId = id; }
 }

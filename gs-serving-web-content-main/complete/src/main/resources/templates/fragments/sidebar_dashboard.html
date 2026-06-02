@@ -10,7 +10,7 @@
     <!-- ╔══════════════════════════════════════════════════════╗ -->
     <!-- ║  NOTIFICATION PANEL — Dark Sidebar Edition           ║ -->
     <!-- ╚══════════════════════════════════════════════════════╝ -->
-    <style>
+    <style th:if="${role != 'admin'}">
         /* ── Wrapper ─────────────────────────────────────────── */
         #sidebarNotifWrapper {
             position: relative;
@@ -358,7 +358,7 @@
         }
     </style>
 
-    <div id="sidebarNotifWrapper">
+    <div id="sidebarNotifWrapper" th:if="${role != 'admin'}">
         <!-- Trigger Button -->
         <button id="sidebarNotifBtn" onclick="SidebarNotif.toggle()" type="button">
             <span class="sn-icon">
@@ -485,6 +485,11 @@
         <li class="nav-item mb-1">
             <a href="/admin/promotions" class="nav-link text-white sidebar-link">
                 <i class="bi bi-tag me-2"></i>Khuyến mãi
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="/admin/notifications" class="nav-link text-white sidebar-link">
+                <i class="bi bi-bell me-2"></i>Gửi thông báo
             </a>
         </li>
     </ul>

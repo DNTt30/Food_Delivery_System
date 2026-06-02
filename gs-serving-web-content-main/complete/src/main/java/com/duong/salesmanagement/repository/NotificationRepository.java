@@ -30,4 +30,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /** Kiểm tra notification trùng (chống spam) */
     boolean existsByUserAndTypeAndRelatedOrderIdAndReadFalse(
             User user, NotificationType type, Long relatedOrderId);
+
+    @Modifying
+    @Query("UPDATE Notification n SET n.title = :title, n.message = :message WHERE n.broadcastLogId = :broadcastId")
+    void updateByBroadcastLogId(@Param("broadcastId") Long broadcastId, @Param("title") String title, @Param("message") String message);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.broadcastLogId = :broadcastId")
+    void deleteByBroadcastLogId(@Param("broadcastId") Long broadcastId);
 }

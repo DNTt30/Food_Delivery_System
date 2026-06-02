@@ -74,6 +74,10 @@ public class DriverApiController {
         DriverProfile driver = getAuthenticatedDriver(authentication);
         if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
+        if (!driver.isAvailable()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Vui lòng bật trạng thái hoạt động để hiển thị đơn"));
+        }
+
         List<FoodOrder> orders = orderService.getAvailableOrdersForDriver();
         List<DriverOrderDTO> dtos = orders.stream().map(o -> mapToDriverOrderDTO(o)).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);

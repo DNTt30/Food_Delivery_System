@@ -84,6 +84,9 @@ public class WebController {
     @GetMapping("/driver/profile")
     public String driverProfile() { return "driver/profile"; }
 
+    @GetMapping("/driver/notifications")
+    public String driverNotifications() { return "driver/notifications"; }
+
     // 5. Admin
     @GetMapping("/admin/dashboard")
     public String adminDashboard() { return "admin/dashboard"; }
@@ -105,4 +108,7 @@ public class WebController {
 
     @GetMapping("/admin/orders")
     public String adminOrders() { return "admin/orders"; }
+
+    @GetMapping("/admin/notifications")
+    public String adminNotifications() { return "admin/notifications"; }
 }

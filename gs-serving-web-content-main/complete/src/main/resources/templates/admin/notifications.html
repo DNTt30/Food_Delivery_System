@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'admin', ~{::main})}">
+<head>
+    <title>Admin - Thông Báo Hệ Thống</title>
+</head>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('admin')}"></div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📢 Gửi thông báo hệ thống</h4>
+        <small class="text-muted">Broadcast thông báo trực tiếp đến thiết bị của người dùng, nhà hàng và tài xế.</small>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Soạn thảo thông báo</h6>
+            
+            <form id="broadcastForm">
+                <input type="hidden" id="editBroadcastId" value="">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Nhóm đối tượng nhận <span class="text-danger">*</span></label>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <div class="form-check custom-radio">
+                            <input class="form-check-input" type="radio" name="targetAudience" id="targetAll" value="ALL" checked>
+                            <label class="form-check-label" for="targetAll">
+                                🌐 Tất cả
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio">
+                            <input class="form-check-input" type="radio" name="targetAudience" id="targetCustomers" value="CUSTOMER">
+                            <label class="form-check-label text-primary" for="targetCustomers">
+                                🧑 Khách hàng
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio">
+                            <input class="form-check-input" type="radio" name="targetAudience" id="targetRestaurants" value="RESTAURANT">
+                            <label class="form-check-label text-warning" for="targetRestaurants">
+                                🏪 Nhà hàng
+                            </label>
+                        </div>
+                        <div class="form-check custom-radio">
+                            <input class="form-check-input" type="radio" name="targetAudience" id="targetDrivers" value="DRIVER">
+                            <label class="form-check-label text-success" for="targetDrivers">
+                                🛵 Tài xế
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Tiêu đề thông báo <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-lg bg-light border-0" id="notifTitle" placeholder="Ví dụ: 🔥 Khuyến mãi siêu khủng cuối tuần!" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small">Nội dung chi tiết <span class="text-danger">*</span></label>
+                    <textarea class="form-control bg-light border-0" id="notifMessage" rows="5" placeholder="Nhập nội dung chi tiết của thông báo..." required></textarea>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold shadow-sm flex-grow-1" id="btnSend">
+                        <i class="bi bi-send-fill me-2"></i>Phát Sóng Ngay (Broadcast)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-semibold d-none" id="btnCancelEdit" onclick="cancelEdit()">
+                        Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 h-100" style="background: linear-gradient(135deg, #f8f9fa, #fff);">
+            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-info"></i>Hướng dẫn</h6>
+            <div class="small text-muted mb-3">
+                Thông báo sẽ xuất hiện ngay lập tức trong <b>Quả chuông thông báo</b> của ứng dụng người nhận.
+            </div>
+            <ul class="small text-muted ps-3 mb-0" style="line-height: 1.8;">
+                <li>Nên dùng emoji ở tiêu đề để tăng sự chú ý.</li>
+                <li>Nội dung nên ngắn gọn, súc tích (dưới 150 chữ).</li>
+                <li>Bạn có thể xem lịch sử, chỉnh sửa nội dung hoặc thu hồi (xóa) thông báo ở danh sách bên dưới.</li>
+            </ul>
+            
+            <div class="mt-auto pt-4 text-center">
+                <img src="https://cdn3d.iconscout.com/3d/premium/thumb/notification-bell-4993414-4161113.png" alt="bell" style="width: 120px; opacity: 0.8;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center px-4 pt-3 pb-2 border-bottom">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>Lịch sử Phát sóng</h6>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="loadHistory()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 0.875rem;">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Thời gian</th>
+                    <th>Nhóm nhận</th>
+                    <th>Tiêu đề & Nội dung</th>
+                    <th class="text-end pe-4">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                <tr><td colspan="4" class="text-center text-muted py-4">Đang tải lịch sử...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.custom-radio {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.custom-radio:hover {
+    background: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 2px 4px rgba(13,110,253,0.1);
+}
+.custom-radio input:checked + label {
+    font-weight: 600;
+}
+.ellipsis-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+<script th:inline="none">
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    const audMap = {
+        'ALL': '<span class="badge bg-secondary">🌐 Tất cả</span>',
+        'CUSTOMER': '<span class="badge bg-primary">🧑 Khách hàng</span>',
+        'RESTAURANT': '<span class="badge bg-warning text-dark">🏪 Nhà hàng</span>',
+        'DRIVER': '<span class="badge bg-success">🛵 Tài xế</span>'
+    };
+
+    let historyData = [];
+
+    // Format datetime
+    function fmtT(str) {
+        if (!str) return '';
+        const d = new Date(str);
+        return d.toLocaleString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+    }
+
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/admin/notifications/broadcasts', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            historyData = await res.json();
+            const tbody = document.getElementById('historyBody');
+            
+            if (historyData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Chưa có thông báo nào được phát sóng.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = historyData.map(log => `
+                <tr>
+                    <td class="ps-4 text-muted small">${fmtT(log.createdAt)}</td>
+                    <td>${audMap[log.targetAudience] || audMap['ALL']}</td>
+                    <td style="max-width: 300px;">
+                        <div class="fw-bold mb-1">${log.title}</div>
+                        <div class="text-muted small ellipsis-text">${log.message}</div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-light text-primary me-1" onclick="editLog(${log.id})" title="Chỉnh sửa">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light text-danger" onclick="deleteLog(${log.id})" title="Thu hồi (Xóa)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+        } catch (e) {
+            console.error(e);
+            document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Lỗi kết nối máy chủ!</td></tr>';
+        }
+    }
+
+    function editLog(id) {
+        const log = historyData.find(l => l.id === id);
+        if (!log) return;
+        
+        document.getElementById('editBroadcastId').value = log.id;
+        document.getElementById('notifTitle').value = log.title;
+        document.getElementById('notifMessage').value = log.message;
+        
+        // Disable radio target audience when editing
+        const radios = document.querySelectorAll('input[name="targetAudience"]');
+        radios.forEach(r => {
+            r.disabled = true;
+            if (r.value === log.targetAudience) r.checked = true;
+        });
+
+        document.getElementById('btnSend').innerHTML = '<i class="bi bi-save-fill me-2"></i>Lưu Chỉnh Sửa';
+        document.getElementById('btnSend').classList.replace('btn-primary', 'btn-success');
+        document.getElementById('btnCancelEdit').classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        document.getElementById('editBroadcastId').value = '';
+        document.getElementById('broadcastForm').reset();
+        
+        const radios = document.querySelectorAll('input[name="targetAudience"]');
+        radios.forEach(r => r.disabled = false);
+
+        document.getElementById('btnSend').innerHTML = '<i class="bi bi-send-fill me-2"></i>Phát Sóng Ngay (Broadcast)';
+        document.getElementById('btnSend').classList.replace('btn-success', 'btn-primary');
+        document.getElementById('btnCancelEdit').classList.add('d-none');
+    }
+
+    async function deleteLog(id) {
+        if (!confirm('Bạn có chắc chắn muốn thu hồi (xóa) thông báo này khỏi toàn bộ người dùng? Hành động này không thể hoàn tác.')) return;
+        
+        try {
+            const res = await fetch('/api/admin/notifications/broadcasts/' + id, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                alert('Đã thu hồi thông báo thành công!');
+                loadHistory();
+            } else {
+                alert('Lỗi khi xóa!');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Lỗi kết nối tới máy chủ!');
+        }
+    }
+
+    document.getElementById('broadcastForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('editBroadcastId').value;
+        const title = document.getElementById('notifTitle').value.trim();
+        const message = document.getElementById('notifMessage').value.trim();
+        const targetAudience = document.querySelector('input[name="targetAudience"]:checked').value;
+
+        if (!title || !message) {
+            alert('Vui lòng nhập đầy đủ tiêu đề và nội dung.');
+            return;
+        }
+
+        const btnSend = document.getElementById('btnSend');
+        const originalContent = btnSend.innerHTML;
+        btnSend.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...';
+        btnSend.disabled = true;
+
+        try {
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/api/admin/notifications/broadcasts/${id}` : '/api/admin/notifications/broadcast';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ title, message, targetAudience })
+            });
+
+            const data = await res.json();
+            
+            if (res.ok) {
+                alert('Thành công! ' + (data.message || ''));
+                cancelEdit();
+                loadHistory();
+            } else {
+                alert('Lỗi: ' + (data.error || 'Không thể xử lý'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Lỗi kết nối tới máy chủ!');
+        } finally {
+            if (!document.getElementById('editBroadcastId').value) {
+                btnSend.innerHTML = originalContent;
+                btnSend.disabled = false;
+            }
+        }
+    });
+
+    // Load initial
+    loadHistory();
+</script>
+
+</main>
+</body>
+</html>

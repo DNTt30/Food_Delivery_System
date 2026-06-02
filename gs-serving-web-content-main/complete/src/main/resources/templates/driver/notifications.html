@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/driver_mobile_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Thông báo - Driver</title>
+</head>
+<body>
+<main>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <a href="/driver/settings" class="text-dark text-decoration-none me-2"><i class="bi bi-arrow-left fs-5"></i></a>
+            <h5 class="fw-bold mb-0 d-inline-block">🔔 Thông báo</h5>
+        </div>
+        <button class="btn btn-sm btn-light border rounded-pill" onclick="markAllAsRead()">
+            <i class="bi bi-check-all"></i> Đã đọc hết
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyNotif" class="text-center py-5 d-none">
+        <div style="font-size: 3.5rem">📭</div>
+        <h6 class="fw-bold mt-2">Chưa có thông báo nào</h6>
+    </div>
+
+    <!-- Notification List -->
+    <div id="notifList"></div>
+
+    <script th:inline="none">
+        const token = localStorage.getItem('jwt_token');
+        if (!token) window.location.href = '/common/auth';
+
+        const EMOJI = {
+            ORDER_CREATED: '🍔', ORDER_ACCEPTED: '✅', ORDER_PREPARING: '👨‍🍳',
+            DRIVER_ASSIGNED: '🛵', ORDER_DELIVERING: '🛵', ORDER_COMPLETED: '🎉',
+            ORDER_CANCELLED: '❌', PAYMENT_SUCCESS: '💳', PAYMENT_FAILED: '⚠️',
+            NEW_REVIEW: '⭐', NEW_PROMOTION: '🎁', SYSTEM_ALERT: '🔔'
+        };
+
+        const ICONBG = {
+            ORDER_CREATED: '#eff6ff', ORDER_ACCEPTED: '#f0fdf4',
+            ORDER_PREPARING: '#eff6ff', DRIVER_ASSIGNED: '#f0fdf4',
+            ORDER_DELIVERING: '#f0fdf4', ORDER_COMPLETED: '#f0fdf4',
+            ORDER_CANCELLED: '#fef2f2', PAYMENT_SUCCESS: '#f0fdf4',
+            PAYMENT_FAILED: '#fef2f2', NEW_REVIEW: '#fffbeb',
+            NEW_PROMOTION: '#f0f9ff', SYSTEM_ALERT: '#fffbeb'
+        };
+
+        function timeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const diff = Math.floor((new Date() - date) / 1000);
+            if (diff < 60) return 'Vừa xong';
+            if (diff < 3600) return Math.floor(diff / 60) + ' phút trước';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+            return Math.floor(diff / 86400) + ' ngày trước';
+        }
+
+        async function loadNotifications() {
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('emptyNotif').classList.add('d-none');
+            const list = document.getElementById('notifList');
+            list.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/notifications', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                document.getElementById('loading').classList.add('d-none');
+
+                if (!data || data.length === 0) {
+                    document.getElementById('emptyNotif').classList.remove('d-none');
+                    return;
+                }
+
+                list.innerHTML = data.map(n => `
+                    <div class="card border-0 shadow-sm mb-3 position-relative ${!n.read ? 'bg-light' : ''}" onclick="markAsRead(${n.id}, this)">
+                        ${!n.read ? '<div class="position-absolute start-0 top-50 translate-middle-y ms-2 rounded-circle bg-danger" style="width: 8px; height: 8px;"></div>' : ''}
+                        <div class="card-body ps-4">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                                     style="width: 40px; height: 40px; background-color: ${ICONBG[n.type] || '#f3f4f6'}; font-size: 1.2rem;">
+                                    ${EMOJI[n.type] || '🔔'}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <h6 class="fw-bold mb-1 fs-6 text-truncate">${n.title}</h6>
+                                    <p class="text-muted small mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${n.message}</p>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">${timeAgo(n.createdAt)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                document.getElementById('loading').classList.add('d-none');
+                list.innerHTML = '<div class="alert alert-danger">Lỗi tải dữ liệu</div>';
+            }
+        }
+
+        async function markAsRead(id, el) {
+            if (!el.classList.contains('bg-light')) return; // Already read
+            
+            el.classList.remove('bg-light');
+            const indicator = el.querySelector('.bg-danger');
+            if (indicator) indicator.remove();
+
+            try {
+                await fetch('/api/notifications/' + id + '/read', {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                await fetch('/api/notifications/read-all', {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadNotifications();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        loadNotifications();
+    </script>
+</main>
+</body>
+</html>

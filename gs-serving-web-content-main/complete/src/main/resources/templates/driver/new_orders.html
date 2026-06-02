@@ -40,15 +40,31 @@
                 const res = await fetch('/api/driver/available-orders', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
-                const orders = await res.json();
+                const data = await res.json();
                 document.getElementById('loading').classList.add('d-none');
 
-                if (!orders || orders.length === 0) {
+                if (!res.ok) {
                     document.getElementById('emptyOrders').classList.remove('d-none');
+                    document.getElementById('emptyOrders').innerHTML = `
+                        <div style="font-size: 3.5rem">😴</div>
+                        <h6 class="fw-bold mt-2 text-danger">Tài khoản đang ngoại tuyến</h6>
+                        <p class="text-muted small">${data.error || 'Vui lòng bật trạng thái hoạt động.'}</p>
+                        <a href="/driver/settings" class="btn btn-primary btn-sm rounded-pill mt-2 px-4">Đến Cài Đặt</a>
+                    `;
                     return;
                 }
 
-                renderOrders(orders);
+                if (!data || data.length === 0) {
+                    document.getElementById('emptyOrders').classList.remove('d-none');
+                    document.getElementById('emptyOrders').innerHTML = `
+                        <div style="font-size: 3.5rem">📭</div>
+                        <h6 class="fw-bold mt-2">Hiện chưa có đơn mới</h6>
+                        <p class="text-muted small">Hãy đợi trong giây lát hoặc kiểm tra kết nối mạng.</p>
+                    `;
+                    return;
+                }
+
+                renderOrders(data);
             } catch {
                 document.getElementById('loading').classList.add('d-none');
                 document.getElementById('orderList').innerHTML = '<div class="alert alert-danger">Lỗi tải dữ liệu</div>';

@@ -27,6 +27,10 @@ public class AdminApiController {
     private final DriverProfileRepository driverProfileRepository;
     @org.springframework.beans.factory.annotation.Autowired
     private OrderItemRepository orderItemRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private NotificationRepository notificationRepository;
+    @org.springframework.beans.factory.annotation.Autowired
+    private BroadcastLogRepository broadcastLogRepository;
 
     public AdminApiController(UserRepository userRepository,
                               RestaurantProfileRepository restaurantProfileRepository,
@@ -474,6 +478,94 @@ public class AdminApiController {
         return m;
     }
 
+    // UC: Quản lý thông báo hệ thống (Broadcast)
+    @PostMapping("/notifications/broadcast")
+    public ResponseEntity<?> broadcastNotification(Authentication authentication, @RequestBody BroadcastRequest req) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        if (req.title == null || req.title.isBlank() || req.message == null || req.message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tiêu đề và nội dung không được để trống"));
+        }
+
+        List<User> targets;
+        String audience = req.targetAudience != null ? req.targetAudience.toUpperCase() : "ALL";
+        switch (audience) {
+            case "CUSTOMER":
+                targets = userRepository.findByRole(Role.CUSTOMER);
+                break;
+            case "RESTAURANT":
+                targets = userRepository.findByRole(Role.RESTAURANT);
+                break;
+            case "DRIVER":
+                targets = userRepository.findByRole(Role.DRIVER);
+                break;
+            case "ALL":
+            default:
+                // Tất cả trừ admin
+                targets = userRepository.findByRoleNot(Role.ADMIN);
+                break;
+        }
+
+        // Tạo log
+        BroadcastLog log = new BroadcastLog(req.title, req.message, audience);
+        broadcastLogRepository.save(log);
+
+        List<Notification> notifications = targets.stream()
+                .map(u -> {
+                    Notification n = new Notification(u, req.title, req.message, NotificationType.SYSTEM_ALERT, null);
+                    n.setBroadcastLogId(log.getId());
+                    return n;
+                })
+                .collect(Collectors.toList());
+
+        notificationRepository.saveAll(notifications);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Đã gửi thông báo thành công tới " + notifications.size() + " người dùng.",
+                "count", notifications.size()
+        ));
+    }
+
+    @GetMapping("/notifications/broadcasts")
+    public ResponseEntity<?> getBroadcastHistory(Authentication authentication) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        return ResponseEntity.ok(broadcastLogRepository.findAllByOrderByCreatedAtDesc());
+    }
+
+    @Transactional
+    @PutMapping("/notifications/broadcasts/{id}")
+    public ResponseEntity<?> updateBroadcast(Authentication authentication, @PathVariable Long id, @RequestBody BroadcastRequest req) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        
+        BroadcastLog log = broadcastLogRepository.findById(id).orElse(null);
+        if (log == null) return ResponseEntity.notFound().build();
+
+        if (req.title == null || req.title.isBlank() || req.message == null || req.message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Tiêu đề và nội dung không được để trống"));
+        }
+
+        log.setTitle(req.title);
+        log.setMessage(req.message);
+        broadcastLogRepository.save(log);
+
+        notificationRepository.updateByBroadcastLogId(id, req.title, req.message);
+
+        return ResponseEntity.ok(Map.of("message", "Đã cập nhật thông báo thành công"));
+    }
+
+    @Transactional
+    @DeleteMapping("/notifications/broadcasts/{id}")
+    public ResponseEntity<?> deleteBroadcast(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        
+        if (!broadcastLogRepository.existsById(id)) return ResponseEntity.notFound().build();
+
+        notificationRepository.deleteByBroadcastLogId(id);
+        broadcastLogRepository.deleteById(id);
+
+        return ResponseEntity.ok(Map.of("message", "Đã thu hồi thông báo thành công"));
+    }
+
     // ---- DTOs ----
     public static class UserDTO {
         public String id;
@@ -519,5 +611,11 @@ public class AdminApiController {
         public Double maxDiscount;
         public String description;
         public boolean active;
+    }
+
+    public static class BroadcastRequest {
+        public String title;
+        public String message;
+        public String targetAudience;
     }
 }
