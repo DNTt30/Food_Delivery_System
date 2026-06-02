@@ -27,6 +27,7 @@ import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.model.Voucher;
 import com.duong.salesmanagement.repository.CustomerProfileRepository;
 import com.duong.salesmanagement.repository.MenuItemRepository;
+import com.duong.salesmanagement.repository.PaymentRepository;
 import com.duong.salesmanagement.repository.RestaurantProfileRepository;
 import com.duong.salesmanagement.repository.ReviewRepository;
 import com.duong.salesmanagement.repository.UserRepository;
@@ -45,6 +46,7 @@ public class CustomerApiController {
     private final CustomerProfileRepository customerProfileRepository;
     private final VoucherRepository voucherRepository;
     private final ReviewRepository reviewRepository;
+    private final PaymentRepository paymentRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
@@ -52,7 +54,8 @@ public class CustomerApiController {
                                  UserRepository userRepository,
                                  CustomerProfileRepository customerProfileRepository,
                                  VoucherRepository voucherRepository,
-                                 ReviewRepository reviewRepository) {
+                                 ReviewRepository reviewRepository,
+                                 PaymentRepository paymentRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
@@ -60,6 +63,7 @@ public class CustomerApiController {
         this.customerProfileRepository = customerProfileRepository;
         this.voucherRepository = voucherRepository;
         this.reviewRepository = reviewRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -310,6 +314,28 @@ public class CustomerApiController {
         }
     }
 
+    // Lịch sử giao dịch
+    @GetMapping("/payments")
+    public ResponseEntity<?> getPaymentHistory(Authentication authentication) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        List<com.duong.salesmanagement.model.Payment> payments = paymentRepository.findByOrder_Customer(customer);
+        List<PaymentHistoryDTO> dtos = payments.stream().map(p -> new PaymentHistoryDTO(
+                p.getId(),
+                p.getOrder().getId(),
+                p.getOrder().getRestaurant().getRestaurantName(),
+                p.getOrder().getRestaurant().getBannerUrl(),
+                p.getPaymentMethod().name(),
+                p.getPaymentStatus().name(),
+                p.getAmount(),
+                p.getTransactionDate() != null ? p.getTransactionDate().toString() : "",
+                p.getOrder().getOrderTime() != null ? p.getOrder().getOrderTime().toString() : ""
+        )).collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
     // ---- DTOs ----
     public static class RestaurantDTO {
         public Long id;
@@ -435,6 +461,32 @@ public class CustomerApiController {
             this.comment = comment;
             this.createdAt = createdAt;
             this.orderItems = orderItems;
+        }
+    }
+
+    public static class PaymentHistoryDTO {
+        public Long id;
+        public Long orderId;
+        public String restaurantName;
+        public String restaurantImage;
+        public String paymentMethod;
+        public String paymentStatus;
+        public Double amount;
+        public String transactionDate;
+        public String orderTime;
+
+        public PaymentHistoryDTO(Long id, Long orderId, String restaurantName, String restaurantImage,
+                                  String paymentMethod, String paymentStatus, Double amount,
+                                  String transactionDate, String orderTime) {
+            this.id = id;
+            this.orderId = orderId;
+            this.restaurantName = restaurantName;
+            this.restaurantImage = restaurantImage;
+            this.paymentMethod = paymentMethod;
+            this.paymentStatus = paymentStatus;
+            this.amount = amount;
+            this.transactionDate = transactionDate;
+            this.orderTime = orderTime;
         }
     }
 }

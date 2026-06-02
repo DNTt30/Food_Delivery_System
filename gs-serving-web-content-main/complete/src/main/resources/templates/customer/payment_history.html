@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Lịch sử giao dịch - Food Delivery</title>
+</head>
+<body>
+<main>
+
+<div class="container mb-5" style="max-width: 800px;">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <h4 class="fw-bold mb-0"><i class="bi bi-credit-card text-danger me-2"></i>Lịch sử giao dịch</h4>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="d-flex gap-2 mb-4 overflow-auto">
+        <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-status="ALL" onclick="filterPayments('ALL', this)">Tất cả</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="filterPayments('COMPLETED', this)">Thành công</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PENDING" onclick="filterPayments('PENDING', this)">Đang xử lý</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="FAILED" onclick="filterPayments('FAILED', this)">Thất bại</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-danger"></div>
+        <p class="text-muted mt-2">Đang tải lịch sử giao dịch...</p>
+    </div>
+
+    <!-- Payments List -->
+    <div id="paymentList" class="d-none"></div>
+
+    <!-- Empty -->
+    <div id="emptyState" class="text-center py-5 d-none">
+        <div style="font-size:4rem">💳</div>
+        <h5 class="fw-bold mt-2">Chưa có giao dịch nào</h5>
+        <p class="text-muted">Hãy đặt món ngay hôm nay!</p>
+        <a href="/customer/home" class="btn btn-danger rounded-pill px-4 mt-2">Đặt món ngay</a>
+    </div>
+</div>
+
+<style>
+.tab-btn.active { background: #212529 !important; color: white !important; border-color: #212529 !important; }
+.payment-card { transition: box-shadow 0.2s; }
+.payment-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+.status-COMPLETED { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
+.status-PENDING { background: #fff8e1; color: #d97706; border-left: 4px solid #f59e0b; }
+.status-FAILED { background: #fef2f2; color: #dc2626; border-left: 4px solid #ef4444; }
+</style>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    let allPayments = [];
+
+    const STATUS_LABELS = {
+        COMPLETED: '✅ Thành công',
+        PENDING: '⏳ Đang xử lý',
+        FAILED: '❌ Thất bại'
+    };
+
+    const PAYMENT_METHOD_LABELS = {
+        VNPAY: '🏦 VNPAY QR',
+        MOMO: '🟣 MoMo QR',
+        COD: '💵 Tiền mặt (COD)',
+        CASH: '💵 Tiền mặt (COD)',
+        CASH_ON_DELIVERY: '💵 Tiền mặt (COD)'
+    };
+
+    function formatVND(n) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0); }
+    function formatDate(dt) {
+        if (!dt) return '';
+        const d = new Date(dt);
+        return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPayments();
+    });
+
+    async function loadPayments() {
+        try {
+            const res = await fetch('/api/customer/payments', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+            allPayments = await res.json();
+            document.getElementById('loading').classList.add('d-none');
+            renderPayments(allPayments);
+        } catch {
+            document.getElementById('loading').innerHTML = '<div class="text-center text-danger"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    function filterPayments(status, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filtered = status === 'ALL' ? allPayments : allPayments.filter(p => p.paymentStatus === status);
+        renderPayments(filtered);
+    }
+
+    function renderPayments(payments) {
+        const el = document.getElementById('paymentList');
+        const empty = document.getElementById('emptyState');
+        if (!payments.length) {
+            el.classList.add('d-none');
+            empty.classList.remove('d-none');
+            return;
+        }
+        empty.classList.add('d-none');
+        el.classList.remove('d-none');
+        el.innerHTML = '';
+
+        payments.forEach(p => {
+            const img = p.restaurantImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop';
+
+            el.insertAdjacentHTML('beforeend', `
+            <div class="card border-0 shadow-sm rounded-4 mb-3 payment-card overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <img src="${img}" class="rounded-3 flex-shrink-0" style="width:64px;height:64px;object-fit:cover;"
+                             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop'">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0">${p.restaurantName}</h6>
+                                    <small class="text-muted">${formatDate(p.transactionDate || p.orderTime)}</small>
+                                </div>
+                                <span class="badge rounded-pill px-3 py-2 status-${p.paymentStatus} fw-semibold"
+                                      style="font-size:0.78rem;">${STATUS_LABELS[p.paymentStatus] || p.paymentStatus}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                                <div>
+                                    <div class="fw-bold text-danger">${formatVND(p.amount)}</div>
+                                    <small class="text-muted d-block mt-1">
+                                        ${PAYMENT_METHOD_LABELS[p.paymentMethod] || p.paymentMethod}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">Mã đơn: #${p.orderId}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`);
+        });
+    }
+</script>
+
+</main>
+</body>
+</html>
