@@ -25,6 +25,41 @@ Use this format when logging new changes:
 
 ## Historic Code Changes Log
 
+### 2026-06-02: Driver Multiple Orders Fix & UI Polish
+*   **Description**: Implemented a constraint to prevent drivers from accepting multiple orders simultaneously. Polished the Driver UI by introducing a history accordion view and removing native browser confirmation alerts for a smoother experience.
+*   **Changed Files**: Driver controllers and templates.
+*   **Affected Modules**: `order`, `tracking`
+*   **API Impact**: Driver accept API now enforces 1 active order per driver constraint.
+*   **Database Schema Updates**: None.
+
+### 2026-06-02: Admin Notification Broadcast & History
+*   **Description**: Overhauled the notification system for Administrators. Admins can now view a comprehensive Notification History and broadcast messages to all users or specific roles (Customers, Drivers, Partners).
+*   **Changed Files**: Admin controllers, notification models, and admin templates.
+*   **Affected Modules**: `notification`
+*   **API Impact**: Added Admin broadcasting endpoints.
+*   **Database Schema Updates**: None.
+
+### 2026-06-02: Server-Side Pagination for Orders
+*   **Description**: Implemented Server-Side Pagination for the orders list to handle large datasets efficiently. Also fixed a SpEL exception in JS and corrected API syntax.
+*   **Changed Files**: Order controllers, repositories, and order list templates.
+*   **Affected Modules**: `order`
+*   **API Impact**: GET endpoints for orders now support page/size pagination query params.
+*   **Database Schema Updates**: None.
+
+### 2026-06-02: Admin Panel Overhaul & Chart.js Integration
+*   **Description**: Completely redesigned the Admin panel. Added an interactive line chart for revenue/order statistics, a recent orders table, sidebar links, and a new promotions scope view.
+*   **Changed Files**: Admin dashboard templates, admin controllers, CSS/JS assets.
+*   **Affected Modules**: `order`
+*   **API Impact**: None.
+*   **Database Schema Updates**: None.
+
+### 2026-06-02: Geocoding Search & Map Rendering Fix in Delivery Modal
+*   **Description**: Fixed Leaflet map rendering bugs in modals and added a geocoding search input directly within the delivery address modal for easier coordinate selection.
+*   **Changed Files**: Modal fragments, map JS scripts.
+*   **Affected Modules**: `order`, `profile`
+*   **API Impact**: None.
+*   **Database Schema Updates**: None.
+
 ### 2026-05-22: Resolved Driver Delivering Screen Blank Rendering Issue
 *   **Description**: Fixed a server-side Thymeleaf 3 template processing crash on the driver's delivery view. The expression parser incorrectly treated a 2D JavaScript array literal `[[...]]` as an inline Thymeleaf expression. Padding the nested brackets with a space (`[ [...] ]`) prevents Thymeleaf from parsing them, restoring full map and order details rendering.
 *   **Changed Files**:

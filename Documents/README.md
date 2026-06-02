@@ -1,6 +1,6 @@
 # 📁 Tài liệu Dự án – Hệ thống Quản lý Đặt đồ ăn Trực tuyến
 
-> **Nhóm:** TEAM 14  
+> **Nhóm:** TEAM 12  
 > **Môn học:** Phân tích & Thiết kế Phần mềm  
 > **GitHub:** [Food_Delivery_System](https://github.com/DNTt30/Food_Delivery_System)
 
@@ -23,7 +23,7 @@
 **Hoạt động:** 
 - Trích xuất **16 lớp entity** từ use case (User, CustomerProfile, RestaurantProfile, DriverProfile, MenuItem, FoodOrder, OrderItem, Payment, Review, Voucher, etc.)
 - Xác định **13+ quan hệ** giữa lớp với multiplicity đầy đủ
-- Vẽ **Class Diagram** chi tiết (ClassDiagram_Team14_Tuan3.drawio)
+- Vẽ **Class Diagram** chi tiết (ClassDiagram_Team12_Tuan3.drawio)
 - Tạo **Spring Boot Skeleton** với cấu trúc 3-tầng (Controller-Service-Repository)
 - Triển khai **OTP Email xác thực** qua Gmail SMTP + giao diện hiện đại
 
@@ -121,7 +121,7 @@
 
 ---
 
-*Cập nhật lần cuối: 20/05/2026*
+*Cập nhật lần cuối: 02/06/2026*
 
 ### 🔍 Hoạt động đã thực hiện
 
@@ -202,7 +202,7 @@ public class FoodOrder {
 
 #### 4. Vẽ Class Diagram (Draw.io)
 
-- **File:** `ClassDiagram_Team14_Tuan3.drawio`
+- **File:** `ClassDiagram_Team12_Tuan3.drawio`
 - **Nội dung:** 16 lớp, 5 enum, đầy đủ quan hệ, chú thích màu sắc theo tầng
 - **Phân màu:**
   - 🔵 Xanh dương: Lớp User và Order
@@ -265,8 +265,8 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 
 | # | Sản phẩm | File/Link | Status |
 | :--- | :--- | :--- | :--- |
-| 1 | Biểu đồ Lớp (Class Diagram) | `ClassDiagram_Team14_Tuan3.drawio` | ✅ |
-| 2 | Tài liệu thiết kế lớp (Word) | `ClassDiagram_Tuan3_Team14.docx` | ✅ |
+| 1 | Biểu đồ Lớp (Class Diagram) | `ClassDiagram_Team12_Tuan3.drawio` | ✅ |
+| 2 | Tài liệu thiết kế lớp (Word) | `ClassDiagram_Tuan3_Team12.docx` | ✅ |
 | 3 | Khung mã nguồn (Skeleton) | `src/.../model/*.java` | ✅ |
 | 4 | Hệ thống xác thực OTP/Mail | `EmailService.java`, `AuthService.java` | ✅ |
 | 5 | Giao diện Đăng ký & Reset PW | `register.html`, `forgot-password.html` | ✅ |
@@ -366,5 +366,5 @@ Xây dựng luồng xác thực người dùng hoàn chỉnh qua Email để đ�
 
 ---
 
-*Cập nhật lần cuối: 17/05/2026*
+*Cập nhật lần cuối: 02/06/2026*
 

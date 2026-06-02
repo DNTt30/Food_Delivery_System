@@ -1,9 +1,9 @@
 # 🎓 BÁO CÁO TỔNG KẾT DỰ ÁN
 ## Hệ thống Quản lý Giao đồ ăn Trực tuyến — Food Delivery System
 
-> **Ngày báo cáo:** 20/05/2026  
+> **Ngày báo cáo:** 02/06/2026  
 > **Người thực hiện:** Dương Ngọc Tú  
-> **Trạng thái:** Hoàn thiện 100% + Khắc phục lỗi Geocoding & Bản đồ + Cập nhật tài liệu  
+> **Trạng thái:** Hoàn thiện 100% + Khắc phục lỗi Geocoding & Bản đồ + Cập nhật Dashboard & Hệ thống thông báo mới
 > **Công nghệ lõi:** Spring Boot 3.3 · Spring Security · WebSocket · MySQL · UUID · JWT · Leaflet Map
 
 ---
@@ -25,9 +25,9 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 | **Xác thực** | Đăng ký, Đăng nhập, OTP, Quên mật khẩu | ✅ 100% | UUID Secure + JWT |
 | **Customer** | Tìm kiếm, Giỏ hàng, Đặt đơn, Tracking, Đánh giá | ✅ 100% | Auto-refresh Timeline & Progress UI Bar |
 | **Restaurant**| Quản lý Menu, Kanban Orders, Doanh thu | ✅ 100% | Chart.js & Map Coordinates Picker |
-| **Driver** | Nhận đơn, Quy trình giao hàng, Thu nhập | ✅ 100% | Mobile-optimized & Live GPS Updating |
-| **Admin** | Quản trị User/Đối tác, Voucher, Thống kê | ✅ 100% | Full Control Dashboard |
-| **Geocoding & Map**| Sửa lỗi định vị Nominatim API, Snapshots & Fallback | ✅ 100% | Tích hợp User-Agent & Map Auto-save |
+| **Driver** | Nhận đơn, Quy trình giao hàng, Thu nhập | ✅ 100% | Single Order Constraint & History Accordion UI |
+| **Admin** | Quản trị User/Đối tác, Voucher, Thống kê | ✅ 100% | Broadcast Notifications & Chart.js Overhaul |
+| **Geocoding & Map**| Sửa lỗi định vị Nominatim API, Snapshots & Fallback | ✅ 100% | Geocoding Search trong Modal Đặt hàng |
 
 ---
 
@@ -42,14 +42,15 @@ Dự án đã xây dựng thành công một nền tảng thương mại điện
 - Toàn bộ Primary Keys được chuyển sang UUID để ngăn chặn Insecure Direct Object References (IDOR).
 - Xác thực 2 lớp qua Email (OTP) cho các hành động nhạy cảm như Đăng ký/Reset Pass.
 
-### 📊 Quản lý Thông minh (Dashboard 2.0)
+### 📊 Quản lý Thông minh (Dashboard 2.0 & Pagination)
 - **Nhà hàng:** Quản lý đơn hàng bằng bảng Kanban (Mới/Đang chuẩn bị/Xong).
-- **Tài xế:** Giao diện thẻ dọc, tích hợp nút gọi/chat ngữ cảnh và thanh trạng thái Online/Offline.
-- **Admin:** Thống kê doanh thu thực tế và quản lý đối tác chuyên nghiệp.
+- **Tài xế:** Giao diện thẻ dọc, giới hạn **1 đơn hàng cùng lúc**, tích hợp lịch sử dạng Accordion và Custom Confirmation Modal.
+- **Admin:** Hệ thống quản trị toàn diện với biểu đồ **Line Chart doanh thu**, bảng Recent Orders, và tính năng **Broadcast Notification** (gửi thông báo đồng loạt theo vai trò).
+- **Hiệu năng:** Tích hợp **Server-Side Pagination** cho toàn bộ danh sách đơn hàng để xử lý lượng lớn dữ liệu.
 
 ### 🗺️ Tối ưu hóa Hệ thống Bản đồ & Tracking (Mới - Tuần 7)
 - **Nominatim Geocoding Hardening**: Tích hợp `User-Agent` hợp lệ khi gọi API OpenStreetMap (Nominatim), giải quyết triệt để lỗi 403 Forbidden.
-- **Map Location Auto-Save**: Tích hợp Leaflet Map Picker trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, tự động lấy tọa độ và cập nhật tức thì vào database khi xác nhận vị trí.
+- **Map Location Auto-Save**: Tích hợp Leaflet Map Picker trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, tự động lấy tọa độ và cập nhật tức thì vào database khi xác nhận vị trí. Tích hợp thanh tìm kiếm **Geocoding Search** trực tiếp trong Modal chọn địa chỉ nhận hàng.
 - **Thanh trạng thái tiến trình giao hàng (Tracking Progress UI)**: Thêm thanh tiến trình trực quan động trên trang theo dõi đơn hàng của Khách hàng, tương ứng với các cột mốc trạng thái từ Chuẩn bị, Đang giao đến Hoàn thành.
 - **Cơ chế Snapshots & Fallback thông minh**: `OrderService` tự động geocode địa chỉ giao hàng và địa chỉ nhà hàng khi đặt đơn nếu thiếu tọa độ, đồng thời tự sửa lỗi (self-healing) cho các đơn hàng cũ.
 

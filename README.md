@@ -67,8 +67,8 @@ Food_Delivery_System/
 - ✅ **Xác thực & Đăng ký:** OTP qua Email, Reset mật khẩu
 - ✅ **Trải nghiệm Premium UI/UX:** Giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
 - ✅ **Video Review Feed (Khám phá):** Trải nghiệm xem video ngắn lướt vuốt thả tim, thiết kế chuẩn Generic an toàn không vi phạm bản quyền thương hiệu.
-- ✅ **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
-- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh (tìm theo Tên nhà hàng & Tên món ăn), lọc nhà hàng, Giỏ hàng Global Real-time.
+- **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
+- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh (tìm theo Tên nhà hàng & Tên món ăn), lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** trực tiếp trong modal chọn địa chỉ.
 - ✅ **Top Món Bán Chạy:** Hệ thống tự động tính toán và hiển thị lượt bán lịch sử (`soldCount`) cho từng món ăn, tăng độ tin cậy.
 - ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
@@ -82,7 +82,8 @@ Food_Delivery_System/
 
 ### 🛵 Tài xế (Driver)
 - ✅ **Quản lý Hồ sơ:** Cập nhật thông tin cá nhân, chọn vị trí làm việc
-- ✅ **Nhận Đơn hàng:** Xem danh sách đơn đang chờ, nhận đơn theo khu vực
+- ✅ **Nhận Đơn hàng:** Xem danh sách đơn đang chờ, nhận đơn (giới hạn **1 đơn hàng cùng lúc**).
+- ✅ **Lịch sử Giao hàng:** Xem lại lịch sử với giao diện **Accordion** thông minh.
 - ✅ **Giao hàng:** Cập nhật trạng thái (PREPARING → DELIVERING → COMPLETED)
 - ✅ **Tracking:** Gửi vị trí GPS Real-time cho Khách hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Khách hàng và Nhà hàng khi đang xử lý đơn
@@ -90,7 +91,8 @@ Food_Delivery_System/
 ### 🛡️ Quản trị viên (Admin)
 - ✅ **Quản lý Người dùng:** Khóa/mở tài khoản, duyệt đối tác nhà hàng mới
 - ✅ **Hệ thống Khuyến mãi:** Tạo/sửa/xóa Voucher (% hoặc số tiền cố định)
-- ✅ **Thống kê Hệ thống:** Xem tổng quan doanh thu, số đơn, người dùng
+- ✅ **Thống kê Hệ thống:** Xem tổng quan doanh thu với **Line Chart**, danh sách đơn hàng gần đây với **Server-Side Pagination**.
+- ✅ **Broadcast Notifications:** Gửi thông báo hệ thống đồng loạt đến toàn bộ người dùng hoặc theo vai trò cụ thể.
 
 ---
 
@@ -280,7 +282,7 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 
 ---
 
-*Cập nhật: 21/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*** Development Team
+*Cập nhật: 02/06/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
 - **Email:** [contact@example.com]
 - **Issues:** GitHub Issues
 - **Documentation:** [Project Wiki]
@@ -378,6 +380,6 @@ src/main/java/com/duong/salesmanagement/
 
 
 
-*Cập nhật: 21/05/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
+*Cập nhật: 02/06/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
 
 

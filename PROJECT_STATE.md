@@ -68,10 +68,10 @@ The application is composed of **6 structural modules**:
     *   Entities: [CustomerProfile.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/CustomerProfile.java), [RestaurantProfile.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/RestaurantProfile.java), [DriverProfile.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/DriverProfile.java)
 
 ### 3. Food Ordering & Cart (`order`)
-*   **Role**: Implements the ordering pipeline, distance and shipping calculations, voucher discounts, order updates, driver assignments, and customer review scoring.
+*   **Role**: Implements the ordering pipeline, distance and shipping calculations, voucher discounts, order updates, driver assignments, customer review scoring, and **Server-Side Pagination** for large datasets.
 *   **Key Files**:
     *   [CustomerApiController.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/controller/CustomerApiController.java), [RestaurantApiController.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/controller/RestaurantApiController.java), [DriverApiController.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/controller/DriverApiController.java)
-    *   [OrderService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/OrderService.java) (Core transactions)
+    *   [OrderService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/OrderService.java) (Core transactions, Pagination, and Fallback geocoding)
     *   [ShippingCalculationService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/ShippingCalculationService.java) (Fee estimation engine)
     *   [GeocodingService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/GeocodingService.java) (Nominatim address mapping)
     *   Entities: [FoodOrder.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/FoodOrder.java), [OrderItem.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/OrderItem.java), [MenuItem.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/MenuItem.java), [Voucher.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/Voucher.java)
@@ -95,10 +95,10 @@ The application is composed of **6 structural modules**:
     *   Entities: [ChatMessage.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/ChatMessage.java)
 
 ### 6. Notifications System (`notification`)
-*   **Role**: Triggers context-aware notifications, enforces smart deduplication, and handles bell updates.
+*   **Role**: Triggers context-aware notifications, enforces smart deduplication, handles bell updates, and supports **Admin Broadcast Notifications** to targeted roles.
 *   **Key Files**:
     *   [NotificationApiController.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/controller/NotificationApiController.java)
-    *   [NotificationService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/NotificationService.java) (Deduplication engine)
+    *   [NotificationService.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/service/NotificationService.java) (Deduplication engine & Broadcast capabilities)
     *   Entities: [Notification.java](file:///d:/review%20SPRING_BOOT/springBoot_template-main/Food_Delivery_System/gs-serving-web-content-main/complete/src/main/java/com/duong/salesmanagement/model/Notification.java)
 
 ---
@@ -197,10 +197,10 @@ The application is composed of **6 structural modules**:
     *   It **does not validate** subscriptions to `/topic/order.{orderId}` (the live chat topic).
     *   Any authenticated user can subscribe to `/topic/order.{orderId}` and read all live chat messages for that order.
 
-### ⚠️ API Blocking Risk (External Integration):
-*   **Missing User-Agent Header on Geocoding Request**:
+### ✅ API Blocking Risk Resolved (External Integration):
+*   **User-Agent Header on Geocoding Request**:
     *   `GeocodingService.getCoordinates()` performs a REST call via `RestTemplate.getForObject` to Nominatim's search endpoint.
-    *   OpenStreetMap's policy strictly mandates a valid, unique `User-Agent` header to prevent bots. The current code does not append this header, making the server susceptible to immediate IP bans/blocking.
+    *   This has been resolved by appending the `FoodDeliveryApp/1.0` User-Agent header, preventing server blockades.
 
 ### 🔄 Circular Dependency (Technical Debt):
 *   **OrderService ↔ WebSocket Framework Circular Dependency**:
