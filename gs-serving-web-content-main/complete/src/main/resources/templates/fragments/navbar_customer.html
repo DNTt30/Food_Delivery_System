@@ -39,21 +39,7 @@
             border-radius: 10px;
         }
 
-        .nav-search-wrapper {
-            background: #f3f4f6;
-            border-radius: 12px;
-            padding: 4px 6px;
-            transition: all 0.2s;
-            border: 1px solid #e5e7eb;
-            max-width: 450px;
-            width: 100%;
-        }
 
-        .nav-search-wrapper:focus-within {
-            background: white;
-            border-color: var(--nav-accent);
-            box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.08);
-        }
 
         .nav-action-btn {
             width: 42px;
@@ -165,17 +151,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarCustomer">
-            <!-- Search Bar -->
-            <div class="mx-auto my-3 my-lg-0 nav-search-wrapper d-flex align-items-center">
-                <i class="bi bi-search text-muted ms-2 small"></i>
-                <input type="text" id="navSearchInput" 
-                       class="form-control border-0 bg-transparent shadow-none small" 
-                       placeholder="Bạn muốn ăn gì?"
-                       onkeydown="if(event.key==='Enter')navSearch()">
-                <button class="btn btn-sm text-white px-3 fw-bold" 
-                        style="background: var(--nav-accent); border-radius: 8px;" 
-                        onclick="navSearch()">Tìm</button>
-            </div>
+
 
             <!-- Action Buttons -->
             <ul class="navbar-nav ms-auto align-items-center gap-3">
@@ -300,10 +276,7 @@
         }
     }
 
-    window.navSearch = function () {
-        const q = document.getElementById('navSearchInput')?.value.trim();
-        if (q) window.location.href = '/customer/home?search=' + encodeURIComponent(q);
-    };
+
 
 
 
