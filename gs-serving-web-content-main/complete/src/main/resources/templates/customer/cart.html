@@ -2,6 +2,8 @@
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
     <title>Giỏ hàng - Food Delivery</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 <main>
@@ -41,7 +43,12 @@
 
                 <!-- Delivery Address -->
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-3">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Địa chỉ giao hàng</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Địa chỉ giao hàng</h6>
+                        <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill" onclick="showMapModal()">
+                            <i class="bi bi-map"></i> Bản đồ
+                        </button>
+                    </div>
                     <textarea id="deliveryAddress" class="form-control" rows="2"
                               placeholder="Nhập địa chỉ giao hàng của bạn..."></textarea>
                     <div class="mt-2">
@@ -165,8 +172,115 @@
     </div>
 </div>
 
+<!-- Map Modal -->
+<div class="modal fade" id="mapModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-map-fill text-danger me-2"></i>Chọn địa chỉ trên bản đồ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-2"><i class="bi bi-info-circle me-1"></i>Kéo thả ghim màu đỏ đến vị trí giao hàng mong muốn.</p>
+                <div id="mapContainer" style="height: 400px; width: 100%; border-radius: 12px; overflow: hidden;" class="mb-3 border"></div>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill text-danger"></i></span>
+                    <input type="text" id="mapSelectedAddress" class="form-control" readonly placeholder="Đang xác định địa chỉ...">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger fw-bold rounded-pill" onclick="confirmMapAddress()">Xác nhận địa chỉ này</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    let mapInstance = null;
+    let mapMarker = null;
+    let mapModalInstance = null;
+
+    function showMapModal() {
+        if (!mapModalInstance) mapModalInstance = new bootstrap.Modal(document.getElementById('mapModal'));
+        mapModalInstance.show();
+
+        // Initialize map after modal is shown to ensure correct sizing
+        setTimeout(() => {
+            if (!mapInstance) {
+                // Default center (Hanoi)
+                const defaultLat = 21.028511;
+                const defaultLng = 105.804817;
+
+                mapInstance = L.map('mapContainer').setView([defaultLat, defaultLng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(mapInstance);
+
+                mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
+
+                // Try to get user's current location
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        mapInstance.setView([lat, lng], 16);
+                        mapMarker.setLatLng([lat, lng]);
+                        fetchAddressFromCoords(lat, lng);
+                    }, () => {
+                        fetchAddressFromCoords(defaultLat, defaultLng);
+                    });
+                } else {
+                    fetchAddressFromCoords(defaultLat, defaultLng);
+                }
+
+                // Event listener for marker drag end
+                mapMarker.on('dragend', function(e) {
+                    const pos = mapMarker.getLatLng();
+                    fetchAddressFromCoords(pos.lat, pos.lng);
+                });
+
+                // Event listener for map click
+                mapInstance.on('click', function(e) {
+                    mapMarker.setLatLng(e.latlng);
+                    fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
+                });
+            } else {
+                mapInstance.invalidateSize();
+            }
+        }, 300);
+    }
+
+    async function fetchAddressFromCoords(lat, lng) {
+        document.getElementById('mapSelectedAddress').value = 'Đang tải...';
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.display_name) {
+                    document.getElementById('mapSelectedAddress').value = data.display_name;
+                } else {
+                    document.getElementById('mapSelectedAddress').value = 'Không tìm thấy địa chỉ cho vị trí này';
+                }
+            }
+        } catch (e) {
+            console.error('Lỗi khi lấy địa chỉ:', e);
+            document.getElementById('mapSelectedAddress').value = 'Lỗi kết nối khi lấy địa chỉ';
+        }
+    }
+
+    function confirmMapAddress() {
+        const address = document.getElementById('mapSelectedAddress').value;
+        if (address && address !== 'Đang tải...' && !address.startsWith('Lỗi') && !address.startsWith('Không tìm thấy')) {
+            document.getElementById('deliveryAddress').value = address;
+            if (mapModalInstance) mapModalInstance.hide();
+            calculateShipping(); // trigger fee recalculation
+        } else {
+            alert('Vui lòng chờ hoặc chọn một vị trí hợp lệ trên bản đồ.');
+        }
+    }
+
     const token = localStorage.getItem('jwt_token');
     if (!token) window.location.href = '/common/auth';
 
