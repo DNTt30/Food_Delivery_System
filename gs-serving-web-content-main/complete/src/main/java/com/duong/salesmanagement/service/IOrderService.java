@@ -23,7 +23,7 @@ public interface IOrderService {
      */
     FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
                           List<OrderService.OrderItemRequest> itemRequests,
-                          String deliveryAddress, String voucherCode, String paymentMethodStr);
+                          String deliveryAddress, Double providedLat, Double providedLng, String voucherCode, String paymentMethodStr);
 
     /**
      * Nhà hàng xác nhận hoặc từ chối đơn hàng.
