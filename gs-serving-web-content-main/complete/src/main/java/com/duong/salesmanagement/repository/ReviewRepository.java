@@ -68,6 +68,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      * Tìm review của một đơn hàng cụ thể (dùng bởi CustomerApiController)
      */
     java.util.Optional<Review> findByOrder(com.duong.salesmanagement.model.FoodOrder order);
+
+    /**
+     * Tìm các review của nhiều đơn hàng cùng lúc để tránh N+1 Query
+     */
+    List<Review> findByOrderIn(List<com.duong.salesmanagement.model.FoodOrder> orders);
     
     /**
      * Kiểm tra đơn hàng đã được review chưa (dùng bởi OrderService)

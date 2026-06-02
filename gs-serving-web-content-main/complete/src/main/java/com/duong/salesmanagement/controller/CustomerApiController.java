@@ -252,17 +252,27 @@ public class CustomerApiController {
         List<FoodOrder> orders = orderService.getCustomerOrders(customer).stream()
                 .filter(o -> o.getStatus() != OrderStatus.PENDING_PAYMENT)
                 .collect(Collectors.toList());
+
+        // Optimize: Fetch all reviews for these orders in one query
+        Map<FoodOrder, Review> reviewMap = new HashMap<>();
+        if (!orders.isEmpty()) {
+            List<Review> reviews = reviewRepository.findByOrderIn(orders);
+            for (Review r : reviews) {
+                reviewMap.put(r.getOrder(), r);
+            }
+        }
+
         List<OrderSummaryDTO> dtos = orders.stream().map(o -> {
             List<OrderItemDTO> items = o.getOrderItems() == null ? List.of() :
                     o.getOrderItems().stream().map(oi -> new OrderItemDTO(
                             oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
                     )).collect(Collectors.toList());
             
-            // Tìm đánh giá cho đơn hàng này
-            Optional<Review> reviewOpt = reviewRepository.findByOrder(o);
-            boolean isReviewed = reviewOpt.isPresent();
-            Integer reviewRating = isReviewed ? reviewOpt.get().getRating() : null;
-            String reviewComment = isReviewed ? reviewOpt.get().getComment() : null;
+            // Tìm đánh giá cho đơn hàng này từ Map (O(1))
+            Review review = reviewMap.get(o);
+            boolean isReviewed = review != null;
+            Integer reviewRating = isReviewed ? review.getRating() : null;
+            String reviewComment = isReviewed ? review.getComment() : null;
 
             return new OrderSummaryDTO(
                     o.getId(),

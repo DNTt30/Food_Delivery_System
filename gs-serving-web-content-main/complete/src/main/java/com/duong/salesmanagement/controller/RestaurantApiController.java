@@ -100,20 +100,11 @@ public class RestaurantApiController {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         LocalDateTime todayEnd   = LocalDate.now().atTime(LocalTime.MAX);
 
-        List<FoodOrder> todayOrders = foodOrderRepository
-                .findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(restaurant, todayStart, todayEnd);
-
-        long newOrders       = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
-        long preparingOrders = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.PREPARING).count();
-        long completedToday  = todayOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
-        double revenueToday  = todayOrders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                .mapToDouble(o -> {
-                    double total = o.getTotalAmount() != null ? o.getTotalAmount() : 0;
-                    double shipping = o.getShippingFee() != null ? o.getShippingFee() : 0;
-                    return Math.max(0, total - shipping);
-                })
-                .sum();
+        long newOrders       = foodOrderRepository.countByRestaurantAndStatusAndOrderTimeBetween(restaurant, OrderStatus.PENDING, todayStart, todayEnd);
+        long preparingOrders = foodOrderRepository.countByRestaurantAndStatusAndOrderTimeBetween(restaurant, OrderStatus.PREPARING, todayStart, todayEnd);
+        long completedToday  = foodOrderRepository.countByRestaurantAndStatusAndOrderTimeBetween(restaurant, OrderStatus.COMPLETED, todayStart, todayEnd);
+        Double revenueTodayObj = foodOrderRepository.sumNetRevenueByRestaurantAndStatusAndDateRange(restaurant, OrderStatus.COMPLETED, todayStart, todayEnd);
+        double revenueToday = revenueTodayObj != null ? revenueTodayObj : 0.0;
 
         long menuCount = menuItemRepository.findByRestaurant(restaurant).stream()
                 .filter(MenuItem::isAvailable).count();
@@ -126,17 +117,11 @@ public class RestaurantApiController {
             LocalDate day = LocalDate.now().minusDays(i);
             LocalDateTime from = day.atStartOfDay();
             LocalDateTime to   = day.atTime(LocalTime.MAX);
-            List<FoodOrder> dayOrders = foodOrderRepository
-                    .findByRestaurantAndOrderTimeBetweenOrderByOrderTimeDesc(restaurant, from, to);
-            double dayRevenue = dayOrders.stream()
-                    .filter(o -> o.getStatus() == OrderStatus.COMPLETED)
-                    .mapToDouble(o -> {
-                        double total = o.getTotalAmount() != null ? o.getTotalAmount() : 0;
-                        double shipping = o.getShippingFee() != null ? o.getShippingFee() : 0;
-                        return Math.max(0, total - shipping);
-                    })
-                    .sum();
-            long dayCount = dayOrders.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
+            
+            long dayCount = foodOrderRepository.countByRestaurantAndStatusAndOrderTimeBetween(restaurant, OrderStatus.COMPLETED, from, to);
+            Double dayRevenueObj = foodOrderRepository.sumNetRevenueByRestaurantAndStatusAndDateRange(restaurant, OrderStatus.COMPLETED, from, to);
+            double dayRevenue = dayRevenueObj != null ? dayRevenueObj : 0.0;
+            
             Map<String, Object> point = new LinkedHashMap<>();
             point.put("date", day.toString());
             point.put("revenue", dayRevenue);
