@@ -8,8 +8,16 @@
 
 <div class="container mb-5" style="max-width: 800px;">
 
-    <div class="d-flex align-items-center gap-3 mb-4">
-        <h4 class="fw-bold mb-0"><i class="bi bi-clock-history text-danger me-2"></i>Lịch sử đơn hàng</h4>
+    <div class="row align-items-center mb-4 gap-3 gap-md-0">
+        <div class="col-md-6 d-flex align-items-center">
+            <h4 class="fw-bold mb-0"><i class="bi bi-clock-history text-danger me-2"></i>Lịch sử đơn hàng</h4>
+        </div>
+        <div class="col-md-6">
+            <div class="input-group rounded-pill overflow-hidden border">
+                <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="searchOrderInput" class="form-control border-0 shadow-none" placeholder="Tìm tên nhà hàng, món ăn..." oninput="onSearchInput()">
+            </div>
+        </div>
     </div>
 
     <!-- Filter tabs -->
@@ -125,22 +133,46 @@
         loadOrders();
     });
 
+    let currentStatusFilter = 'ALL';
+    let searchQuery = '';
+
     async function loadOrders() {
         try {
             const res = await fetch('/api/customer/orders', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.status === 401) { window.location.href = '/common/auth'; return; }
             allOrders = await res.json();
             document.getElementById('loading').classList.add('d-none');
-            renderOrders(allOrders);
+            applyFilters();
         } catch {
             document.getElementById('loading').innerHTML = '<div class="text-center text-danger"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
         }
     }
 
     function filterOrders(status, btn) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filtered = status === 'ALL' ? allOrders : allOrders.filter(o => o.status === status);
+        if (btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        currentStatusFilter = status;
+        applyFilters();
+    }
+
+    function onSearchInput() {
+        searchQuery = document.getElementById('searchOrderInput').value.toLowerCase().trim();
+        applyFilters();
+    }
+
+    function applyFilters() {
+        let filtered = currentStatusFilter === 'ALL' ? allOrders : allOrders.filter(o => o.status === currentStatusFilter);
+        
+        if (searchQuery) {
+            filtered = filtered.filter(o => {
+                const restaurantName = o.restaurantName ? o.restaurantName.toLowerCase() : '';
+                const itemsText = o.items ? o.items.map(i => i.itemName.toLowerCase()).join(' ') : '';
+                return restaurantName.includes(searchQuery) || itemsText.includes(searchQuery);
+            });
+        }
+        
         renderOrders(filtered);
     }
 
