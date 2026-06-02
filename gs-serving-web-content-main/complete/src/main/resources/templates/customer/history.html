@@ -23,9 +23,7 @@
     <!-- Filter tabs -->
     <div class="d-flex gap-2 mb-4 overflow-auto">
         <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-status="ALL" onclick="filterOrders('ALL', this)">Tất cả</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PENDING" onclick="filterOrders('PENDING', this)">Chờ xác nhận</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PREPARING" onclick="filterOrders('PREPARING', this)">Đang nấu</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="DELIVERING" onclick="filterOrders('DELIVERING', this)">Đang giao</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PROCESSING" onclick="filterOrders('PROCESSING', this)">Đang xử lý</button>
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="filterOrders('COMPLETED', this)">Hoàn thành</button>
         <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="CANCELLED" onclick="filterOrders('CANCELLED', this)">Đã hủy</button>
     </div>
@@ -163,7 +161,12 @@
     }
 
     function applyFilters() {
-        let filtered = currentStatusFilter === 'ALL' ? allOrders : allOrders.filter(o => o.status === currentStatusFilter);
+        let filtered = allOrders;
+        if (currentStatusFilter === 'PROCESSING') {
+            filtered = allOrders.filter(o => ['PENDING', 'PREPARING', 'DELIVERING'].includes(o.status));
+        } else if (currentStatusFilter !== 'ALL') {
+            filtered = allOrders.filter(o => o.status === currentStatusFilter);
+        }
         
         if (searchQuery) {
             filtered = filtered.filter(o => {
