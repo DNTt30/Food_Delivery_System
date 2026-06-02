@@ -272,9 +272,13 @@ async function loadActiveDeliveries() {
         if (!orders || orders.length === 0) {
             stopGPS(); show('emptyState'); return;
         }
+        
+        // CHỈ HIỂN THỊ ĐƠN HÀNG ĐẦU TIÊN (Để giải quyết lỗi hiển thị quá nhiều đơn cùng lúc)
         currentOrder = orders[0];
+        const displayOrders = [currentOrder];
+        
         renderPaymentBanner(currentOrder);
-        renderCards(orders);
+        renderCards(displayOrders);
         initMap(currentOrder);
         renderPhase(currentOrder.status);
         startGPS(currentOrder.id);
@@ -589,7 +593,6 @@ function renderPhase(status) {
 // ── Buttons ────────────────────────────────────────────────────────
 async function confirmPickedUp() {
     if (!currentOrder) return;
-    if (!confirm(`Xác nhận đã lấy xong hàng tại ${currentOrder.restaurantName}?`)) return;
     const btn = document.getElementById('btn-picked-up');
     btn.disabled = true; btn.textContent = '⏳ Đang cập nhật...';
     try {
@@ -609,16 +612,11 @@ async function confirmPickedUp() {
             toast(d.error || 'Lỗi cập nhật', 'danger');
             btn.disabled = false; btn.textContent = '🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO';
         }
-    } catch { toast('Lỗi kết nối', 'danger'); btn.disabled = false; btn.textContent = '🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO'; }
+    } catch (e) { toast('Lỗi kết nối', 'danger'); btn.disabled = false; btn.textContent = '🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO'; }
 }
 
 async function confirmComplete() {
     if (!currentOrder) return;
-    let msg = `Xác nhận đã giao xong đơn hàng #${currentOrder.id}?`;
-    if (currentOrder.needsCollectCash) {
-        msg = `Bạn đã thu ${formatVND(currentOrder.amountToCollect || currentOrder.totalAmount)} từ khách chưa?\n\n` + msg;
-    }
-    if (!confirm(msg)) return;
     const btn = document.getElementById('btn-complete');
     btn.disabled = true; btn.textContent = '⏳ Đang xác nhận...';
     try {
@@ -628,13 +626,16 @@ async function confirmComplete() {
         if (res.ok) {
             stopGPS();
             toast('🎉 Giao thành công! Đã cộng thu nhập vào ví.', 'success');
-            setTimeout(loadActiveDeliveries, 1500);
+            // Tự động chuyển hướng về trang Nhận đơn để lấy đơn tiếp theo
+            setTimeout(() => {
+                window.location.href = '/driver/new_orders';
+            }, 1500);
         } else {
             const d = await res.json().catch(() => ({}));
             toast(d.error || 'Lỗi cập nhật', 'danger');
             btn.disabled = false; btn.textContent = '✅ XÁC NHẬN GIAO THÀNH CÔNG';
         }
-    } catch { toast('Lỗi kết nối', 'danger'); btn.disabled = false; btn.textContent = '✅ XÁC NHẬN GIAO THÀNH CÔNG'; }
+    } catch (e) { toast('Lỗi kết nối', 'danger'); btn.disabled = false; btn.textContent = '✅ XÁC NHẬN GIAO THÀNH CÔNG'; }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────

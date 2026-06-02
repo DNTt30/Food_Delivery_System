@@ -159,6 +159,14 @@ public class DriverApiController {
         DriverProfile driver = getAuthenticatedDriver(authentication);
         if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
+        if (!driver.isAvailable()) {
+            // Đang offline -> muốn bật online
+            List<FoodOrder> activeOrders = orderService.getDriverActiveDeliveries(driver);
+            if (!activeOrders.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Bạn đang có đơn hàng chưa hoàn thành. Không thể nhận thêm đơn."));
+            }
+        }
+
         driver.setAvailable(!driver.isAvailable());
         driverProfileRepository.save(driver);
         return ResponseEntity.ok(Map.of(

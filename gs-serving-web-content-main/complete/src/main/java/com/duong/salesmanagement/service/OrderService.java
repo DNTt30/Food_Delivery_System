@@ -335,16 +335,13 @@ public class OrderService implements IOrderService {
     public FoodOrder acceptOrderByDriver(Long orderId, DriverProfile driver) {
         FoodOrder order = foodOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-        if (order.getStatus() != OrderStatus.PREPARING)
-            throw new RuntimeException("Đơn hàng chưa sẵn sàng để lấy");
-        if (order.getDriver() != null)
-            throw new RuntimeException("Đơn hàng đã được nhận bửi tài xế khác");
+        if (order.getDriver() != null || order.getStatus() != OrderStatus.PREPARING)
+            throw new RuntimeException("Đơn hàng không khả dụng để nhận");
 
-        // Kiểm tra xem tài xế đã có đơn hàng nào đang giao chưa
-        List<FoodOrder> preparing = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.PREPARING);
-        List<FoodOrder> delivering = foodOrderRepository.findByDriverAndStatus(driver, OrderStatus.DELIVERING);
-        if (!preparing.isEmpty() || !delivering.isEmpty()) {
-            throw new RuntimeException("Bạn đang có đơn hàng chưa hoàn thành. Vui lòng hoàn thành trước khi nhận đơn mới.");
+        // CHẶN TÀI XẾ NHẬN NHIỀU ĐƠN: Chỉ cho phép nhận nếu chưa có đơn nào đang giao
+        List<FoodOrder> activeOrders = getDriverActiveDeliveries(driver);
+        if (!activeOrders.isEmpty()) {
+            throw new RuntimeException("Bạn đang có đơn hàng chưa hoàn thành. Vui lòng giao xong trước khi nhận đơn mới.");
         }
 
         order.setDriver(driver);

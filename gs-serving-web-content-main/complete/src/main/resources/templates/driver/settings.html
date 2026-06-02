@@ -96,15 +96,6 @@
 </div>
 
 <div class="settings-group">
-    <div class="settings-item">
-        <div>
-            <span class="icon"><i class="bi bi-power text-success"></i></span>
-            Trạng thái hoạt động
-        </div>
-        <div class="form-check form-switch m-0">
-            <input class="form-check-input" type="checkbox" role="switch" id="availabilitySwitch" style="width: 2.5em; height: 1.25em;">
-        </div>
-    </div>
     <a href="/driver/notifications" class="settings-item">
         <div>
             <span class="icon"><i class="bi bi-bell text-danger"></i></span>
@@ -149,7 +140,6 @@
             if (res.ok) {
                 const data = await res.json();
                 document.getElementById('driverName').textContent = data.driverName || 'Tài xế';
-                document.getElementById('availabilitySwitch').checked = data.isAvailable;
                 if (document.getElementById('totalEarnings')) {
                     document.getElementById('totalEarnings').textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.totalEarnings || 0);
                 }
@@ -159,27 +149,7 @@
         }
     }
 
-    document.getElementById('availabilitySwitch').addEventListener('change', async function() {
-        this.disabled = true;
-        try {
-            const res = await fetch('/api/driver/availability', {
-                method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                this.checked = data.isAvailable;
-                toast(data.message, 'success');
-            } else {
-                this.checked = !this.checked; // revert
-                toast('Lỗi cập nhật trạng thái', 'danger');
-            }
-        } catch {
-            this.checked = !this.checked;
-            toast('Lỗi kết nối', 'danger');
-        }
-        this.disabled = false;
-    });
+
 
     function logout() {
         localStorage.removeItem('jwt_token');

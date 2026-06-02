@@ -142,7 +142,13 @@
         }
 
         async function acceptOrder(id) {
-            if (!confirm(`Bạn muốn nhận đơn hàng #${id}?`)) return;
+            // Thay đổi nút ngay lập tức để tạo cảm giác phản hồi nhanh (không cần confirm)
+            const btn = document.querySelector(`button[onclick="acceptOrder(${id})"]`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> ĐANG NHẬN ĐƠN...';
+            }
+
             try {
                 const res = await fetch(`/api/driver/orders/${id}/accept`, { 
                     method: 'POST', 
@@ -150,12 +156,31 @@
                 });
                 const d = await res.json();
                 if (res.ok) {
-                    alert(d.message);
-                    window.location.href = '/driver/delivering';
+                    toast(d.message || 'Đã nhận đơn thành công!', 'success');
+                    // Chuyển hướng sang màn hình Giao hàng ngay lập tức
+                    setTimeout(() => window.location.href = '/driver/delivering', 500);
                 } else {
-                    alert(d.error || 'Không thể nhận đơn');
+                    toast(d.error || 'Không thể nhận đơn', 'danger');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> NHẬN ĐƠN NGAY';
+                    }
                 }
-            } catch { alert('Lỗi kết nối'); }
+            } catch { 
+                toast('Lỗi kết nối', 'danger');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> NHẬN ĐƠN NGAY';
+                }
+            }
+        }
+
+        function toast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+            t.style.cssText = 'z-index:9999;border-radius:12px;min-width:220px;';
+            t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
         }
 
         window.onDriverStatusChange = function(isOnline) {
