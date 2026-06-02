@@ -82,7 +82,7 @@ public class OrderControllerTest {
         when(userRepository.findByUsername("customer")).thenReturn(Optional.of(user));
         when(customerProfileRepository.findByUser(any(User.class))).thenReturn(Optional.of(customer));
         when(restaurantProfileRepository.findById(1L)).thenReturn(Optional.of(restaurant));
-        when(orderService.createOrder(any(), any(), any(), any(), any(), any())).thenReturn(order);
+        when(orderService.createOrder(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(order);
 
         CustomerApiController.PlaceOrderRequest request = new CustomerApiController.PlaceOrderRequest();
         request.restaurantId = 1L;
