@@ -38,6 +38,16 @@ public interface IOrderService {
     void cancelOrder(Long orderId, CustomerProfile customer);
 
     /**
+     * Hủy đơn chờ thanh toán online.
+     */
+    void cancelUnpaidOnlineOrder(Long orderId, CustomerProfile customer);
+
+    /**
+     * Kiểm tra đơn hàng có hiển thị trong lịch sử của khách hàng không.
+     */
+    boolean isVisibleInCustomerOrderHistory(FoodOrder order);
+
+    /**
      * Khách hàng đánh giá đơn hàng đã hoàn thành.
      * Business rule: Chỉ đánh giá được 1 lần sau khi đơn COMPLETED.
      */
