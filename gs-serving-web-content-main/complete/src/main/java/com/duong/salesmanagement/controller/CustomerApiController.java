@@ -25,6 +25,7 @@ import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.model.Voucher;
 import com.duong.salesmanagement.repository.CustomerProfileRepository;
 import com.duong.salesmanagement.repository.MenuItemRepository;
+import com.duong.salesmanagement.repository.PaymentRepository;
 import com.duong.salesmanagement.repository.RestaurantProfileRepository;
 import com.duong.salesmanagement.repository.ReviewRepository;
 import com.duong.salesmanagement.repository.UserRepository;
@@ -44,6 +45,7 @@ public class CustomerApiController {
     private final ReviewRepository reviewRepository;
     private final IShippingCalculationService shippingCalculationService;
     private final com.duong.salesmanagement.service.GeocodingService geocodingService;
+    private final PaymentRepository paymentRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
@@ -53,7 +55,8 @@ public class CustomerApiController {
                                  VoucherRepository voucherRepository,
                                  ReviewRepository reviewRepository,
                                  IShippingCalculationService shippingCalculationService,
-                                 com.duong.salesmanagement.service.GeocodingService geocodingService) {
+                                 com.duong.salesmanagement.service.GeocodingService geocodingService,
+                                 PaymentRepository paymentRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
@@ -63,6 +66,7 @@ public class CustomerApiController {
         this.reviewRepository = reviewRepository;
         this.shippingCalculationService = shippingCalculationService;
         this.geocodingService = geocodingService;
+        this.paymentRepository = paymentRepository;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -184,10 +188,14 @@ public class CustomerApiController {
 
         try {
             FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.deliveryLat, request.deliveryLng, request.voucherCode, request.paymentMethod);
+            boolean requiresPayment = order.getStatus() == com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT;
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                    "message", "Đặt hàng thành công!",
+                    "message", requiresPayment
+                            ? "Vui lòng hoàn tất thanh toán để xác nhận đơn hàng"
+                            : "Đặt hàng thành công!",
                     "orderId", order.getId(),
-                    "totalAmount", order.getTotalAmount()
+                    "totalAmount", order.getTotalAmount(),
+                    "requiresPayment", requiresPayment
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -283,6 +291,19 @@ public class CustomerApiController {
         return ResponseEntity.ok(Map.of("shippingFee", fee));
     }
 
+    /** Hủy đơn online khi chưa thanh toán (VD: không tạo được URL VNPAY) */
+    @PostMapping("/orders/{id}/cancel-unpaid")
+    public ResponseEntity<?> cancelUnpaidOrder(Authentication authentication, @PathVariable Long id) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        try {
+            orderService.cancelUnpaidOnlineOrder(id, customer);
+            return ResponseEntity.ok(Map.of("message", "Đã hủy đơn chờ thanh toán"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // UC-10: Lịch sử & theo dõi đơn hàng
     @GetMapping("/orders")
     public ResponseEntity<?> getMyOrders(Authentication authentication) {
@@ -290,7 +311,7 @@ public class CustomerApiController {
         if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         List<FoodOrder> orders = orderService.getCustomerOrders(customer).stream()
-                .filter(o -> o.getStatus() != OrderStatus.PENDING_PAYMENT)
+                .filter(o -> o.getStatus() != OrderStatus.AWAITING_PAYMENT)
                 .collect(Collectors.toList());
 
         // Optimize: Fetch all reviews for these orders in one query
@@ -339,7 +360,8 @@ public class CustomerApiController {
         if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         FoodOrder order = orderService.getOrderById(id).orElse(null);
-        if (order == null || !order.getCustomer().getId().equals(customer.getId()))
+        if (order == null || !order.getCustomer().getId().equals(customer.getId())
+                || !orderService.isVisibleInCustomerOrderHistory(order))
             return ResponseEntity.notFound().build();
 
         List<OrderItemDTO> items = order.getOrderItems() == null ? List.of() :
@@ -404,6 +426,28 @@ public class CustomerApiController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // Lịch sử giao dịch
+    @GetMapping("/payments")
+    public ResponseEntity<?> getPaymentHistory(Authentication authentication) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        List<com.duong.salesmanagement.model.Payment> payments = paymentRepository.findByOrder_Customer(customer);
+        List<PaymentHistoryDTO> dtos = payments.stream().map(p -> new PaymentHistoryDTO(
+                p.getId(),
+                p.getOrder().getId(),
+                p.getOrder().getRestaurant().getRestaurantName(),
+                p.getOrder().getRestaurant().getBannerUrl(),
+                p.getPaymentMethod().name(),
+                p.getPaymentStatus().name(),
+                p.getAmount(),
+                p.getTransactionDate() != null ? p.getTransactionDate().toString() : "",
+                p.getOrder().getOrderTime() != null ? p.getOrder().getOrderTime().toString() : ""
+        )).collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
     // ---- DTOs ----
@@ -542,6 +586,32 @@ public class CustomerApiController {
             this.imageUrl = imageUrl;
             this.restaurantReply = restaurantReply;
             this.repliedAt = repliedAt;
+        }
+    }
+
+    public static class PaymentHistoryDTO {
+        public Long id;
+        public Long orderId;
+        public String restaurantName;
+        public String restaurantImage;
+        public String paymentMethod;
+        public String paymentStatus;
+        public Double amount;
+        public String transactionDate;
+        public String orderTime;
+
+        public PaymentHistoryDTO(Long id, Long orderId, String restaurantName, String restaurantImage,
+                                  String paymentMethod, String paymentStatus, Double amount,
+                                  String transactionDate, String orderTime) {
+            this.id = id;
+            this.orderId = orderId;
+            this.restaurantName = restaurantName;
+            this.restaurantImage = restaurantImage;
+            this.paymentMethod = paymentMethod;
+            this.paymentStatus = paymentStatus;
+            this.amount = amount;
+            this.transactionDate = transactionDate;
+            this.orderTime = orderTime;
         }
     }
 }

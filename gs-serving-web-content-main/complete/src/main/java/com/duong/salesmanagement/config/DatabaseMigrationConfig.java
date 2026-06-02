@@ -23,4 +23,18 @@ public class DatabaseMigrationConfig {
             }
         };
     }
+
+    /** AWAITING_PAYMENT (16 ký tự) — cột status cũ thường VARCHAR(10) hoặc ENUM hẹp */
+    @Bean
+    public ApplicationRunner alterFoodOrderStatusColumn(JdbcTemplate jdbcTemplate) {
+        return args -> {
+            try {
+                jdbcTemplate.execute(
+                        "ALTER TABLE food_orders MODIFY COLUMN status VARCHAR(32) NOT NULL");
+                log.info("Successfully altered food_orders.status to VARCHAR(32)");
+            } catch (Exception e) {
+                log.warn("Could not alter food_orders.status column: {}", e.getMessage());
+            }
+        };
+    }
 }

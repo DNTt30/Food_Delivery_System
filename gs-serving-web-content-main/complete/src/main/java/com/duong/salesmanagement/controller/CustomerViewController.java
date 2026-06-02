@@ -1,9 +1,7 @@
 package com.duong.salesmanagement.controller;
 
-import com.duong.salesmanagement.model.FoodOrder;
-import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.service.IOrderService;
-import com.duong.salesmanagement.repository.FoodOrderRepository;
+import java.util.Optional;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,7 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.Optional;
+import com.duong.salesmanagement.model.FoodOrder;
+import com.duong.salesmanagement.model.User;
+import com.duong.salesmanagement.repository.FoodOrderRepository;
+import com.duong.salesmanagement.service.OrderService;
 
 @Controller
 @RequestMapping("/customer")
@@ -36,7 +37,8 @@ public class CustomerViewController {
             // Lấy các đơn hàng thực tế của User
             activeOrders = orderService.getOrdersByUser(user).stream()
                 .filter(o -> o.getStatus() != com.duong.salesmanagement.model.OrderStatus.COMPLETED 
-                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.CANCELLED)
+                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.CANCELLED
+                          && o.getStatus() != com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT)
                 .collect(java.util.stream.Collectors.toList());
         } else {
             // Nếu chưa login (test), lấy toàn bộ đơn hàng đang Delivering/Preparing
@@ -54,21 +56,25 @@ public class CustomerViewController {
      * Hiển thị trang theo dõi đơn hàng
      */
     @GetMapping("/tracking")
-    public String showTrackingPage(@RequestParam Long orderId, 
-                                   @AuthenticationPrincipal User user, 
+    public String showTrackingPage(@RequestParam Long orderId,
+                                   @AuthenticationPrincipal User user,
                                    Model model) {
-        
+
         // 1. Lấy thông tin đơn hàng trước
         Optional<FoodOrder> orderOpt = orderService.getOrderById(orderId);
-        
+
         if (orderOpt.isPresent()) {
             FoodOrder order = orderOpt.get();
-            
+
+            if (order.getStatus() == com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT) {
+                return "redirect:/customer/cart?error=payment_required&orderId=" + orderId;
+            }
+
             // 2. Kiểm tra quyền (Nếu có user thì check, nếu không có user thì cho qua để test)
             if (user != null && !orderService.hasPermissionToTrackOrder(orderId, user)) {
                 return "redirect:/customer/orders?error=access_denied";
             }
-            
+
             // 3. Self-healing logic for old orders that were created without coordinates
             boolean updated = false;
             if (order.getRestaurantLat() == null && order.getRestaurant().getLatitude() != null) {
@@ -84,11 +90,19 @@ public class CustomerViewController {
             if (updated) {
                 foodOrderRepository.save(order);
             }
-            
+
             model.addAttribute("order", order);
             return "customer/tracking";
         }
 
         return "redirect:/customer/orders?error=order_not_found";
+    }
+
+    /**
+     * Hiển thị trang lịch sử giao dịch
+     */
+    @GetMapping("/payment_history")
+    public String showPaymentHistoryPage() {
+        return "customer/payment_history";
     }
 }
