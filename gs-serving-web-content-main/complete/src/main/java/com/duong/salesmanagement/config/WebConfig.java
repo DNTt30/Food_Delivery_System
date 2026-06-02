@@ -12,11 +12,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@org.springframework.lang.NonNull ResourceHandlerRegistry registry) {
-        // Ánh xạ URL /images/** vào thư mục vật lý để có thể xem ảnh ngay sau khi upload mà không cần restart
-        Path uploadDir = Paths.get("src/main/resources/static/images/");
+        // Ánh xạ URL /images/** để đọc ảnh từ 2 nguồn:
+        // 1. Thư mục 'uploads' bên ngoài file .jar (cho ảnh mới upload)
+        // 2. Thư mục 'classpath:/static/images/' bên trong file .jar (cho ảnh mặc định có sẵn)
+        Path uploadDir = Paths.get("uploads");
         String uploadPath = uploadDir.toFile().getAbsolutePath();
 
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:///" + uploadPath + "/");
+                .addResourceLocations("file:///" + uploadPath + "/", "classpath:/static/images/");
     }
 }

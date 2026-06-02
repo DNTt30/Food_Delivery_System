@@ -17,9 +17,9 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 public class FileUploadController {
 
-    // Thư mục lưu trữ ảnh (có thể tùy chỉnh)
-    // Trong môi trường dev, lưu vào thư mục static để có thể truy cập ngay
-    private final String UPLOAD_DIR = "src/main/resources/static/images/";
+    // Thư mục lưu trữ ảnh trên server thật
+    // Lưu vào thư mục 'uploads' ngang hàng với file .jar để dữ liệu không bị lỗi path
+    private final String UPLOAD_DIR = "uploads/";
 
     @PostMapping("/image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
