@@ -3,6 +3,7 @@ services:
     name: food-delivery-api
     env: docker
     dockerContext: gs-serving-web-content-main/complete
+    dockerfilePath: gs-serving-web-content-main/complete/Dockerfile
     plan: free
     envVars:
       - key: SPRING_PROFILES_ACTIVE
