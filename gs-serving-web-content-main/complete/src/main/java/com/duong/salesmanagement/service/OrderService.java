@@ -167,7 +167,7 @@ public class OrderService implements IOrderService {
         }
 
         FoodOrder savedOrder = foodOrderRepository.save(order);
-        double totalAmount = savedOrder.getShippingFee() != null ? savedOrder.getShippingFee() : 0;
+        double productTotal = 0;
 
         for (OrderItemRequest req : itemRequests) {
             Long itemId = req.getMenuItemId();
@@ -184,7 +184,7 @@ public class OrderService implements IOrderService {
             orderItem.setQuantity(req.getQuantity());
             orderItem.setPriceAtTimeOfOrder(menuItem.getPrice());
             orderItemRepository.save(orderItem);
-            totalAmount += menuItem.getPrice() * req.getQuantity();
+            productTotal += menuItem.getPrice() * req.getQuantity();
         }
 
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
@@ -198,17 +198,20 @@ public class OrderService implements IOrderService {
                    (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
                     double discount = 0;
                     if (v.getDiscountType() == DiscountType.PERCENTAGE) {
-                        discount = totalAmount * (v.getDiscountValue() / 100.0);
+                        discount = productTotal * (v.getDiscountValue() / 100.0);
                     } else if (v.getDiscountType() == DiscountType.FIXED_AMOUNT) {
                         discount = v.getDiscountValue();
                     }
-                    totalAmount -= discount;
-                    if (totalAmount < 0) totalAmount = 0;
+                    productTotal -= discount;
+                    if (productTotal < 0) productTotal = 0;
                 }
             }
         }
 
-        savedOrder.setTotalAmount(totalAmount);
+        double finalShippingFee = savedOrder.getShippingFee() != null ? savedOrder.getShippingFee() : 0;
+        double finalTotalAmount = productTotal + finalShippingFee;
+
+        savedOrder.setTotalAmount(finalTotalAmount);
         FoodOrder finalOrder = foodOrderRepository.save(savedOrder);
 
         // 💳 Tạo bản ghi Payment
@@ -222,7 +225,7 @@ public class OrderService implements IOrderService {
         payment.setOrder(finalOrder);
         payment.setPaymentMethod(paymentMethod);
         payment.setPaymentStatus(PaymentStatus.PENDING);
-        payment.setAmount(totalAmount);
+        payment.setAmount(finalTotalAmount);
         payment.setTransactionDate(LocalDateTime.now());
         paymentRepository.save(payment);
 
