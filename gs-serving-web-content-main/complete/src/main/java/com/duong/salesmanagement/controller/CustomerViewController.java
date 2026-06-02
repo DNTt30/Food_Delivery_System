@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
-import com.duong.salesmanagement.service.OrderService;
 
 @Controller
 @RequestMapping("/customer")
