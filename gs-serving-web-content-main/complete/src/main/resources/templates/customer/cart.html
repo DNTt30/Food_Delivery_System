@@ -185,7 +185,7 @@
                 <div id="mapContainer" style="height: 400px; width: 100%; border-radius: 12px; overflow: hidden;" class="mb-3 border"></div>
                 <div class="input-group">
                     <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill text-danger"></i></span>
-                    <input type="text" id="mapSelectedAddress" class="form-control" readonly placeholder="Đang xác định địa chỉ...">
+                    <input type="text" id="mapSelectedAddress" class="form-control" placeholder="Đang xác định địa chỉ...">
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -247,8 +247,10 @@
                         mapMarker.setLatLng(e.latlng);
                         fetchAddressFromCoords(e.latlng.lat, e.latlng.lng);
                     });
+                    
+                    setTimeout(() => mapInstance.invalidateSize(), 100);
                 } else {
-                    mapInstance.invalidateSize();
+                    setTimeout(() => mapInstance.invalidateSize(), 100);
                 }
             });
         }
