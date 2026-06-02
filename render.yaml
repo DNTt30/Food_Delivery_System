@@ -5,21 +5,3 @@ services:
     dockerContext: gs-serving-web-content-main/complete
     dockerfilePath: gs-serving-web-content-main/complete/Dockerfile
     plan: free
-    envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: prod
-      # Database configs should be synced with Render dashboard or Aiven
-      - key: SPRING_DATASOURCE_URL
-        sync: false
-      - key: SPRING_DATASOURCE_USERNAME
-        sync: false
-      - key: SPRING_DATASOURCE_PASSWORD
-        sync: false
-      # Mail/SMTP
-      - key: SPRING_MAIL_USERNAME
-        sync: false
-      - key: SPRING_MAIL_PASSWORD
-        sync: false
-      # JWT Secret
-      - key: JWT_SECRET
-        generateValue: true
