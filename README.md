@@ -66,10 +66,10 @@ Food_Delivery_System/
 ### 👤 Khách hàng (Customer)
 - ✅ **Xác thực & Đăng ký:** OTP qua Email, Reset mật khẩu
 - ✅ **Trải nghiệm Premium UI/UX:** Giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
-- ✅ **Video Review Feed (Khám phá):** Trải nghiệm xem video ngắn lướt vuốt thả tim, thiết kế chuẩn Generic an toàn không vi phạm bản quyền thương hiệu.
+- ✅ **Thanh toán Trực tuyến (VNPAY/MoMo):** Tích hợp cổng thanh toán trực tuyến và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
 - **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
-- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh (tìm theo Tên nhà hàng & Tên món ăn), lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** trực tiếp trong modal chọn địa chỉ.
-- ✅ **Top Món Bán Chạy:** Hệ thống tự động tính toán và hiển thị lượt bán lịch sử (`soldCount`) cho từng món ăn, tăng độ tin cậy.
+- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh, lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine.
+- ✅ **Lịch sử Giao dịch (E-Wallet):** Xem lại toàn bộ lịch sử nạp/rút/thanh toán với giao diện Ví điện tử chuyên nghiệp, tách biệt khỏi Lịch sử đơn hàng.
 - ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
 

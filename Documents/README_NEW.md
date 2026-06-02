@@ -62,18 +62,17 @@
 
 ---
 
-## ✅ Tuần 7 – Sửa lỗi Geocoding, Đồng bộ Tọa độ & Cập nhật Tài liệu
+## ✅ Tuần 7 – Tích hợp Thanh toán Trực tuyến, Sửa lỗi Geocoding & Giao diện Tài chính
 
 **Hoạt động:**
-- **Khắc phục lỗi định vị (Nominatim API):** Bổ sung header `User-Agent` (`FoodDeliveryApp/1.0`) cho RestTemplate của `GeocodingService` để giải quyết triệt để lỗi 403 Forbidden chặn IP từ OpenStreetMap.
-- **Tích hợp Map Picker tự động lưu tọa độ:** Nâng cấp bản đồ chọn vị trí (Leaflet Map) trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, hỗ trợ tự động đồng bộ và lưu tọa độ `latitude`/`longitude` trực tiếp vào Database khi người dùng xác nhận vị trí trên bản đồ.
-- **Cơ chế Snapshots & Fallback thông minh:** Cập nhật `OrderService` khi tạo đơn: tự động geocode địa chỉ giao hàng và địa chỉ quán, chỉ fallback về tọa độ profile nếu địa chỉ trùng khớp, bổ sung cơ chế tự sửa lỗi (self-healing) tọa độ cho các đơn hàng cũ thiếu dữ liệu tracking.
-- **Thanh trạng thái tiến trình giao hàng (Tracking Progress UI Bar):** Thêm thanh tiến trình trực quan động trên trang theo dõi đơn hàng của Khách hàng (`tracking.html`), đồng bộ với các trạng thái đơn hàng thời gian thực.
-- **Cập nhật Tài liệu Toàn diện:** 
-  - Cập nhật [README.md root](../README.md) với đầy đủ API Endpoints, hướng dẫn cài đặt, kiến trúc 3-tầng và stack công nghệ.
-  - Cập nhật tài liệu chuyên biệt từng module trong thư mục `modules/` để phản ánh đúng các thay đổi kỹ thuật của dự án.
+- **Khắc phục lỗi định vị (Nominatim API):** Bổ sung header `User-Agent` (`FoodDeliveryApp/1.0`) cho RestTemplate của `GeocodingService` để giải quyết triệt để lỗi 403 Forbidden.
+- **Tích hợp Map Picker tự động lưu tọa độ:** Nâng cấp bản đồ chọn vị trí (Leaflet Map) trên trang cá nhân của Khách hàng và Đối tác Nhà hàng, hỗ trợ tự động đồng bộ và lưu tọa độ `latitude`/`longitude`.
+- **Cơ chế Snapshots & Fallback thông minh:** Cập nhật `OrderService` tự động geocode địa chỉ giao hàng, bổ sung cơ chế tự sửa lỗi (self-healing) tọa độ.
+- **Thanh toán Trực tuyến (VNPAY/MoMo) & Hoàn tiền (Refund):** Xây dựng luồng thanh toán online `AWAITING_PAYMENT`. Cập nhật logic: Tự động đánh dấu `REFUNDED` nếu nhà hàng hủy đơn khách đã trả tiền, xử lý rủi ro đơn hàng bị treo khi khách thoát trang thanh toán.
+- **Giao diện Lịch sử giao dịch (E-wallet UI):** Làm lại hoàn toàn giao diện Lịch sử thanh toán cho khách hàng, tách biệt khỏi lịch sử đơn hàng. Bổ sung các UI theo dạng danh sách ví điện tử, hiển thị +/- dòng tiền rõ ràng, biểu tượng icon trực quan (Bank, Wallet, Cash).
+- **Thanh trạng thái tiến trình giao hàng (Tracking Progress UI Bar):** Thêm thanh tiến trình trực quan động trên trang theo dõi đơn hàng (`tracking.html`).
 
-**Sản phẩm:** ✅ Bản vá lỗi Nominatim API 403 | ✅ Map Picker Auto-Save | ✅ Tracking Progress Bar | ✅ README Root & Module Docs
+**Sản phẩm:** ✅ Bản vá lỗi Nominatim API 403 | ✅ Payment Gateway & Refund | ✅ E-Wallet Transaction UI | ✅ Map Picker Auto-Save | ✅ Tracking Progress Bar
 
 ---
 

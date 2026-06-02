@@ -26,15 +26,18 @@ Coordinates business logic through multi-role controllers:
 
 ## 3. Order Pipeline & State Transitions
 
-The order state transitions follow a strict pipeline:
+The order state transitions follow a strict pipeline, now including online payment flows (VNPAY/MoMo):
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDING : Customer checkouts cart
+    [*] --> AWAITING_PAYMENT : Customer checkouts with VNPAY/MoMo
+    [*] --> PENDING : Customer checkouts with COD
+    AWAITING_PAYMENT --> PENDING : Online payment successful
+    AWAITING_PAYMENT --> CANCELLED : Customer cancels unpaid order / Payment failed
     PENDING --> PREPARING : Restaurant accepts order
     PENDING --> CANCELLED : Customer/Restaurant cancels order
     PREPARING --> DELIVERING : Driver claims order
-    PREPARING --> CANCELLED : Restaurant rejects order
+    PREPARING --> CANCELLED : Restaurant rejects order (Triggers Refund if paid online)
     DELIVERING --> COMPLETED : Driver completes delivery
 ```
 
