@@ -71,14 +71,14 @@
 
 <!-- Quick Actions + Chart -->
 <div class="row g-4 mb-4">
-    <!-- Revenue Chart -->
+    <!-- Revenue Line Chart -->
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow me-2 text-danger"></i>Biểu đồ doanh thu</h6>
-                <small class="text-muted">Dữ liệu tổng hợp từ hệ thống</small>
+                <h6 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow me-2 text-danger"></i>Doanh thu 7 ngày gần nhất</h6>
+                <small class="text-muted">Chỉ tính đơn Hoàn thành</small>
             </div>
-            <canvas id="revenueChart" height="220"></canvas>
+            <canvas id="revenueChart" height="200"></canvas>
         </div>
     </div>
     <!-- Quick Actions -->
@@ -118,13 +118,45 @@
     </div>
 </div>
 
-<!-- Lower Row -->
+<!-- Recent Orders -->
 <div class="row g-4 mb-4">
-    <!-- Recent Orders Summary -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>5 Đơn hàng mới nhất</h6>
+                <a href="/admin/orders" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Xem tất cả
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="font-size:.78rem;color:#6c757d;">ID</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Khách hàng</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Nhà hàng</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Số tiền</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Thanh toán</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Trạng thái</th>
+                            <th style="font-size:.78rem;color:#6c757d;">Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentOrdersTable">
+                        <tr><td colspan="7" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lower Row: Order stats + Top Products -->
+<div class="row g-4 mb-4">
+    <!-- Quick stats -->
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Thống kê nhanh</h6>
+                <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill me-2 text-warning"></i>Phân bố đơn hàng</h6>
                 <span class="badge bg-danger-subtle text-danger border border-danger" id="pendingCount">0 đơn đang chờ</span>
             </div>
             <div class="row g-3 text-center">
@@ -159,7 +191,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Top Products -->
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
@@ -204,6 +236,7 @@
             document.getElementById('sumPreparing').textContent = d.preparingOrders || 0;
             document.getElementById('sumDelivering').textContent = d.deliveringOrders || 0;
             document.getElementById('sumCompleted').textContent = d.completedOrders || 0;
+            renderRecentOrders(d.recentOrders || []);
 
             if (d.topProducts && d.topProducts.length > 0) {
                 document.getElementById('topProductsTable').innerHTML = d.topProducts.map((p, i) => `
@@ -236,25 +269,26 @@
 
     function renderChart(d) {
         const ctx = document.getElementById('revenueChart').getContext('2d');
-        const labels = ['Đơn chờ', 'Đang nấu', 'Đang giao', 'Hoàn thành'];
-        const values = [
-            d.pendingOrders || 0,
-            d.preparingOrders || 0,
-            d.deliveringOrders || 0,
-            d.completedOrders || 0
-        ];
+        const revenueByDay = d.revenueByDay || [];
+        const labels = revenueByDay.map(r => r.label);
+        const values = revenueByDay.map(r => r.revenue);
 
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels,
                 datasets: [{
-                    label: 'Số đơn hàng',
+                    label: 'Doanh thu (VND)',
                     data: values,
-                    backgroundColor: ['rgba(245,158,11,0.7)', 'rgba(59,130,246,0.7)', 'rgba(16,185,129,0.7)', 'rgba(107,114,128,0.7)'],
-                    borderRadius: 8,
-                    borderSkipped: false
+                    fill: true,
+                    backgroundColor: 'rgba(239,68,68,0.08)',
+                    borderColor: 'rgba(239,68,68,0.85)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: 'rgba(239,68,68,1)',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    tension: 0.4
                 }]
             },
             options: {
@@ -263,16 +297,60 @@
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: ctx => ctx.parsed.y + ' đơn'
+                            label: ctx => new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(ctx.parsed.y)
                         }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: v => {
+                                if (v >= 1000000) return (v/1000000).toFixed(1) + 'M';
+                                if (v >= 1000) return (v/1000).toFixed(0) + 'K';
+                                return v;
+                            }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
                     x: { grid: { display: false } }
                 }
             }
         });
+    }
+
+    const STATUS_MAP = {
+        'PENDING':    { label: 'Chờ XN',      cls: 'bg-warning-subtle text-warning border border-warning' },
+        'PREPARING':  { label: 'Đang nấu',    cls: 'bg-primary-subtle text-primary border border-primary' },
+        'DELIVERING': { label: 'Đang giao',    cls: 'bg-info-subtle text-info border border-info' },
+        'COMPLETED':  { label: 'Hoàn thành',   cls: 'bg-success-subtle text-success border border-success' },
+        'CANCELLED':  { label: 'Đã hủy',       cls: 'bg-danger-subtle text-danger border border-danger' }
+    };
+    const PAY_MAP = {
+        'CASH_ON_DELIVERY': 'COD',
+        'VNPAY': 'VNPay',
+        'MOMO_E_WALLET': 'MoMo'
+    };
+
+    function renderRecentOrders(orders) {
+        if (!orders || !orders.length) {
+            document.getElementById('recentOrdersTable').innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>';
+            return;
+        }
+        document.getElementById('recentOrdersTable').innerHTML = orders.map(o => {
+            const st = STATUS_MAP[o.status] || { label: o.status, cls: 'bg-secondary-subtle text-secondary' };
+            const d2 = new Date(o.orderTime);
+            const timeStr = o.orderTime ? d2.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+            return `<tr>
+                <td class="fw-bold text-danger">#${o.id}</td>
+                <td class="fw-semibold small">${o.customerName||'—'}</td>
+                <td><small>${o.restaurantName||'—'}</small></td>
+                <td class="fw-bold text-success">${new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND'}).format(o.totalAmount||0)}</td>
+                <td><small>${PAY_MAP[o.paymentMethod]||o.paymentMethod||'—'}</small></td>
+                <td><span class="badge ${st.cls} rounded-pill">${st.label}</span></td>
+                <td><small class="text-muted">${timeStr}</small></td>
+            </tr>`;
+        }).join('');
     }
 
     loadDashboard();

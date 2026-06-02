@@ -102,4 +102,7 @@ public class WebController {
 
     @GetMapping("/admin/profile")
     public String adminProfile() { return "admin/profile"; }
+
+    @GetMapping("/admin/orders")
+    public String adminOrders() { return "admin/orders"; }
 }

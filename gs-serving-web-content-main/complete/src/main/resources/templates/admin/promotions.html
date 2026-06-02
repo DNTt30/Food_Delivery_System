@@ -55,6 +55,7 @@
                     <th>Loại giảm giá</th>
                     <th>Giá trị</th>
                     <th>Đơn tối thiểu</th>
+                    <th>Phạm vi</th>
                     <th>Hạn dùng</th>
                     <th>Trạng thái</th>
                     <th class="text-end">Hành động</th>
@@ -231,6 +232,12 @@
                 <td><small>${v.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định'}</small></td>
                 <td><strong class="text-success">${discountStr}</strong></td>
                 <td><small>${v.minOrderAmount ? formatVND(v.minOrderAmount) : '—'}</small></td>
+                <td>
+                    ${v.restaurantName
+                        ? `<span class="badge bg-warning-subtle text-warning border border-warning rounded-pill"><i class="bi bi-shop me-1"></i>${v.restaurantName}</span>`
+                        : `<span class="badge bg-info-subtle text-info border border-info rounded-pill"><i class="bi bi-globe me-1"></i>Toàn hệ thống</span>`
+                    }
+                </td>
                 <td>${expiryStr}</td>
                 <td>${statusBadge}</td>
                 <td class="text-end">

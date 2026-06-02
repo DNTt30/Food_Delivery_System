@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'admin', ~{::main})}">
+<head>
+    <title>Admin - Quản lý Đơn hàng</title>
+</head>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('admin')}"></div>
+
+<!-- Header row -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <small class="text-muted">Theo dõi và quản lý tất cả đơn hàng trong hệ thống</small>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="exportCSV()">
+            <i class="bi bi-download me-1"></i>Xuất CSV
+        </button>
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="loadOrders()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+        </button>
+    </div>
+</div>
+
+<!-- KPI mini cards -->
+<div class="row g-3 mb-4" id="kpiRow">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#fff8e1,#fff)">
+            <div class="fs-4 fw-bold text-warning" id="kpiPending">—</div>
+            <div class="text-muted small">⏳ Chờ xác nhận</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#eff6ff,#fff)">
+            <div class="fs-4 fw-bold text-primary" id="kpiPreparing">—</div>
+            <div class="text-muted small">🍳 Đang nấu</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#f0fdf4,#fff)">
+            <div class="fs-4 fw-bold text-success" id="kpiDelivering">—</div>
+            <div class="text-muted small">🛵 Đang giao</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 p-3 text-center h-100" style="background:linear-gradient(135deg,#f5f3ff,#fff)">
+            <div class="fs-4 fw-bold" style="color:#7c3aed" id="kpiCompleted">—</div>
+            <div class="text-muted small">✅ Hoàn thành</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <div class="input-group" style="max-width:280px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Tìm ID, khách, nhà hàng..." oninput="filterOrders()">
+        </div>
+        <select class="form-select" style="max-width:170px;" id="statusFilter" onchange="filterOrders()">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ xác nhận</option>
+            <option value="PREPARING">Đang nấu</option>
+            <option value="DELIVERING">Đang giao</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="CANCELLED">Đã hủy</option>
+        </select>
+        <select class="form-select" style="max-width:160px;" id="daysFilter" onchange="loadOrders()">
+            <option value="7">7 ngày qua</option>
+            <option value="30" selected>30 ngày qua</option>
+            <option value="90">90 ngày qua</option>
+            <option value="365">Năm nay</option>
+            <option value="0">Tất cả</option>
+        </select>
+        <select class="form-select" style="max-width:160px;" id="paymentFilter" onchange="filterOrders()">
+            <option value="all">Tất cả TT</option>
+            <option value="CASH_ON_DELIVERY">Tiền mặt</option>
+            <option value="VNPAY">VNPay</option>
+            <option value="MOMO_E_WALLET">MoMo</option>
+        </select>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-danger"></div>
+    <p class="text-muted mt-2">Đang tải đơn hàng...</p>
+</div>
+
+<!-- Table -->
+<div id="ordersTable" class="d-none">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="d-flex justify-content-between align-items-center px-4 pt-3 pb-2">
+            <h6 class="fw-bold mb-0"><i class="bi bi-table me-2 text-danger"></i>Danh sách đơn hàng</h6>
+            <span class="badge bg-danger-subtle text-danger border border-danger" id="orderCount">0 đơn</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="font-size:.78rem;color:#6c757d;">ID</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Khách hàng</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Nhà hàng</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Tài xế</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Số tiền</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Thanh toán</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Trạng thái</th>
+                        <th style="font-size:.78rem;color:#6c757d;">Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Empty -->
+<div id="emptyState" class="text-center py-5 d-none">
+    <div style="font-size:4rem">📋</div>
+    <h5 class="fw-bold mt-2">Không có đơn hàng nào</h5>
+    <p class="text-muted">Thử thay đổi bộ lọc để xem kết quả khác.</p>
+</div>
+
+<script>
+    const token = localStorage.getItem('jwt_token');
+    if (!token) window.location.href = '/common/auth';
+
+    let allOrders = [];
+
+    const STATUS_MAP = {
+        'PENDING':   { label: 'Chờ xác nhận', cls: 'bg-warning-subtle text-warning border border-warning' },
+        'PREPARING': { label: 'Đang nấu',     cls: 'bg-primary-subtle text-primary border border-primary' },
+        'DELIVERING':{ label: 'Đang giao',    cls: 'bg-info-subtle text-info border border-info' },
+        'COMPLETED': { label: 'Hoàn thành',   cls: 'bg-success-subtle text-success border border-success' },
+        'CANCELLED': { label: 'Đã hủy',       cls: 'bg-danger-subtle text-danger border border-danger' }
+    };
+    const PAY_MAP = {
+        'CASH_ON_DELIVERY': { label: '💵 COD',  cls: 'bg-secondary-subtle text-secondary' },
+        'VNPAY':            { label: '🏦 VNPay', cls: 'bg-primary-subtle text-primary' },
+        'MOMO_E_WALLET':    { label: '🟣 MoMo',  cls: 'bg-pink-subtle text-purple' }
+    };
+
+    function formatVND(n) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
+    }
+
+    function formatTime(str) {
+        if (!str) return '—';
+        const d = new Date(str);
+        return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function loadOrders() {
+        document.getElementById('loading').classList.remove('d-none');
+        document.getElementById('ordersTable').classList.add('d-none');
+        document.getElementById('emptyState').classList.add('d-none');
+
+        const days = document.getElementById('daysFilter').value;
+        try {
+            const res = await fetch(`/api/admin/orders?days=${days}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+            allOrders = await res.json();
+            document.getElementById('loading').classList.add('d-none');
+            updateKPIs();
+            filterOrders();
+        } catch(e) {
+            document.getElementById('loading').innerHTML = '<div class="text-danger py-4 text-center"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    function updateKPIs() {
+        document.getElementById('kpiPending').textContent   = allOrders.filter(o => o.status === 'PENDING').length;
+        document.getElementById('kpiPreparing').textContent = allOrders.filter(o => o.status === 'PREPARING').length;
+        document.getElementById('kpiDelivering').textContent= allOrders.filter(o => o.status === 'DELIVERING').length;
+        document.getElementById('kpiCompleted').textContent = allOrders.filter(o => o.status === 'COMPLETED').length;
+    }
+
+    function filterOrders() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const pay = document.getElementById('paymentFilter').value;
+
+        let filtered = allOrders;
+        if (q) filtered = filtered.filter(o =>
+            String(o.id).includes(q) ||
+            (o.customerName || '').toLowerCase().includes(q) ||
+            (o.restaurantName || '').toLowerCase().includes(q) ||
+            (o.driverName || '').toLowerCase().includes(q));
+        if (status !== 'all') filtered = filtered.filter(o => o.status === status);
+        if (pay !== 'all') filtered = filtered.filter(o => o.paymentMethod === pay);
+
+        renderOrders(filtered);
+    }
+
+    function renderOrders(orders) {
+        document.getElementById('orderCount').textContent = orders.length + ' đơn';
+        if (!orders.length) {
+            document.getElementById('ordersTable').classList.add('d-none');
+            document.getElementById('emptyState').classList.remove('d-none');
+            return;
+        }
+        document.getElementById('emptyState').classList.add('d-none');
+        document.getElementById('ordersTable').classList.remove('d-none');
+
+        document.getElementById('ordersBody').innerHTML = orders.map(o => {
+            const st = STATUS_MAP[o.status] || { label: o.status, cls: 'bg-secondary-subtle text-secondary' };
+            const pm = PAY_MAP[o.paymentMethod] || { label: o.paymentMethod || '—', cls: 'bg-light text-dark' };
+            return `<tr>
+                <td class="ps-4 fw-bold text-danger">#${o.id}</td>
+                <td>
+                    <div class="fw-semibold small">${o.customerName || '—'}</div>
+                    <div class="text-muted" style="font-size:.72rem;">${o.customerUsername || ''}</div>
+                </td>
+                <td><small class="fw-semibold">${o.restaurantName || '—'}</small></td>
+                <td><small class="${o.driverName ? 'text-success fw-semibold' : 'text-muted'}">${o.driverName || 'Chưa có'}</small></td>
+                <td class="fw-bold text-success">${formatVND(o.totalAmount)}</td>
+                <td><span class="badge ${pm.cls} rounded-pill">${pm.label}</span></td>
+                <td><span class="badge ${st.cls} rounded-pill">${st.label}</span></td>
+                <td><small class="text-muted">${formatTime(o.orderTime)}</small></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function exportCSV() {
+        const rows = [['ID','Khách hàng','Nhà hàng','Tài xế','Số tiền','Thanh toán','Trạng thái','Thời gian']];
+        allOrders.forEach(o => rows.push([
+            o.id, o.customerName, o.restaurantName, o.driverName||'', o.totalAmount,
+            o.paymentMethod, o.status, o.orderTime
+        ]));
+        const csv = rows.map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'don_hang_' + new Date().toISOString().slice(0,10) + '.csv';
+        a.click();
+    }
+
+    loadOrders();
+</script>
+</main>
+</body>
+</html>

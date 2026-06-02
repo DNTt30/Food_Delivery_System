@@ -117,8 +117,38 @@ public class AdminApiController {
         }).collect(Collectors.toList());
         stats.put("topProducts", topProducts);
 
+        // Revenue by day (last 7 days) for line chart
+        List<java.util.Map<String, Object>> revenueByDay = new java.util.ArrayList<>();
+        java.time.LocalDate today2 = java.time.LocalDate.now();
+        for (int i = 6; i >= 0; i--) {
+            java.time.LocalDate day = today2.minusDays(i);
+            java.time.LocalDateTime dayStart = day.atStartOfDay();
+            java.time.LocalDateTime dayEnd = day.plusDays(1).atStartOfDay();
+            Double rev = foodOrderRepository.sumTotalAmountByStatusAndDateRange(OrderStatus.COMPLETED, dayStart, dayEnd);
+            java.util.Map<String, Object> dayData = new java.util.LinkedHashMap<>();
+            dayData.put("date", day.toString());
+            dayData.put("label", day.getDayOfMonth() + "/" + day.getMonthValue());
+            dayData.put("revenue", rev != null ? rev : 0.0);
+            revenueByDay.add(dayData);
+        }
+        stats.put("revenueByDay", revenueByDay);
+
+        // Recent 5 orders
+        List<FoodOrder> recentOrders = foodOrderRepository.findTop5ByStatusNotOrderByOrderTimeDesc(OrderStatus.PENDING_PAYMENT);
+        List<java.util.Map<String, Object>> recentOrderDTOs = recentOrders.stream().map(o -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", o.getId());
+            m.put("customerName", o.getCustomer().getUser().getFullName());
+            m.put("restaurantName", o.getRestaurant().getRestaurantName());
+            m.put("totalAmount", o.getTotalAmount());
+            m.put("status", o.getStatus().name());
+            m.put("paymentMethod", o.getPaymentMethod());
+            m.put("orderTime", o.getOrderTime() != null ? o.getOrderTime().toString() : "");
+            return m;
+        }).collect(Collectors.toList());
+        stats.put("recentOrders", recentOrderDTOs);
+
         return ResponseEntity.ok(stats);
-    }
 
     // UC-17: Quản lý tài khoản người dùng
     @GetMapping("/users")
@@ -372,6 +402,9 @@ public class AdminApiController {
         m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENT");
         m.put("expiryDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : null);
         m.put("active", v.isActive());
+        m.put("description", v.getDescription());
+        m.put("restaurantName", v.getRestaurant() != null ? v.getRestaurant().getRestaurantName() : null);
+        m.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);
         return m;
     }
 
