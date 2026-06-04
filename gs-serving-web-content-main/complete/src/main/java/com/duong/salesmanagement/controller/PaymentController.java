@@ -5,23 +5,34 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.UUID;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
+import com.duong.salesmanagement.config.MomoConfig;
 import com.duong.salesmanagement.config.VNPAYConfig;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.OrderStatus;
+import com.duong.salesmanagement.model.PaymentMethod;
 import com.duong.salesmanagement.model.PaymentStatus;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
@@ -40,6 +51,7 @@ public class PaymentController {
             LoggerFactory.getLogger(PaymentController.class);
 
     private final VNPAYConfig vnpayConfig;
+    private final MomoConfig momoConfig;
     private final FoodOrderRepository foodOrderRepository;
     private final PaymentRepository paymentRepository;
     private final NotificationService notificationService;
@@ -47,13 +59,14 @@ public class PaymentController {
 
     public PaymentController(
             VNPAYConfig vnpayConfig,
+            MomoConfig momoConfig,
             FoodOrderRepository foodOrderRepository,
             PaymentRepository paymentRepository,
             NotificationService notificationService,
             OrderService orderService
     ) {
-
         this.vnpayConfig = vnpayConfig;
+        this.momoConfig = momoConfig;
         this.foodOrderRepository = foodOrderRepository;
         this.paymentRepository = paymentRepository;
         this.notificationService = notificationService;
@@ -534,6 +547,142 @@ public class PaymentController {
                 }
             });
         });
+    }
+
+    // ═══════════════════════════════════════════════
+    // MOMO PAYMENT
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Tạo URL thanh toán MoMo
+     */
+    @GetMapping("/create-momo-payment")
+    public ResponseEntity<?> createMomoPayment(
+            @RequestParam("orderId") Long orderId
+    ) {
+        Optional<FoodOrder> orderOpt = foodOrderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Không tìm thấy đơn hàng"));
+        }
+        FoodOrder order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.AWAITING_PAYMENT) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Đơn hàng không ở trạng thái chờ thanh toán"));
+        }
+
+        try {
+            long amount = (long)(order.getTotalAmount() != null ? order.getTotalAmount() : 0.0);
+            String requestId   = momoConfig.getPartnerCode() + System.currentTimeMillis();
+            String momoOrderId = requestId;
+            String orderInfo   = "Thanh toan don hang #" + orderId;
+            String extraData   = "";
+            String requestType = "payWithMethod";
+
+            // Build raw signature string
+            String rawSignature = "accessKey=" + momoConfig.getAccessKey()
+                    + "&amount=" + amount
+                    + "&extraData=" + extraData
+                    + "&ipnUrl=" + momoConfig.getIpnUrl()
+                    + "&orderId=" + momoOrderId
+                    + "&orderInfo=" + orderInfo
+                    + "&partnerCode=" + momoConfig.getPartnerCode()
+                    + "&redirectUrl=" + momoConfig.getRedirectUrl() + "?internalOrderId=" + orderId
+                    + "&requestId=" + requestId
+                    + "&requestType=" + requestType;
+
+            String signature = hmacSHA256(momoConfig.getSecretKey(), rawSignature);
+            log.info("[MoMo] rawSignature = {}", rawSignature);
+            log.info("[MoMo] signature    = {}", signature);
+
+            // Build request body
+            Map<String, Object> body = new HashMap<>();
+            body.put("partnerCode",  momoConfig.getPartnerCode());
+            body.put("accessKey",    momoConfig.getAccessKey());
+            body.put("requestId",    requestId);
+            body.put("amount",       String.valueOf(amount));
+            body.put("orderId",      momoOrderId);
+            body.put("orderInfo",    orderInfo);
+            body.put("redirectUrl",  momoConfig.getRedirectUrl() + "?internalOrderId=" + orderId);
+            body.put("ipnUrl",       momoConfig.getIpnUrl());
+            body.put("lang",         "vi");
+            body.put("extraData",    extraData);
+            body.put("requestType",  requestType);
+            body.put("signature",    signature);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<Map> momoResp = restTemplate.postForEntity(
+                    momoConfig.getEndpoint(), entity, Map.class);
+
+            Map<?, ?> momoBody = momoResp.getBody();
+            log.info("[MoMo] Response = {}", momoBody);
+
+            if (momoBody != null && momoBody.containsKey("payUrl")) {
+                return ResponseEntity.ok(Map.of("paymentUrl", momoBody.get("payUrl")));
+            } else {
+                String errMsg = momoBody != null ? String.valueOf(((Map<Object,Object>)(Map<?,?>)momoBody).getOrDefault("message", "Unknown")) : "No response";
+                log.error("[MoMo] Error: {}", errMsg);
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(Map.of("error", "MoMo từ chối: " + errMsg));
+            }
+
+        } catch (Exception e) {
+            log.error("[MoMo] Exception: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Lỗi kết nối MoMo: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * MoMo Callback (redirect sau khi user thanh toán)
+     */
+    @GetMapping("/momo-callback")
+    public void momoCallback(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws Exception {
+        String resultCode      = request.getParameter("resultCode");
+        String internalOrderId = request.getParameter("internalOrderId");
+
+        boolean success = "0".equals(resultCode);
+        Long orderId = null;
+        try { orderId = Long.parseLong(internalOrderId); } catch (Exception ignored) {}
+
+        if (orderId != null) {
+            updatePaymentStatus(orderId, success);
+            String status = success ? "success" : "fail";
+            response.sendRedirect("/payment-result?status=" + status + "&orderId=" + orderId);
+        } else {
+            response.sendRedirect("/payment-result?status=fail");
+        }
+    }
+
+    /**
+     * MoMo IPN (server-to-server)
+     */
+    @GetMapping("/momo-ipn")
+    public ResponseEntity<?> momoIpn(HttpServletRequest request) {
+        String resultCode      = request.getParameter("resultCode");
+        String internalOrderId = request.getParameter("internalOrderId");
+        boolean success = "0".equals(resultCode);
+        try {
+            Long orderId = Long.parseLong(internalOrderId);
+            updatePaymentStatus(orderId, success);
+        } catch (Exception ignored) {}
+        return ResponseEntity.ok(Map.of("status", "received"));
+    }
+
+    /** HMAC-SHA256 helper cho MoMo */
+    private String hmacSHA256(String key, String data) throws Exception {
+        Mac hmac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        hmac.init(keySpec);
+        byte[] bytes = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 
     /**
