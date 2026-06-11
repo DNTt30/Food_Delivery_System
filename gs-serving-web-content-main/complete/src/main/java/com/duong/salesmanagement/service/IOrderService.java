@@ -66,6 +66,12 @@ public interface IOrderService {
     void markAsPickedUp(Long orderId, DriverProfile driver);
 
     /**
+     * CẢI TIẾN: Tài xế xác nhận đã lấy hàng nhiều đơn cùng lúc.
+     * Chuyển trạng thái: PREPARING → DELIVERING cho tất cả đơn
+     */
+    List<FoodOrder> batchMarkAsPickedUp(List<Long> orderIds, DriverProfile driver);
+
+    /**
      * Tài xế xác nhận đã giao hàng thành công cho khách.
      * Chuyển trạng thái: DELIVERING → COMPLETED
      */

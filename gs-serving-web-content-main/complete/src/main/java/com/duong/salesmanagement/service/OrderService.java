@@ -382,7 +382,7 @@ public class OrderService implements IOrderService {
 
         // 🔔 Notify restaurant có đánh giá mới
         notificationService.notifyNewReview(
-                restaurant.getUser(), orderId, rating);
+            restaurant.getUser(), orderId, rating);
 
         return savedReview;
     }
@@ -394,17 +394,13 @@ public class OrderService implements IOrderService {
         if (order.getDriver() != null || order.getStatus() != OrderStatus.PREPARING)
             throw new RuntimeException("Đơn hàng không khả dụng để nhận");
 
-        // CHẶN TÀI XẾ NHẬN NHIỀU ĐƠN: Chỉ cho phép nhận nếu chưa có đơn nào đang giao
-        List<FoodOrder> activeOrders = getDriverActiveDeliveries(driver);
-        if (!activeOrders.isEmpty()) {
-            throw new RuntimeException("Bạn đang có đơn hàng chưa hoàn thành. Vui lòng giao xong trước khi nhận đơn mới.");
-        }
+        // CẢI TIẾN: Cho phép driver nhận nhiều đơn trước khi xác nhận đi giao
+        // Không còn chặn driver nhận đơn khi đang có đơn đang giao
 
         order.setDriver(driver);
         // Chặng 1: Driver đang đến nhà hàng — giữ nguyên status PREPARING
         // (sẽ chuyển sang DELIVERING khi Driver bấm "Đã lấy hàng")
-        driver.setAvailable(false);
-        driverProfileRepository.save(driver);
+        // Không set available=false để driver có thể tiếp tục nhận đơn khác
         FoodOrder saved = foodOrderRepository.save(order);
         broadcastOrderStatus(saved); // 🔔 Real-time WebSocket
 
@@ -435,6 +431,27 @@ public class OrderService implements IOrderService {
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket
     }
 
+    /**
+     * CẢI TIẾN: Driver xác nhận đã lấy hàng nhiều đơn cùng lúc → chuyển tất cả sang DELIVERING
+     */
+    @Transactional
+    public List<FoodOrder> batchMarkAsPickedUp(List<Long> orderIds, DriverProfile driver) {
+        List<FoodOrder> pickedUpOrders = new java.util.ArrayList<>();
+        for (Long orderId : orderIds) {
+            FoodOrder order = foodOrderRepository.findById(orderId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng #" + orderId));
+            if (order.getDriver() == null || !order.getDriver().getId().equals(driver.getId()))
+                throw new RuntimeException("Không có quyền cập nhật đơn hàng #" + orderId);
+            if (order.getStatus() != OrderStatus.PREPARING)
+                throw new RuntimeException("Đơn hàng #" + orderId + " không ở trạng thái chờ lấy hàng");
+            order.setStatus(OrderStatus.DELIVERING);
+            FoodOrder saved = foodOrderRepository.save(order);
+            pickedUpOrders.add(saved);
+            broadcastOrderStatus(saved); // 🔔 Real-time WebSocket
+        }
+        return pickedUpOrders;
+    }
+
     @Transactional
     public void completeDelivery(Long orderId, DriverProfile driver) {
         FoodOrder order = foodOrderRepository.findById(orderId)
@@ -446,7 +463,6 @@ public class OrderService implements IOrderService {
         order.setStatus(OrderStatus.COMPLETED);
         markCodPaymentCompletedIfNeeded(order);
         foodOrderRepository.save(order);
-
         // Update soldCount for menu items
         if (order.getOrderItems() != null) {
             for (OrderItem item : order.getOrderItems()) {
@@ -459,8 +475,14 @@ public class OrderService implements IOrderService {
             }
         }
 
-        driver.setAvailable(true);
-        driverProfileRepository.save(driver);
+        // CẢI TIẾN: Không tự động set available=true
+        // Driver có thể có nhiều đơn khác đang giao, chỉ set available khi không còn đơn nào
+        List<FoodOrder> remainingOrders = getDriverActiveDeliveries(driver);
+        if (remainingOrders.isEmpty()) {
+            driver.setAvailable(true);
+            driverProfileRepository.save(driver);
+        }
+
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket
 
         // 🔔 Notify Customer: đơn hoàn thành
