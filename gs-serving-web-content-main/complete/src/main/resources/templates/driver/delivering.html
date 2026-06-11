@@ -290,16 +290,6 @@ async function loadActiveDeliveries() {
         if (!orders || orders.length === 0) {
             stopGPS(); show('emptyState'); return;
         }
-<<<<<<< HEAD
-        
-        // CHỈ HIỂN THỊ ĐƠN HÀNG ĐẦU TIÊN (Để giải quyết lỗi hiển thị quá nhiều đơn cùng lúc)
-        currentOrder = orders[0];
-        const displayOrders = [currentOrder];
-        
-=======
-<<<<<<< Updated upstream
-        currentOrder = orders[0];
-=======
 
         // CẢI TIẾN: Hiển thị tất cả đơn hàng
         currentOrders = orders;
@@ -313,14 +303,13 @@ async function loadActiveDeliveries() {
         // Cập nhật status summary
         updateStatusSummary(orders);
 
->>>>>>> Stashed changes
->>>>>>> origin/quỳnh
         renderPaymentBanner(currentOrder);
-        renderCards(displayOrders);
+        renderCards(orders);
         initMap(currentOrder);
         renderPhase(currentOrder.status);
         startGPS(currentOrder.id);
         show('actionArea');
+
 
     } catch(e) {
         hide('loading');

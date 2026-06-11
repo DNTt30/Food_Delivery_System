@@ -173,15 +173,6 @@
                 });
                 const d = await res.json();
                 if (res.ok) {
-<<<<<<< HEAD
-                    toast(d.message || 'Đã nhận đơn thành công!', 'success');
-                    // Chuyển hướng sang màn hình Giao hàng ngay lập tức
-                    setTimeout(() => window.location.href = '/driver/delivering', 500);
-=======
-<<<<<<< Updated upstream
-                    alert(d.message);
-                    window.location.href = '/driver/delivering';
-=======
                     toast(d.message || 'Đã nhận đơn thành công!', 'success');
                     // CẢI TIẾN: Không chuyển hướng ngay - tăng counter và hiển thị banner
                     acceptedOrdersCount++;
@@ -194,8 +185,6 @@
                     if (remainingCards.length === 0) {
                         loadAvailableOrders();
                     }
->>>>>>> Stashed changes
->>>>>>> origin/quỳnh
                 } else {
                     toast(d.error || 'Không thể nhận đơn', 'danger');
                     if (btn) {
@@ -203,14 +192,7 @@
                         btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> NHẬN ĐƠN NGAY';
                     }
                 }
-<<<<<<< HEAD
-            } catch { 
-=======
-<<<<<<< Updated upstream
-            } catch { alert('Lỗi kết nối'); }
-=======
             } catch {
->>>>>>> origin/quỳnh
                 toast('Lỗi kết nối', 'danger');
                 if (btn) {
                     btn.disabled = false;
@@ -219,8 +201,6 @@
             }
         }
 
-<<<<<<< HEAD
-=======
         function updateAcceptedBanner() {
             const banner = document.getElementById('acceptedBanner');
             const countBadge = document.getElementById('acceptedCountBadge');
@@ -241,18 +221,14 @@
             window.location.href = '/driver/delivering';
         }
 
->>>>>>> origin/quỳnh
         function toast(msg, type) {
             const t = document.createElement('div');
             t.className = `position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
             t.style.cssText = 'z-index:9999;border-radius:12px;min-width:220px;';
             t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
             document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
-<<<<<<< HEAD
-=======
->>>>>>> Stashed changes
->>>>>>> origin/quỳnh
         }
+
 
         window.onDriverStatusChange = function(isOnline) {
             if (isOnline) loadAvailableOrders();
