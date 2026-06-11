@@ -168,7 +168,94 @@
 .payment-chip.collect { background: #fee2e2; color: #991b1b; }
 .payment-chip.paid { background: #dcfce7; color: #166534; }
 .payment-chip.pending { background: #ffedd5; color: #9a3412; }
+
+/* ─── Compact Order Card (1 card per order) ── */
+.order-card {
+    background: #fff; border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+.order-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+.order-id-label { font-size: 0.75rem; font-weight: 700; color: #64748b; }
+.order-status-badge {
+    font-size: 0.68rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; letter-spacing: .03em;
+}
+.status-preparing { background: #fef3c7; color: #92400e; }
+.status-delivering { background: #dbeafe; color: #1e40af; }
+.order-card-body { padding: 12px 14px 14px; }
+
+/* Route strip */
+.route-strip { position: relative; padding-left: 22px; margin-bottom: 10px; }
+.route-strip::before {
+    content: ''; position: absolute; left: 7px; top: 16px; bottom: 16px;
+    width: 2px; background: #cbd5e1; border-radius: 2px;
+}
+.route-row { display: flex; flex-direction: column; padding: 4px 0; position: relative; }
+.route-dot {
+    position: absolute; left: -21px; top: 7px;
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid white;
+}
+.route-dot.pickup { background: #f59e0b; box-shadow: 0 0 0 2px #f59e0b44; }
+.route-dot.dropoff { background: #ef4444; box-shadow: 0 0 0 2px #ef444444; }
+.route-label { font-size: 0.63rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+.route-name { font-size: 0.83rem; font-weight: 700; color: #1e293b; }
+.route-addr { font-size: 0.72rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+
+/* Items row */
+.order-items-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.74rem; color: #475569;
+    background: #f8fafc; border-radius: 8px;
+    padding: 6px 10px; margin-bottom: 8px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Quick actions row */
+.quick-actions { display: flex; gap: 6px; margin-bottom: 7px; flex-wrap: wrap; }
+.btn-icon-sm {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 4px; padding: 5px 10px; border-radius: 8px;
+    font-size: 0.73rem; font-weight: 600; border: 1px solid #e2e8f0;
+    background: #f8fafc; color: #334155; cursor: pointer;
+    text-decoration: none; white-space: nowrap; transition: background .15s;
+}
+.btn-icon-sm:hover { background: #e2e8f0; color: #334155; }
+.btn-icon-sm.nav-btn { border-color: #bfdbfe; background: #eff6ff; color: #1e40af; }
+.btn-icon-sm.nav-btn:hover { background: #dbeafe; }
+.btn-icon-sm.chat-sq { padding: 5px 9px; }
+
+/* Per-order action button */
+.btn-order-action {
+    width: 100%; padding: 12px; border: none; border-radius: 12px;
+    font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    transition: transform .1s, opacity .2s;
+    box-shadow: 0 3px 10px rgba(0,0,0,.14);
+    margin-top: 4px;
+}
+.btn-pickup  { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+.btn-done    { background: linear-gradient(135deg,#22c55e,#16a34a); color:#fff; }
+.btn-order-action:active { transform: scale(.97); }
+.btn-order-action:disabled { opacity:.6; cursor:not-allowed; }
+
+/* Batch bar */
+.batch-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fefce8; border: 1px solid #fde68a;
+    border-radius: 12px; padding: 9px 13px; margin-bottom: 10px;
+    font-size: 0.8rem; color: #713f12; font-weight: 600;
+}
+.batch-counts { display: flex; gap: 14px; }
 </style>
+
 
 <!-- Header -->
 <div class="page-header">
@@ -363,33 +450,6 @@ function renderPaymentBanner(o) {
     if (!o) { el.classList.add('d-none'); return; }
 
     el.classList.remove('d-none', 'collect', 'paid-online', 'pending-online');
-
-    if (o.needsCollectCash) {
-        el.classList.add('collect');
-        el.innerHTML = `
-            <div class="pay-icon">💵</div>
-            <div>
-                <div class="pay-title">Cần thu tiền khi giao hàng</div>
-                <div class="pay-amount">${formatVND(o.amountToCollect || o.totalAmount)}</div>
-                <div style="font-size:.75rem;opacity:.85;margin-top:2px;">${esc(o.paymentStatusLabel || 'Thu tiền khi giao hàng')}</div>
-            </div>`;
-    } else if (o.isPaidOnline) {
-        el.classList.add('paid-online');
-        el.innerHTML = `
-            <div class="pay-icon">✅</div>
-            <div>
-                <div class="pay-title">Khách đã thanh toán online</div>
-                <div style="font-size:.75rem;opacity:.85;">Không cần thu tiền mặt</div>
-            </div>`;
-    } else {
-        el.classList.add('pending-online');
-        el.innerHTML = `
-            <div class="pay-icon">⚠️</div>
-            <div>
-                <div class="pay-title">Chưa thanh toán online</div>
-                <div style="font-size:.75rem;opacity:.85;">Nhắc khách thanh toán trước khi giao</div>
-            </div>`;
-    }
 }
 
 // ── Render cards ───────────────────────────────────────────────────
@@ -399,59 +459,131 @@ function renderCards(orders) {
         const rLng = o.restaurantLng ?? 105.7402;
         const cLat = o.deliveryLat ?? 20.9685;
         const cLng = o.deliveryLng ?? 105.7451;
-        const statusBadge = o.status === 'PREPARING'
-            ? '<span class="badge bg-warning text-dark rounded-pill">Chờ lấy hàng</span>'
-            : '<span class="badge bg-primary rounded-pill">Đang giao</span>';
+        const isPreparing = o.status === 'PREPARING';
+        const statusCls = isPreparing ? 'status-preparing' : 'status-delivering';
+        const statusTxt = isPreparing ? '🏍️ Đến lấy hàng' : '📦 Đang giao khách';
+
+        // Payment chip
+        let payChip = '';
+        if (o.needsCollectCash)
+            payChip = `<span class="payment-chip collect"><i class="bi bi-cash-coin"></i> Thu tiền mặt ${formatVND(o.amountToCollect||o.totalAmount)}</span>`;
+        else if (o.isPaidOnline)
+            payChip = `<span class="payment-chip paid"><i class="bi bi-check-circle-fill"></i> Đã thanh toán</span>`;
+        else
+            payChip = `<span class="payment-chip pending"><i class="bi bi-hourglass-split"></i> Chưa thanh toán</span>`;
+
+        // Main action button
+        const actionBtn = isPreparing
+            ? `<button class="btn-order-action btn-pickup" onclick="doPickedUp(${o.id}, this)">🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO</button>`
+            : `<button class="btn-order-action btn-done" onclick="doComplete(${o.id}, this)"><i class="bi bi-check-circle-fill me-1"></i> GIAO THÀNH CÔNG</button>`;
+
+        // Call buttons
+        const callRest = o.restaurantPhone
+            ? `<a href="tel:${o.restaurantPhone}" class="btn-icon-sm"><i class="bi bi-telephone"></i>Quán</a>`
+            : `<span class="btn-icon-sm" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Quán</span>`;
+        const callCust = o.customerPhone
+            ? `<a href="tel:${o.customerPhone}" class="btn-icon-sm"><i class="bi bi-telephone"></i>Khách</a>`
+            : `<span class="btn-icon-sm" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Khách</span>`;
+
         return `
-    <div class="step-card">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="step-label s1">① LẤY HÀNG</span>
-            <div class="d-flex align-items-center gap-2">
-                ${statusBadge}
-                <span style="font-size:.72rem;color:#94a3b8;">Đơn #${o.id}</span>
+<div class="order-card" id="order-card-${o.id}">
+    <div class="order-card-header">
+        <span class="order-id-label">Đơn #${o.id}</span>
+        <span class="order-status-badge ${statusCls}">${statusTxt}</span>
+    </div>
+    <div class="order-card-body">
+        <div class="route-strip">
+            <div class="route-row">
+                <span class="route-dot pickup"></span>
+                <div class="route-label">Lấy hàng tại</div>
+                <div class="route-name">${esc(o.restaurantName)}</div>
+                <div class="route-addr">${esc(o.restaurantAddress)}</div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="route-row">
+                <span class="route-dot dropoff"></span>
+                <div class="route-label">Giao đến</div>
+                <div class="route-name">${esc(o.customerName)}</div>
+                <div class="route-addr">${esc(o.deliveryAddress)}</div>
             </div>
         </div>
-        <h6>${esc(o.restaurantName)}</h6>
-        <div class="addr"><i class="bi bi-shop text-warning"></i>${esc(o.restaurantAddress)}</div>
-        <div class="action-row">
-            ${o.restaurantPhone
-                ? `<a href="tel:${o.restaurantPhone}" class="btn-call"><i class="bi bi-telephone"></i>Gọi quán</a>`
-                : `<span class="btn-call" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Gọi quán</span>`}
-            <button class="btn-nav" onclick="navTo(${rLat},${rLng})">
-                <i class="bi bi-map"></i>Chỉ đường
-            </button>
-            <button class="btn-chat" onclick="chat(${o.id},'RESTAURANT','Nhà hàng')" title="Chat quán">
-                <i class="bi bi-chat-dots"></i>
-            </button>
+        <div class="order-items-row"><i class="bi bi-box-seam text-muted"></i>${(o.items||[]).join(', ')||'—'}</div>
+        ${payChip}
+        <div class="quick-actions">
+            ${callRest}
+            <button class="btn-icon-sm nav-btn" onclick="navTo(${rLat},${rLng})"><i class="bi bi-shop"></i>Chỉ đường quán</button>
+            <button class="btn-icon-sm chat-sq" onclick="chat(${o.id},'RESTAURANT','Nhà hàng')" title="Chat quán"><i class="bi bi-chat-dots"></i></button>
         </div>
+        <div class="quick-actions">
+            ${callCust}
+            <button class="btn-icon-sm nav-btn" onclick="navTo(${cLat},${cLng})"><i class="bi bi-geo-alt"></i>Chỉ đường khách</button>
+            <button class="btn-icon-sm chat-sq" onclick="chat(${o.id},'CUSTOMER','Khách hàng')" title="Chat khách"><i class="bi bi-chat-dots"></i></button>
+        </div>
+        ${actionBtn}
     </div>
+</div>`;
+    }).join('');
 
-    <div class="step-card">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="step-label s2">② GIAO ĐẾN KHÁCH</span>
-        </div>
-        ${paymentChipHtml(o)}
-        <h6>${esc(o.customerName)}</h6>
-        <div class="addr"><i class="bi bi-geo-alt-fill text-danger"></i>${esc(o.deliveryAddress)}</div>
-        <div class="items-line"><i class="bi bi-box-seam text-muted me-1"></i>${(o.items||[]).join(', ')||'—'}</div>
-        <div class="action-row">
-            ${o.customerPhone
-                ? `<a href="tel:${o.customerPhone}" class="btn-call"><i class="bi bi-telephone"></i>Gọi khách</a>`
-                : `<span class="btn-call" style="opacity:.4;cursor:default"><i class="bi bi-telephone"></i>Gọi khách</span>`}
-            <button class="btn-nav" onclick="navTo(${cLat},${cLng})">
-                <i class="bi bi-map"></i>Chỉ đường
-            </button>
-            <button class="btn-chat" onclick="chat(${o.id},'CUSTOMER','Khách hàng')" title="Chat khách">
-                <i class="bi bi-chat-dots"></i>
-            </button>
-        </div>
-    </div>`;
-    }).join('<div style="border-top:1px dashed #e2e8f0;margin:4px 0 12px;"></div>');
-
-    // Subscriptions chat
     const ids = orders.map(o => o.id);
     if (typeof window._refreshDriverChatSubs === 'function') window._refreshDriverChatSubs(ids);
 }
+
+// Per-order action handlers
+async function doPickedUp(orderId, btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Đang cập nhật...';
+    try {
+        const res = await fetch(`/api/driver/orders/${orderId}/picked-up`, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            toast('✅ Đã lấy hàng! Bắt đầu giao đến khách', 'success');
+            setTimeout(loadActiveDeliveries, 800);
+        } else {
+            const d = await res.json().catch(() => ({}));
+            toast(d.error || 'Lỗi cập nhật', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO';
+        }
+    } catch(e) {
+        toast('Lỗi kết nối', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO';
+    }
+}
+
+async function doComplete(orderId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Đang xác nhận...';
+    try {
+        const res = await fetch(`/api/driver/orders/${orderId}/complete`, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            toast('🎉 Giao thành công! Đã cộng thu nhập vào ví.', 'success');
+            const card = document.getElementById('order-card-' + orderId);
+            if (card) {
+                card.style.transition = 'opacity .3s, transform .3s';
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(-8px)';
+                setTimeout(() => { card.remove(); loadActiveDeliveries(); }, 400);
+            } else {
+                setTimeout(loadActiveDeliveries, 800);
+            }
+        } else {
+            const d = await res.json().catch(() => ({}));
+            toast(d.error || 'Lỗi cập nhật', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> GIAO THÀNH CÔNG';
+        }
+    } catch(e) {
+        toast('Lỗi kết nối', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> GIAO THÀNH CÔNG';
+    }
+}
+
+
 
 // ── Leaflet Map ────────────────────────────────────────────────────
 let currentRoutePhase = null;
