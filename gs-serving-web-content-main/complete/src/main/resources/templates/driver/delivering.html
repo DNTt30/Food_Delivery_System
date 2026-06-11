@@ -69,18 +69,35 @@
     border-radius: 0; overflow: hidden;
     position: relative;
 }
-#driver-map {
-    height: 240px; width: 100%;
-    background: #e2e8f0;
-}
+#driver-map { height: 200px; width: 100%; background: #e2e8f0; transition: height .25s; }
 .leaflet-routing-container { display: none !important; }
-.map-btn-focus {
-    position: absolute; top: 10px; right: 10px; z-index: 999;
+.map-controls {
+    position: absolute; top: 8px; right: 8px; z-index: 999;
+    display: flex; gap: 6px;
+}
+.map-btn {
     background: white; border: 1px solid #e2e8f0;
-    border-radius: 8px; padding: 6px 10px;
-    font-size: 0.75rem; font-weight: 600;
+    border-radius: 8px; padding: 5px 10px;
+    font-size: 0.73rem; font-weight: 600;
     color: #334155; cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,.1);
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+}
+.map-btn:hover { background: #f1f5f9; }
+
+/* Fullscreen map overlay */
+#map-wrapper.map-fullscreen {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    margin: 0 !important; z-index: 2000;
+    border-radius: 0 !important;
+}
+#map-wrapper.map-fullscreen #driver-map {
+    height: 100% !important;
+}
+#map-wrapper.map-fullscreen .map-controls {
+    top: 14px; right: 14px;
 }
 
 /* ─── Step Cards ──────────────────────────── */
@@ -321,24 +338,19 @@
 <!-- MAP -->
 <div id="map-wrapper" class="d-none">
     <div id="driver-map"></div>
-    <button class="map-btn-focus" onclick="focusDriver()">
-        <i class="bi bi-crosshair"></i> Vị trí tôi
-    </button>
+    <div class="map-controls">
+        <button class="map-btn" onclick="focusDriver()">
+            <i class="bi bi-crosshair"></i> Vị trí tôi
+        </button>
+        <button class="map-btn" id="mapExpandBtn" onclick="toggleMapFullscreen()">
+            <i class="bi bi-fullscreen" id="mapExpandIcon"></i> Phóng to
+        </button>
+    </div>
 </div>
 
 <!-- Order Cards -->
 <div id="activeOrders"></div>
 
-<!-- Action -->
-<div id="actionArea" class="d-none">
-    <button id="btn-picked-up" class="d-none" onclick="confirmPickedUp()">
-        🍱 ĐÃ LẤY HÀNG — BẮT ĐẦU GIAO
-    </button>
-    <button id="btn-complete" class="d-none" onclick="confirmComplete()">
-        <i class="bi bi-check-circle-fill me-1"></i> XÁC NHẬN GIAO THÀNH CÔNG
-    </button>
-    <div class="action-hint" id="actionHint"></div>
-</div>
 
 <script>
 const token = localStorage.getItem('jwt_token');
@@ -363,7 +375,7 @@ async function loadActiveDeliveries() {
         return;
     }
     show('loading'); hide('emptyState'); hide('phaseBanner'); hide('paymentBanner');
-    hide('map-wrapper'); hide('actionArea'); hide('statusSummary');
+    hide('map-wrapper'); hide('statusSummary');
     document.getElementById('activeOrders').innerHTML = '';
 
     try {
@@ -395,7 +407,7 @@ async function loadActiveDeliveries() {
         initMap(currentOrder);
         renderPhase(currentOrder.status);
         startGPS(currentOrder.id);
-        show('actionArea');
+
 
 
     } catch(e) {
@@ -644,6 +656,35 @@ function drawRoute(fromLat, fromLng, toLat, toLng, color) {
 function focusDriver() {
     if (driverMarker && driverMap) driverMap.flyTo(driverMarker.getLatLng(), 16, { animate: true });
 }
+
+function toggleMapFullscreen() {
+    const wrapper = document.getElementById('map-wrapper');
+    const icon = document.getElementById('mapExpandIcon');
+    const btn = document.getElementById('mapExpandBtn');
+    const isFullscreen = wrapper.classList.contains('map-fullscreen');
+
+    if (isFullscreen) {
+        wrapper.classList.remove('map-fullscreen');
+        icon.className = 'bi bi-fullscreen';
+        btn.innerHTML = '<i class="bi bi-fullscreen"></i> Phóng to';
+        document.body.style.overflow = '';
+    } else {
+        wrapper.classList.add('map-fullscreen');
+        icon.className = 'bi bi-fullscreen-exit';
+        btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> Thu nhỏ';
+        document.body.style.overflow = 'hidden';
+    }
+    // Fix Leaflet kích thước sau transition
+    setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 50);
+}
+
+// Đóng fullscreen khi bấm Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        const wrapper = document.getElementById('map-wrapper');
+        if (wrapper && wrapper.classList.contains('map-fullscreen')) toggleMapFullscreen();
+    }
+});
 
 // ── GPS ────────────────────────────────────────────────────────────
 function updateDriverPosition(lat, lng, accuracy, orderId) {
