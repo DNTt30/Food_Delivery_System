@@ -7,9 +7,25 @@
 <main>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold mb-0">🛒 Đơn hàng sẵn sàng</h5>
-        <button class="btn btn-sm btn-light border rounded-pill" onclick="loadAvailableOrders()">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success rounded-pill d-none" id="acceptedCountBadge">0 đơn đã nhận</span>
+            <button class="btn btn-sm btn-light border rounded-pill" onclick="loadAvailableOrders()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Banner hiển thị số lượng đơn đã nhận -->
+    <div id="acceptedBanner" class="alert alert-success py-2 px-3 mb-3 rounded-3 border-0 d-none">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <i class="bi bi-check-circle-fill me-1"></i>
+                <strong>Đã nhận <span id="acceptedCount">0</span> đơn</strong>
+            </div>
+            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="goToDelivering()">
+                Bắt đầu giao <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Empty State -->
@@ -30,6 +46,7 @@
 
     <script th:inline="javascript">
         const token = localStorage.getItem('jwt_token');
+        let acceptedOrdersCount = 0;
 
         async function loadAvailableOrders() {
             document.getElementById('loading').classList.remove('d-none');
@@ -128,18 +145,71 @@
         async function acceptOrder(id) {
             if (!confirm(`Bạn muốn nhận đơn hàng #${id}?`)) return;
             try {
-                const res = await fetch(`/api/driver/orders/${id}/accept`, { 
-                    method: 'POST', 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const res = await fetch(`/api/driver/orders/${id}/accept`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const d = await res.json();
                 if (res.ok) {
+<<<<<<< Updated upstream
                     alert(d.message);
                     window.location.href = '/driver/delivering';
+=======
+                    toast(d.message || 'Đã nhận đơn thành công!', 'success');
+                    // CẢI TIẾN: Không chuyển hướng ngay - tăng counter và hiển thị banner
+                    acceptedOrdersCount++;
+                    updateAcceptedBanner();
+                    // Xóa card đơn đã nhận khỏi danh sách
+                    const card = btn.closest('.mobile-card');
+                    if (card) card.remove();
+                    // Nếu không còn đơn nào, tải lại danh sách
+                    const remainingCards = document.querySelectorAll('#orderList .mobile-card');
+                    if (remainingCards.length === 0) {
+                        loadAvailableOrders();
+                    }
+>>>>>>> Stashed changes
                 } else {
                     alert(d.error || 'Không thể nhận đơn');
                 }
+<<<<<<< Updated upstream
             } catch { alert('Lỗi kết nối'); }
+=======
+            } catch {
+                toast('Lỗi kết nối', 'danger');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> NHẬN ĐƠN NGAY';
+                }
+            }
+        }
+
+        function updateAcceptedBanner() {
+            const banner = document.getElementById('acceptedBanner');
+            const countBadge = document.getElementById('acceptedCountBadge');
+            const countSpan = document.getElementById('acceptedCount');
+
+            if (acceptedOrdersCount > 0) {
+                banner.classList.remove('d-none');
+                countBadge.classList.remove('d-none');
+                countBadge.textContent = `${acceptedOrdersCount} đơn đã nhận`;
+                countSpan.textContent = acceptedOrdersCount;
+            } else {
+                banner.classList.add('d-none');
+                countBadge.classList.add('d-none');
+            }
+        }
+
+        function goToDelivering() {
+            window.location.href = '/driver/delivering';
+        }
+
+        function toast(msg, type) {
+            const t = document.createElement('div');
+            t.className = `position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+            t.style.cssText = 'z-index:9999;border-radius:12px;min-width:220px;';
+            t.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${msg}</div></div>`;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
+>>>>>>> Stashed changes
         }
 
         window.onDriverStatusChange = function(isOnline) {

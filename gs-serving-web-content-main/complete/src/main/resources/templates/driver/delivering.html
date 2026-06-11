@@ -172,7 +172,7 @@
 
 <!-- Header -->
 <div class="page-header">
-    <h5>🛵 Chuyến giao hiện tại</h5>
+    <h5>🛵 Đơn đang giao <span id="totalOrdersBadge" class="badge bg-primary rounded-pill ms-2 d-none">0</span></h5>
     <button class="btn btn-sm btn-light border rounded-pill px-3"
             onclick="loadActiveDeliveries()" style="font-size:.8rem;">
         <i class="bi bi-arrow-clockwise"></i>
@@ -214,6 +214,23 @@
     </div>
 </div>
 
+<!-- Status Summary Banner -->
+<div id="statusSummary" class="alert alert-info py-2 px-3 mb-3 rounded-3 border-0 d-none">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3">
+            <div>
+                <span class="badge bg-warning text-dark rounded-pill">Chờ lấy: <span id="preparingCount">0</span></span>
+            </div>
+            <div>
+                <span class="badge bg-primary rounded-pill">Đang giao: <span id="deliveringCount">0</span></span>
+            </div>
+        </div>
+        <button id="batchPickupBtn" class="btn btn-sm btn-success rounded-pill px-3 d-none" onclick="batchPickup()">
+            <i class="bi bi-box-seam me-1"></i> Lấy tất cả hàng
+        </button>
+    </div>
+</div>
+
 <!-- MAP -->
 <div id="map-wrapper" class="d-none">
     <div id="driver-map"></div>
@@ -238,6 +255,7 @@
 
 <script>
 const token = localStorage.getItem('jwt_token');
+let currentOrders = [];
 let currentOrder = null;
 let driverMap = null;
 let driverMarker = null;
@@ -254,7 +272,7 @@ function makeIcon(url) {
 // ── Load data ──────────────────────────────────────────────────────
 async function loadActiveDeliveries() {
     show('loading'); hide('emptyState'); hide('phaseBanner'); hide('paymentBanner');
-    hide('map-wrapper'); hide('actionArea');
+    hide('map-wrapper'); hide('actionArea'); hide('statusSummary');
     document.getElementById('activeOrders').innerHTML = '';
 
     try {
@@ -268,7 +286,23 @@ async function loadActiveDeliveries() {
         if (!orders || orders.length === 0) {
             stopGPS(); show('emptyState'); return;
         }
+<<<<<<< Updated upstream
         currentOrder = orders[0];
+=======
+
+        // CẢI TIẾN: Hiển thị tất cả đơn hàng
+        currentOrders = orders;
+        currentOrder = orders[0]; // Vẫn giữ đơn đầu tiên cho map và GPS
+
+        // Cập nhật badge tổng số đơn
+        const totalBadge = document.getElementById('totalOrdersBadge');
+        totalBadge.textContent = orders.length;
+        totalBadge.classList.remove('d-none');
+
+        // Cập nhật status summary
+        updateStatusSummary(orders);
+
+>>>>>>> Stashed changes
         renderPaymentBanner(currentOrder);
         renderCards(orders);
         initMap(currentOrder);
@@ -282,6 +316,29 @@ async function loadActiveDeliveries() {
             `<div class="alert alert-danger rounded-3 text-center small">
                 <i class="bi bi-wifi-off me-1"></i>Lỗi kết nối: ${e.message}
              </div>`;
+    }
+}
+
+function updateStatusSummary(orders) {
+    const preparing = orders.filter(o => o.status === 'PREPARING').length;
+    const delivering = orders.filter(o => o.status === 'DELIVERING').length;
+
+    document.getElementById('preparingCount').textContent = preparing;
+    document.getElementById('deliveringCount').textContent = delivering;
+
+    const summaryBanner = document.getElementById('statusSummary');
+    const batchPickupBtn = document.getElementById('batchPickupBtn');
+
+    if (preparing > 0 || delivering > 0) {
+        summaryBanner.classList.remove('d-none');
+        // Chỉ hiện nút batch pickup nếu có đơn PREPARING
+        if (preparing > 0) {
+            batchPickupBtn.classList.remove('d-none');
+        } else {
+            batchPickupBtn.classList.add('d-none');
+        }
+    } else {
+        summaryBanner.classList.add('d-none');
     }
 }
 
@@ -341,11 +398,17 @@ function renderCards(orders) {
         const rLng = o.restaurantLng ?? 105.7402;
         const cLat = o.deliveryLat ?? 20.9685;
         const cLng = o.deliveryLng ?? 105.7451;
+        const statusBadge = o.status === 'PREPARING'
+            ? '<span class="badge bg-warning text-dark rounded-pill">Chờ lấy hàng</span>'
+            : '<span class="badge bg-primary rounded-pill">Đang giao</span>';
         return `
     <div class="step-card">
         <div class="d-flex justify-content-between align-items-center mb-1">
             <span class="step-label s1">① LẤY HÀNG</span>
-            <span style="font-size:.72rem;color:#94a3b8;">Đơn #${o.id}</span>
+            <div class="d-flex align-items-center gap-2">
+                ${statusBadge}
+                <span style="font-size:.72rem;color:#94a3b8;">Đơn #${o.id}</span>
+            </div>
         </div>
         <h6>${esc(o.restaurantName)}</h6>
         <div class="addr"><i class="bi bi-shop text-warning"></i>${esc(o.restaurantAddress)}</div>
@@ -579,6 +642,44 @@ function renderPhase(status) {
 }
 
 // ── Buttons ────────────────────────────────────────────────────────
+async function batchPickup() {
+    const preparingOrders = currentOrders.filter(o => o.status === 'PREPARING');
+    if (preparingOrders.length === 0) {
+        toast('Không có đơn nào chờ lấy hàng', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('batchPickupBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang cập nhật...';
+
+    try {
+        const orderIds = preparingOrders.map(o => o.id);
+        const res = await fetch('/api/driver/orders/batch-pickup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(orderIds)
+        });
+        const d = await res.json();
+        if (res.ok) {
+            toast(`✅ ${d.message}`, 'success');
+            // Reload dữ liệu
+            loadActiveDeliveries();
+        } else {
+            toast(d.error || 'Lỗi cập nhật', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-box-seam me-1"></i> Lấy tất cả hàng';
+        }
+    } catch (e) {
+        toast('Lỗi kết nối', 'danger');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-seam me-1"></i> Lấy tất cả hàng';
+    }
+}
+
 async function confirmPickedUp() {
     if (!currentOrder) return;
     if (!confirm(`Xác nhận đã lấy xong hàng tại ${currentOrder.restaurantName}?`)) return;
@@ -618,9 +719,15 @@ async function confirmComplete() {
             method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
         });
         if (res.ok) {
-            stopGPS();
             toast('🎉 Giao thành công! Đã cộng thu nhập vào ví.', 'success');
+<<<<<<< Updated upstream
             setTimeout(loadActiveDeliveries, 1500);
+=======
+            // CẢI TIẾN: Reload trang để hiển thị các đơn còn lại thay vì chuyển hướng ngay
+            setTimeout(() => {
+                loadActiveDeliveries();
+            }, 1000);
+>>>>>>> Stashed changes
         } else {
             const d = await res.json().catch(() => ({}));
             toast(d.error || 'Lỗi cập nhật', 'danger');

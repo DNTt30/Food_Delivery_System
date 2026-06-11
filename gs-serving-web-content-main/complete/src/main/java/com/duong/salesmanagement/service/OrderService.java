@@ -376,15 +376,23 @@ public class OrderService {
     public FoodOrder acceptOrderByDriver(Long orderId, DriverProfile driver) {
         FoodOrder order = foodOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+<<<<<<< Updated upstream
         if (order.getStatus() != OrderStatus.PREPARING)
             throw new RuntimeException("Đơn hàng chưa sẵn sàng để lấy");
         if (order.getDriver() != null)
             throw new RuntimeException("Đơn hàng đã được nhận bửi tài xế khác");
+=======
+        if (order.getDriver() != null || order.getStatus() != OrderStatus.PREPARING)
+            throw new RuntimeException("Đơn hàng không khả dụng để nhận");
+
+        // CẢI TIẾN: Cho phép driver nhận nhiều đơn trước khi xác nhận đi giao
+        // Không còn chặn driver nhận đơn khi đang có đơn đang giao
+
+>>>>>>> Stashed changes
         order.setDriver(driver);
         // Chặng 1: Driver đang đến nhà hàng — giữ nguyên status PREPARING
         // (sẽ chuyển sang DELIVERING khi Driver bấm "Đã lấy hàng")
-        driver.setAvailable(false);
-        driverProfileRepository.save(driver);
+        // Không set available=false để driver có thể tiếp tục nhận đơn khác
         FoodOrder saved = foodOrderRepository.save(order);
         broadcastOrderStatus(saved); // 🔔 Real-time WebSocket
 
@@ -415,6 +423,27 @@ public class OrderService {
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket
     }
 
+    /**
+     * CẢI TIẾN: Driver xác nhận đã lấy hàng nhiều đơn cùng lúc → chuyển tất cả sang DELIVERING
+     */
+    @Transactional
+    public List<FoodOrder> batchMarkAsPickedUp(List<Long> orderIds, DriverProfile driver) {
+        List<FoodOrder> pickedUpOrders = new java.util.ArrayList<>();
+        for (Long orderId : orderIds) {
+            FoodOrder order = foodOrderRepository.findById(orderId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng #" + orderId));
+            if (order.getDriver() == null || !order.getDriver().getId().equals(driver.getId()))
+                throw new RuntimeException("Không có quyền cập nhật đơn hàng #" + orderId);
+            if (order.getStatus() != OrderStatus.PREPARING)
+                throw new RuntimeException("Đơn hàng #" + orderId + " không ở trạng thái chờ lấy hàng");
+            order.setStatus(OrderStatus.DELIVERING);
+            FoodOrder saved = foodOrderRepository.save(order);
+            pickedUpOrders.add(saved);
+            broadcastOrderStatus(saved); // 🔔 Real-time WebSocket
+        }
+        return pickedUpOrders;
+    }
+
     @Transactional
     public void completeDelivery(Long orderId, DriverProfile driver) {
         FoodOrder order = foodOrderRepository.findById(orderId)
@@ -426,8 +455,32 @@ public class OrderService {
         order.setStatus(OrderStatus.COMPLETED);
         markCodPaymentCompletedIfNeeded(order);
         foodOrderRepository.save(order);
+<<<<<<< Updated upstream
         driver.setAvailable(true);
         driverProfileRepository.save(driver);
+=======
+
+        // Update soldCount for menu items
+        if (order.getOrderItems() != null) {
+            for (OrderItem item : order.getOrderItems()) {
+                MenuItem menuItem = item.getMenuItem();
+                if (menuItem != null) {
+                    int current = menuItem.getSoldCount() != null ? menuItem.getSoldCount() : 0;
+                    menuItem.setSoldCount(current + item.getQuantity());
+                    menuItemRepository.save(menuItem);
+                }
+            }
+        }
+
+        // CẢI TIẾN: Không tự động set available=true
+        // Driver có thể có nhiều đơn khác đang giao, chỉ set available khi không còn đơn nào
+        List<FoodOrder> remainingOrders = getDriverActiveDeliveries(driver);
+        if (remainingOrders.isEmpty()) {
+            driver.setAvailable(true);
+            driverProfileRepository.save(driver);
+        }
+
+>>>>>>> Stashed changes
         broadcastOrderStatus(order); // 🔔 Real-time WebSocket
 
         // 🔔 Notify Customer: đơn hoàn thành

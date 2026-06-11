@@ -50,7 +50,10 @@ public class DriverApiController {
         if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
         List<FoodOrder> all = orderService.getDriverHistory(driver);
-        long delivering = all.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERING).count();
+        // CẢI TIẾN: Đếm cả PREPARING và DELIVERING trong activeDeliveries
+        long activeDeliveries = all.stream()
+                .filter(o -> o.getStatus() == OrderStatus.PREPARING || o.getStatus() == OrderStatus.DELIVERING)
+                .count();
         long completed = all.stream().filter(o -> o.getStatus() == OrderStatus.COMPLETED).count();
         long available = orderService.getAvailableOrdersForDriver().size();
         double totalEarnings = all.stream()
@@ -59,7 +62,7 @@ public class DriverApiController {
                 .sum();
 
         return ResponseEntity.ok(Map.of(
-                "activeDeliveries", delivering,
+                "activeDeliveries", activeDeliveries,
                 "completedDeliveries", completed,
                 "availableOrders", available,
                 "totalEarnings", totalEarnings,
@@ -113,6 +116,23 @@ public class DriverApiController {
         }
     }
 
+    // CẢI TIẾN: Driver xác nhận đã lấy hàng nhiều đơn cùng lúc → chuyển tất cả sang DELIVERING
+    @PostMapping("/orders/batch-pickup")
+    public ResponseEntity<?> batchPickup(Authentication authentication, @RequestBody List<Long> orderIds) {
+        DriverProfile driver = getAuthenticatedDriver(authentication);
+        if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        try {
+            List<FoodOrder> pickedUpOrders = orderService.batchMarkAsPickedUp(orderIds, driver);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Đã lấy " + pickedUpOrders.size() + " đơn hàng! Bắt đầu giao đến khách.",
+                    "orderIds", pickedUpOrders.stream().map(FoodOrder::getId).collect(Collectors.toList())
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // UC-16: Hoàn thành giao hàng
     @PutMapping("/orders/{id}/complete")
     public ResponseEntity<?> completeDelivery(Authentication authentication, @PathVariable Long id) {
@@ -155,6 +175,12 @@ public class DriverApiController {
         DriverProfile driver = getAuthenticatedDriver(authentication);
         if (driver == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
+<<<<<<< Updated upstream
+=======
+        // CẢI TIẾN: Cho phép driver bật available bất kể đang có đơn hàng hay không
+        // Driver có thể nhận nhiều đơn trước khi xác nhận đi giao
+
+>>>>>>> Stashed changes
         driver.setAvailable(!driver.isAvailable());
         driverProfileRepository.save(driver);
         return ResponseEntity.ok(Map.of(
