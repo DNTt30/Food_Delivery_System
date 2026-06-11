@@ -674,9 +674,10 @@ function toggleMapFullscreen() {
         btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> Thu nhỏ';
         document.body.style.overflow = 'hidden';
     }
-    // Fix Leaflet kích thước sau transition
-    setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 50);
+    // Fix Leaflet kích thước sau transition (CSS transition là 0.25s -> chờ 300ms)
+    setTimeout(() => { if (driverMap) driverMap.invalidateSize(); }, 300);
 }
+
 
 // Đóng fullscreen khi bấm Escape
 document.addEventListener('keydown', e => {
