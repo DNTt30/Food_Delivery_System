@@ -184,18 +184,47 @@ public class CustomerApiController {
         return ResponseEntity.ok(categories);
     }
 
-    // UC: Lấy món ăn theo danh mục
+    // UC: Lấy món ăn theo danh mục — có fallback thông minh
     @GetMapping("/menu-items/category/{categoryId}")
     public ResponseEntity<?> getMenuItemsByCategory(@PathVariable Long categoryId) {
+        com.duong.salesmanagement.model.Category category =
+            categoryRepository.findById(categoryId).orElse(null);
+        if (category == null) return ResponseEntity.notFound().build();
+
+        // Buớc 1: Lấy món được gán trực tiếp vào category này
         List<MenuItem> menuItems = menuItemRepository.findByCategory_IdAndIsAvailableTrue(categoryId);
+        boolean isFallback = menuItems.isEmpty();
+
+        // Buớc 2: Nếu không có kết quả, fallback tìm theo tên category trong tên/mô tả món
+        if (isFallback) {
+            menuItems = menuItemRepository.findByNameOrDescriptionContainingIgnoreCaseAndIsAvailableTrue(
+                category.getName()
+            );
+        }
+
+        // Buớc 3: Map sang DTO, sắp xếp theo rating giảm dần
         List<MenuItemDTO> menuItemDTOs = menuItems.stream()
-                .filter(m -> m.getRestaurant() != null && m.getRestaurant().getUser() != null && m.getRestaurant().getUser().isEnabled())
+                .filter(m -> m.getRestaurant() != null && m.getRestaurant().getUser() != null
+                        && m.getRestaurant().getUser().isEnabled())
+                .sorted((a, b) -> Double.compare(
+                    b.getAverageRating() != null ? b.getAverageRating() : 0,
+                    a.getAverageRating() != null ? a.getAverageRating() : 0))
                 .map(m -> new MenuItemDTO(
-                    m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.getVideoUrl(), m.isAvailable(),
-                    m.getAverageRating(), m.getReviewCount(), m.getRestaurant() != null ? m.getRestaurant().getId() : null, m.getRestaurant() != null ? m.getRestaurant().getRestaurantName() : null,
-                    m.getCategory() != null ? m.getCategory().getId() : null, m.getCategory() != null ? m.getCategory().getName() : null
+                    m.getId(), m.getName(), m.getDescription(), m.getPrice(),
+                    m.getImageUrl(), m.getVideoUrl(), m.isAvailable(),
+                    m.getAverageRating(), m.getReviewCount(),
+                    m.getRestaurant() != null ? m.getRestaurant().getId() : null,
+                    m.getRestaurant() != null ? m.getRestaurant().getRestaurantName() : null,
+                    m.getCategory() != null ? m.getCategory().getId() : null,
+                    m.getCategory() != null ? m.getCategory().getName() : null
                 )).collect(Collectors.toList());
-        return ResponseEntity.ok(menuItemDTOs);
+
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("items", menuItemDTOs);
+        result.put("categoryName", category.getName());
+        result.put("isFallback", isFallback);
+        result.put("total", menuItemDTOs.size());
+        return ResponseEntity.ok(result);
     }
 
     // UC: Xem danh sách đánh giá của món ăn
