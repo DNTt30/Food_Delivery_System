@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.UUID;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,7 +31,6 @@ import com.duong.salesmanagement.config.MomoConfig;
 import com.duong.salesmanagement.config.VNPAYConfig;
 import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.OrderStatus;
-import com.duong.salesmanagement.model.PaymentMethod;
 import com.duong.salesmanagement.model.PaymentStatus;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
@@ -613,16 +611,18 @@ public class PaymentController {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
             RestTemplate restTemplate = new RestTemplate();
+            @SuppressWarnings("rawtypes")
             ResponseEntity<Map> momoResp = restTemplate.postForEntity(
                     momoConfig.getEndpoint(), entity, Map.class);
 
-            Map<?, ?> momoBody = momoResp.getBody();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> momoBody = (Map<String, Object>) momoResp.getBody();
             log.info("[MoMo] Response = {}", momoBody);
 
             if (momoBody != null && momoBody.containsKey("payUrl")) {
                 return ResponseEntity.ok(Map.of("paymentUrl", momoBody.get("payUrl")));
             } else {
-                String errMsg = momoBody != null ? String.valueOf(((Map<Object,Object>)(Map<?,?>)momoBody).getOrDefault("message", "Unknown")) : "No response";
+                String errMsg = momoBody != null ? String.valueOf(momoBody.getOrDefault("message", "Unknown")) : "No response";
                 log.error("[MoMo] Error: {}", errMsg);
                 return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                         .body(Map.of("error", "MoMo từ chối: " + errMsg));

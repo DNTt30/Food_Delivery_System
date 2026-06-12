@@ -12,4 +12,10 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
     List<MenuItem> findByRestaurant(RestaurantProfile restaurant);
     List<MenuItem> findByRestaurantAndIsAvailableTrue(RestaurantProfile restaurant);
     List<MenuItem> findTop10ByIsAvailableTrueOrderBySoldCountDesc();
+    
+    // Tìm kiếm theo tên và sắp xếp theo đánh giá giảm dần
+    List<MenuItem> findByNameContainingIgnoreCaseAndIsAvailableTrueOrderByAverageRatingDesc(String keyword);
+    
+    // Tìm kiếm theo danh mục
+    List<MenuItem> findByCategory_IdAndIsAvailableTrue(Long categoryId);
 }

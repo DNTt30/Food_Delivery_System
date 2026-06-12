@@ -69,6 +69,13 @@
         <!-- Menu -->
         <h5 class="fw-bold mb-3"><i class="bi bi-menu-button-wide-fill text-danger me-2"></i>Thực đơn</h5>
 
+        <!-- Category Pills (In-Restaurant) -->
+        <div class="category-scroll-wrapper mb-3 d-none" id="categoryFilterSection">
+            <div class="d-flex overflow-auto no-scrollbar gap-2 pb-2" id="restaurantCategoriesList">
+                <button class="btn btn-danger rounded-pill px-3 py-1 btn-sm fw-medium cat-filter-btn active" onclick="filterByCategory(null, this)">Tất cả</button>
+            </div>
+        </div>
+
         <!-- Menu search -->
         <div class="input-group mb-4">
             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
@@ -277,6 +284,7 @@
             localStorage.setItem('fd_restaurant_' + restaurantId, JSON.stringify({ id: data.id, name: data.name }));
 
             allMenuItems = data.menuItems || [];
+            renderCategoryPills(allMenuItems);
             renderMenu(allMenuItems);
 
         } catch (err) {
@@ -284,12 +292,74 @@
         }
     }
 
+    function renderCategoryPills(items) {
+        const catSection = document.getElementById('categoryFilterSection');
+        const catList = document.getElementById('restaurantCategoriesList');
+        if (!catSection || !catList || items.length === 0) return;
+
+        // Extract unique categories
+        const categories = {};
+        items.forEach(item => {
+            if (item.categoryId && item.categoryName) {
+                categories[item.categoryId] = item.categoryName;
+            }
+        });
+
+        const catIds = Object.keys(categories);
+        if (catIds.length === 0) return; // No categories found
+
+        catSection.classList.remove('d-none');
+        
+        // Reset list with "Tất cả"
+        catList.innerHTML = `<button class="btn btn-danger rounded-pill px-3 py-1 btn-sm fw-medium cat-filter-btn active" onclick="filterByCategory(null, this)">Tất cả</button>`;
+        
+        catIds.forEach(id => {
+            const name = categories[id];
+            catList.insertAdjacentHTML('beforeend', 
+                `<button class="btn btn-outline-danger rounded-pill px-3 py-1 btn-sm fw-medium cat-filter-btn" onclick="filterByCategory(${id}, this)">${name}</button>`
+            );
+        });
+    }
+
+    let currentCategoryId = null;
+
+    function filterByCategory(categoryId, btnEl) {
+        currentCategoryId = categoryId;
+        
+        // Update UI
+        document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+            btn.classList.remove('btn-danger', 'active');
+            btn.classList.add('btn-outline-danger');
+        });
+        if (btnEl) {
+            btnEl.classList.remove('btn-outline-danger');
+            btnEl.classList.add('btn-danger', 'active');
+        }
+
+        // Apply filters
+        applyFilters();
+    }
+
     function filterMenu(q) {
-        if (!q.trim()) { renderMenu(allMenuItems); return; }
-        const filtered = allMenuItems.filter(item =>
-            item.name.toLowerCase().includes(q.toLowerCase()) ||
-            (item.description && item.description.toLowerCase().includes(q.toLowerCase()))
-        );
+        // Just store the query if needed, or call applyFilters directly
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const q = document.getElementById('menuSearch').value.toLowerCase();
+        let filtered = allMenuItems;
+
+        if (currentCategoryId !== null) {
+            filtered = filtered.filter(item => item.categoryId == currentCategoryId);
+        }
+
+        if (q.trim() !== '') {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(q) ||
+                (item.description && item.description.toLowerCase().includes(q))
+            );
+        }
+
         renderMenu(filtered);
     }
 
@@ -308,6 +378,15 @@
             const img = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&h=200&fit=crop';
             const cartItems = getCart();
             const existingQty = cartItems.find(c => c.id === item.id)?.qty || 0;
+            
+            const ratingHtml = item.averageRating && item.averageRating > 0
+                ? `<div class="mb-1 text-warning small fw-semibold" style="cursor: pointer;" onclick="showItemReviewsModal(${item.id})" title="Xem đánh giá món ăn">
+                     <i class="bi bi-star-fill text-warning me-1"></i>${item.averageRating.toFixed(1)} (${item.reviewCount || 0} đánh giá)
+                   </div>`
+                : `<div class="mb-1 text-muted small" style="cursor: pointer;" onclick="showItemReviewsModal(${item.id})" title="Xem đánh giá món ăn">
+                     <i class="bi bi-star me-1"></i>Mới (Chưa có đánh giá)
+                   </div>`;
+
             const card = `
             <div class="col-12 col-sm-6">
                 <div class="card border-0 shadow-sm h-100 menu-card" style="border-radius:14px;overflow:hidden;">
@@ -315,6 +394,7 @@
                         <div class="p-3 flex-grow-1 d-flex flex-column justify-content-between">
                             <div style="${!item.isAvailable ? 'opacity: 0.5;' : ''}">
                                 <h6 class="fw-bold mb-1">${item.name}</h6>
+                                ${ratingHtml}
                                 <p class="text-muted small mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${item.description || 'Không có mô tả'}</p>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
@@ -392,6 +472,7 @@
 
     async function showReviewsModal() {
         const modal = new bootstrap.Modal(document.getElementById('reviewsModal'));
+        document.querySelector('#reviewsModal .modal-title').innerHTML = '<i class="bi bi-star-fill text-warning me-2"></i>Đánh giá nhà hàng';
         modal.show();
         const container = document.getElementById('reviewsContainer');
         container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-danger" role="status"></div></div>';
@@ -446,6 +527,67 @@
             container.innerHTML = html;
         } catch (e) {
             container.innerHTML = '<div class="text-center text-danger py-4">Lỗi tải đánh giá.</div>';
+        }
+    }
+
+    async function showItemReviewsModal(itemId) {
+        const item = allMenuItems.find(i => i.id === itemId);
+        if (!item) return;
+
+        const modal = new bootstrap.Modal(document.getElementById('reviewsModal'));
+        document.querySelector('#reviewsModal .modal-title').innerHTML = `<i class="bi bi-egg-fried text-danger me-2"></i>Đánh giá món: ${item.name}`;
+        modal.show();
+
+        const container = document.getElementById('reviewsContainer');
+        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-danger" role="status"></div></div>';
+
+        try {
+            const res = await fetch(`/api/customer/menu-items/${itemId}/reviews`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error();
+            const reviews = await res.json();
+
+            if (!reviews.length) {
+                container.innerHTML = '<div class="text-center text-muted py-4">Món ăn này chưa có đánh giá nào.</div>';
+                return;
+            }
+
+            let html = '';
+            reviews.forEach(rv => {
+                const date = new Date(rv.createdAt).toLocaleDateString('vi-VN');
+                const time = new Date(rv.createdAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'});
+                const stars = Array(5).fill(0).map((_, i) => 
+                    i < rv.rating ? '<i class="bi bi-star-fill text-warning"></i>' : '<i class="bi bi-star text-muted"></i>'
+                ).join('');
+                
+                const initial = rv.customerName ? rv.customerName.charAt(0).toUpperCase() : 'U';
+
+                const ratingLevelHtml = rv.ratingLevel ? `<span class="badge bg-light text-dark border ms-2" style="font-size: 0.75rem;">${rv.ratingLevel}</span>` : '';
+
+                html += `
+                <div class="border-bottom py-3">
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="bg-secondary bg-opacity-75 text-white rounded-circle d-flex align-items-center justify-content-center me-3 mt-1 shadow-sm" style="width: 42px; height: 42px; flex-shrink: 0; font-weight: bold; font-size: 1.2rem;">
+                            ${initial}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold fs-6 text-dark">${rv.customerName || 'Ẩn danh'}</span>
+                                <small class="text-muted" style="font-size: 0.8rem;">${time} - ${date}</small>
+                            </div>
+                            <div class="d-flex align-items-center gap-1" style="font-size:0.9rem">
+                                <div>${stars}</div>
+                                ${ratingLevelHtml}
+                            </div>
+                            <p class="mb-0 text-secondary mt-1" style="font-size:0.95rem; line-height: 1.5;">${rv.comment || '<em class="text-muted">Không có bình luận.</em>'}</p>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            container.innerHTML = '<div class="text-center text-danger py-4">Lỗi tải đánh giá món ăn.</div>';
         }
     }
 </script>

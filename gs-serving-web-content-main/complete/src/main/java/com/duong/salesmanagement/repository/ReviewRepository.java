@@ -84,4 +84,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
      */
     @Query("SELECT COUNT(r) FROM Review r WHERE r.order.restaurant.id = :restaurantId")
     Long countByRestaurantId(@Param("restaurantId") Long restaurantId);
+
+    /**
+     * ④ Lấy tất cả review của khách hàng, sắp xếp mới nhất trước (cho trang "Đánh giá của tôi")
+     */
+    List<Review> findByOrder_CustomerOrderByCreatedAtDesc(
+        com.duong.salesmanagement.model.CustomerProfile customer);
 }

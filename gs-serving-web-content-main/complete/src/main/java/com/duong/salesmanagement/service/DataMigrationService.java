@@ -4,8 +4,10 @@ import com.duong.salesmanagement.model.FoodOrder;
 import com.duong.salesmanagement.model.MenuItem;
 import com.duong.salesmanagement.model.OrderItem;
 import com.duong.salesmanagement.model.OrderStatus;
+import com.duong.salesmanagement.model.Category;
 import com.duong.salesmanagement.repository.MenuItemRepository;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
+import com.duong.salesmanagement.repository.CategoryRepository;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,17 @@ public class DataMigrationService {
 
     private final FoodOrderRepository foodOrderRepository;
     private final MenuItemRepository menuItemRepository;
+    private final CategoryRepository categoryRepository;
+    private final CategoryClassifierService categoryClassifierService;
 
-    public DataMigrationService(FoodOrderRepository foodOrderRepository, MenuItemRepository menuItemRepository) {
+    public DataMigrationService(FoodOrderRepository foodOrderRepository, 
+                                MenuItemRepository menuItemRepository,
+                                CategoryRepository categoryRepository,
+                                CategoryClassifierService categoryClassifierService) {
         this.foodOrderRepository = foodOrderRepository;
         this.menuItemRepository = menuItemRepository;
+        this.categoryRepository = categoryRepository;
+        this.categoryClassifierService = categoryClassifierService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -48,5 +57,28 @@ public class DataMigrationService {
             }
         }
         System.out.println("DataMigrationService: Backfilled sold count for " + salesCountMap.size() + " menu items.");
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void backfillCategories() {
+        // Find all menu items
+        List<MenuItem> allItems = menuItemRepository.findAll();
+        for (MenuItem item : allItems) {
+            Category classified = categoryClassifierService.classify(item.getName());
+            item.setCategory(classified);
+            menuItemRepository.save(item);
+        }
+        
+        // Clean up unused categories
+        List<Category> allCategories = categoryRepository.findAll();
+        for (Category cat : allCategories) {
+            boolean hasReference = menuItemRepository.findAll().stream()
+                    .anyMatch(m -> m.getCategory() != null && m.getCategory().getId().equals(cat.getId()));
+            if (!hasReference) {
+                categoryRepository.delete(cat);
+            }
+        }
+        System.out.println("DataMigrationService: Reclassified all menu items and cleaned up unused categories.");
     }
 }

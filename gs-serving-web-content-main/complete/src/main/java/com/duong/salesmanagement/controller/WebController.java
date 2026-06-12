@@ -111,4 +111,10 @@ public class WebController {
 
     @GetMapping("/admin/notifications")
     public String adminNotifications() { return "admin/notifications"; }
+
+    @GetMapping("/admin/reviews")
+    public String adminReviews() { return "admin/reviews"; }
+
+    @GetMapping("/customer/my-reviews")
+    public String customerMyReviews() { return "customer/history"; }
 }

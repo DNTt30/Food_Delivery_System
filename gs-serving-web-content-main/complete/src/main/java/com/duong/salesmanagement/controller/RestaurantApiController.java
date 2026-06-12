@@ -4,6 +4,7 @@ import com.duong.salesmanagement.model.*;
 import com.duong.salesmanagement.repository.*;
 import com.duong.salesmanagement.service.IOrderService;
 import com.duong.salesmanagement.service.ProfanityFilterService;
+import com.duong.salesmanagement.service.CategoryClassifierService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,9 @@ public class RestaurantApiController {
     private final com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository;
     private final com.duong.salesmanagement.service.NotificationService notificationService;
 
+    private final CategoryRepository categoryRepository;
+    private final CategoryClassifierService categoryClassifierService;
+
     public RestaurantApiController(UserRepository userRepository,
                                    RestaurantProfileRepository restaurantProfileRepository,
                                    MenuItemRepository menuItemRepository,
@@ -51,7 +55,9 @@ public class RestaurantApiController {
                                    com.duong.salesmanagement.repository.OrderTrackingLocationRepository trackingLocationRepository,
                                    com.duong.salesmanagement.service.NotificationService notificationService,
                                    ProfanityFilterService profanityFilterService,
-                                   com.duong.salesmanagement.service.ReviewService reviewService) {
+                                   com.duong.salesmanagement.service.ReviewService reviewService,
+                                   CategoryRepository categoryRepository,
+                                   CategoryClassifierService categoryClassifierService) {
         this.userRepository = userRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
@@ -63,6 +69,8 @@ public class RestaurantApiController {
         this.notificationService = notificationService;
         this.profanityFilterService = profanityFilterService;
         this.reviewService = reviewService;
+        this.categoryRepository = categoryRepository;
+        this.categoryClassifierService = categoryClassifierService;
     }
 
     // ================================================================
@@ -242,6 +250,12 @@ public class RestaurantApiController {
         if (dto.imageUrl != null)    item.setImageUrl(dto.imageUrl);
         if (dto.videoUrl != null)    item.setVideoUrl(dto.videoUrl);
         item.setAvailable(dto.isAvailable);
+        
+        if (dto.categoryId != null) {
+            categoryRepository.findById(dto.categoryId).ifPresent(item::setCategory);
+        } else if (item.getName() != null) {
+            item.setCategory(categoryClassifierService.classify(item.getName()));
+        }
     }
 
     // ================================================================

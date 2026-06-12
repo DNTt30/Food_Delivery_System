@@ -195,10 +195,13 @@ public class NotificationService {
     /** Gửi thông báo khi có đánh giá mới (cho Restaurant) */
     @Transactional
     public void notifyNewReview(User restaurantUser, Long orderId, int rating) {
-        String stars = "⭐".repeat(rating);
+        String stars = "⭐".repeat(Math.max(1, Math.min(rating, 5)));
+        String msg = orderId != null
+                ? "Bạn vừa nhận được đánh giá " + stars + " từ đơn #" + orderId + "."
+                : "Bạn vừa nhận được đánh giá " + stars + " cho một món ăn.";
         createNotification(restaurantUser,
                 "⭐ Đánh giá mới!",
-                "Bạn vừa nhận được đánh giá " + stars + " từ đơn #" + orderId + ".",
+                msg,
                 NotificationType.NEW_REVIEW, orderId);
     }
 

@@ -26,6 +26,7 @@ import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.model.Voucher;
 import com.duong.salesmanagement.repository.DriverProfileRepository;
 import com.duong.salesmanagement.repository.FoodOrderRepository;
+import com.duong.salesmanagement.repository.FoodReviewRepository;
 import com.duong.salesmanagement.repository.MenuItemRepository;
 import com.duong.salesmanagement.repository.OrderItemRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
@@ -41,6 +42,7 @@ public class OrderService implements IOrderService {
     private final OrderItemRepository orderItemRepository;
     private final MenuItemRepository menuItemRepository;
     private final ReviewRepository reviewRepository;
+    private final FoodReviewRepository foodReviewRepository;
     private final DriverProfileRepository driverProfileRepository;
     private final VoucherRepository voucherRepository;
     private final SimpMessagingTemplate messagingTemplate;
@@ -54,6 +56,7 @@ public class OrderService implements IOrderService {
                         OrderItemRepository orderItemRepository,
                         MenuItemRepository menuItemRepository,
                         ReviewRepository reviewRepository,
+                        FoodReviewRepository foodReviewRepository,
                         DriverProfileRepository driverProfileRepository,
                         VoucherRepository voucherRepository,
                         SimpMessagingTemplate messagingTemplate,
@@ -66,6 +69,7 @@ public class OrderService implements IOrderService {
         this.orderItemRepository = orderItemRepository;
         this.menuItemRepository = menuItemRepository;
         this.reviewRepository = reviewRepository;
+        this.foodReviewRepository = foodReviewRepository;
         this.driverProfileRepository = driverProfileRepository;
         this.voucherRepository = voucherRepository;
         this.messagingTemplate = messagingTemplate;
@@ -371,14 +375,14 @@ public class OrderService implements IOrderService {
         review.setCreatedAt(LocalDateTime.now());
         Review savedReview = reviewRepository.save(review);
 
-        // Cập nhật điểm đánh giá cho nhà hàng
+        // Cập nhật điểm đánh giá cho nhà hàng từ dữ liệu thực tế trong DB
         RestaurantProfile restaurant = order.getRestaurant();
-        int currentCount = (restaurant.getReviewCount() != null) ? restaurant.getReviewCount() : 0;
-        double currentAvg = (restaurant.getAverageRating() != null) ? restaurant.getAverageRating() : 0.0;
-
-        double newAvg = ((currentAvg * currentCount) + rating) / (currentCount + 1);
-        restaurant.setReviewCount(currentCount + 1);
-        restaurant.setAverageRating(Math.round(newAvg * 10.0) / 10.0);
+        Double avgRating = foodReviewRepository.getAverageRatingByRestaurantId(restaurant.getId());
+        Long count = foodReviewRepository.countByRestaurantId(restaurant.getId());
+        
+        restaurant.setReviewCount(count != null ? count.intValue() : 0);
+        restaurant.setAverageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+        restaurantProfileRepository.save(restaurant);
 
         // 🔔 Notify restaurant có đánh giá mới
         notificationService.notifyNewReview(

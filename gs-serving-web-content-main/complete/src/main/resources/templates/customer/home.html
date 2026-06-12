@@ -123,6 +123,19 @@
     .cat-pill span {
         font-size: 0.85rem;
         font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .cat-pill.active .cat-icon-wrapper {
+        background: var(--primary-gradient);
+        color: white;
+        transform: translateY(-8px);
+        box-shadow: var(--hover-shadow);
+    }
+
+    .cat-pill.active span {
+        color: #ff4b2b;
+        font-weight: 700;
     }
 
     /* Restaurant Card Enhancement */
@@ -234,6 +247,21 @@
         </div>
     </div>
 
+    <!-- Categories Section -->
+    <div class="mb-5 animate-up" style="animation-delay: 0.1s;">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <h4 class="fw-bold mb-0">🍔 Danh mục món ăn</h4>
+        </div>
+        <div class="d-flex gap-4 overflow-auto pb-3 no-scrollbar" id="categoriesList">
+            <!-- Skeletons for Categories -->
+            <div class="skeleton" style="min-width: 80px; height: 95px; border-radius: 20px;"></div>
+            <div class="skeleton" style="min-width: 80px; height: 95px; border-radius: 20px;"></div>
+            <div class="skeleton" style="min-width: 80px; height: 95px; border-radius: 20px;"></div>
+            <div class="skeleton" style="min-width: 80px; height: 95px; border-radius: 20px;"></div>
+            <div class="skeleton" style="min-width: 80px; height: 95px; border-radius: 20px;"></div>
+        </div>
+    </div>
+
     <!-- Top Selling Items -->
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-end mb-4">
@@ -248,6 +276,18 @@
             <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
             <div class="skeleton" style="min-width: 160px; height: 180px; border-radius: 16px;"></div>
         </div>
+    </div>
+
+    <!-- Global Search Title -->
+    <div id="globalSearchTitleSection" class="d-none mb-4">
+        <h3 class="fw-bold mb-0" id="globalSearchTitle"></h3>
+    </div>
+
+    <!-- Menu Items Grid (for search results) -->
+    <div id="menuItemsSection" class="d-none mb-5">
+        <h4 class="fw-bold mb-4" id="menuItemsTitle">🍔 Món ăn khớp với tìm kiếm</h4>
+        <div class="row g-4" id="menuItemsList"></div>
+        <hr class="mt-5 text-muted">
     </div>
 
     <!-- Section Header & Filters -->
@@ -326,12 +366,29 @@
 
             allRestaurants = await res.json();
             loading.classList.add('d-none');
-            renderRestaurants(allRestaurants);
 
-            const titleEl = document.getElementById('resultTitle');
-            if (searchQuery) {
-                titleEl.innerHTML = `Kết quả cho "<span class="text-danger">${searchQuery}</span>"`;
+            // Cập nhật giá trị hiển thị của select dropdown dựa trên ngữ cảnh tìm kiếm
+            const sortSelect = document.querySelector('select[onchange="sortRestaurants(this.value)"]');
+            if (sortSelect) {
+                if (searchQuery) {
+                    // Nếu có từ khóa tìm kiếm, mặc định sắp xếp theo Đánh giá cao
+                    sortSelect.value = 'rating';
+                }
+                sortRestaurants(sortSelect.value);
             } else {
+                renderRestaurants(allRestaurants);
+            }
+
+            const globalSearchTitleSection = document.getElementById('globalSearchTitleSection');
+            const globalSearchTitle = document.getElementById('globalSearchTitle');
+            const titleEl = document.getElementById('resultTitle');
+            
+            if (searchQuery) {
+                globalSearchTitleSection.classList.remove('d-none');
+                globalSearchTitle.innerHTML = `Kết quả cho "<span class="text-danger">${searchQuery}</span>"`;
+                titleEl.textContent = '🏪 Nhà hàng khớp với tìm kiếm';
+            } else {
+                globalSearchTitleSection.classList.add('d-none');
                 titleEl.textContent = 'Nhà hàng tiêu biểu';
             }
         } catch (err) {
@@ -340,6 +397,54 @@
                     <i class="bi bi-cloud-slash display-1 text-muted d-block mb-3"></i>
                     <h5 class="text-muted">Không thể kết nối với máy chủ</h5>
                 </div>`;
+        }
+    }
+
+    async function loadMenuItems(searchQuery) {
+        const section = document.getElementById('menuItemsSection');
+        const listEl = document.getElementById('menuItemsList');
+        
+        if (!searchQuery) {
+            section.classList.add('d-none');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/customer/menu-items/search?keyword=${encodeURIComponent(searchQuery)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+                const items = await res.json();
+                if (items.length > 0) {
+                    section.classList.remove('d-none');
+                    listEl.innerHTML = '';
+                    items.forEach((item, idx) => {
+                        const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+                        const ratingHtml = item.averageRating && item.averageRating > 0
+                            ? `<span class="res-rating"><i class="bi bi-star-fill me-1 text-warning"></i>${item.averageRating.toFixed(1)} (${item.reviewCount || 0})</span>`
+                            : `<span class="res-rating"><i class="bi bi-star me-1 text-warning"></i>Mới</span>`;
+                        const imgSrc = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop';
+                        
+                        const card = `
+                        <div class="col-lg-3 col-md-4 col-sm-6" style="animation-delay: ${idx * 0.05}s">
+                            <div class="card border-0 shadow-sm res-card" onclick="location.href='/customer/detail?id=${item.restaurantId || ''}'" style="cursor: pointer;">
+                                <img src="${imgSrc}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${item.name}">
+                                <div class="card-body p-3">
+                                    <h6 class="fw-bold mb-1 text-truncate">${item.name}</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <p class="text-danger fw-bold mb-0" style="font-size: 0.9rem;">${priceFmt}</p>
+                                        ${ratingHtml}
+                                    </div>
+                                    <small class="text-muted text-truncate d-block"><i class="bi bi-shop me-1"></i>${item.restaurantName || 'Nhà hàng'}</small>
+                                </div>
+                            </div>
+                        </div>`;
+                        listEl.insertAdjacentHTML('beforeend', card);
+                    });
+                } else {
+                    section.classList.add('d-none');
+                }
+            }
+        } catch (e) {
+            console.error("Error loading menu items search:", e);
         }
     }
 
@@ -404,34 +509,165 @@
         });
     }
 
+    let activeCategoryId = null;
+
+    async function loadCategories() {
+        const catContainer = document.getElementById('categoriesList');
+        if(!catContainer) return;
+        
+        try {
+            const res = await fetch('/api/customer/categories', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const categories = await res.json();
+                catContainer.innerHTML = '';
+                
+                const emojiMap = {
+                    "Đồ uống": "🥤",
+                    "Đồ ăn nhanh": "🍔",
+                    "Đồ ăn": "🍛",
+                    "Cơm": "🍚",
+                    "Phở": "🍜",
+                    "Trà chanh": "🍋",
+                    "Trà sữa": "🧋",
+                    "Bánh mì": "🥖",
+                    "Ăn vặt": "🍿",
+                    "Gà rán": "🍗",
+                    "Bánh ngọt": "🍰",
+                    "Mì": "🍝",
+                    "Lẩu": "🍲",
+                    "Burger": "🍔",
+                    "Pizza": "🍕"
+                };
+                
+                categories.forEach(cat => {
+                    const emoji = emojiMap[cat.name] || emojiMap[Object.keys(emojiMap).find(k => cat.name.includes(k))] || "🍽️";
+                    const itemHtml = `
+                        <div class="cat-pill" onclick="selectCategory(${cat.id}, '${cat.name}', this)">
+                            <div class="cat-icon-wrapper">
+                                <span>${emoji}</span>
+                            </div>
+                            <span>${cat.name}</span>
+                        </div>
+                    `;
+                    catContainer.insertAdjacentHTML('beforeend', itemHtml);
+                });
+            }
+        } catch (e) {
+            console.error("Error loading categories:", e);
+            catContainer.innerHTML = '<small class="text-muted">Không thể tải danh mục</small>';
+        }
+    }
+
+    async function selectCategory(categoryId, categoryName, el) {
+        if (activeCategoryId === categoryId) {
+            clearCategoryFilter();
+            return;
+        }
+
+        activeCategoryId = categoryId;
+
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        if (el) el.classList.add('active');
+
+        const section = document.getElementById('menuItemsSection');
+        const listEl = document.getElementById('menuItemsList');
+        const titleEl = document.getElementById('menuItemsTitle');
+
+        section.classList.remove('d-none');
+        listEl.innerHTML = `
+            <div class="col-12 text-center py-4">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+            </div>`;
+        
+        document.getElementById('searchInput').value = '';
+
+        try {
+            const res = await fetch(`/api/customer/menu-items/category/${categoryId}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            
+            if (res.ok) {
+                const items = await res.json();
+                listEl.innerHTML = '';
+                
+                if (items.length > 0) {
+                    titleEl.innerHTML = `🍔 Món ăn thuộc danh mục: <span class="text-danger">${categoryName}</span>`;
+                    
+                    items.forEach((item, idx) => {
+                        const priceFmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price);
+                        const ratingHtml = item.averageRating && item.averageRating > 0
+                            ? `<span class="res-rating"><i class="bi bi-star-fill me-1 text-warning"></i>${item.averageRating.toFixed(1)} (${item.reviewCount || 0})</span>`
+                            : `<span class="res-rating"><i class="bi bi-star me-1 text-warning"></i>Mới</span>`;
+                        const imgSrc = item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop';
+                        
+                        const card = `
+                        <div class="col-lg-3 col-md-4 col-sm-6 animate-up" style="animation-delay: ${idx * 0.05}s">
+                            <div class="card border-0 shadow-sm res-card" onclick="location.href='/customer/detail?id=${item.restaurantId || ''}'" style="cursor: pointer;">
+                                <img src="${imgSrc}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="${item.name}">
+                                <div class="card-body p-3">
+                                    <h6 class="fw-bold mb-1 text-truncate">${item.name}</h6>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <p class="text-danger fw-bold mb-0" style="font-size: 0.9rem;">${priceFmt}</p>
+                                        ${ratingHtml}
+                                    </div>
+                                    <small class="text-muted text-truncate d-block"><i class="bi bi-shop me-1"></i>${item.restaurantName || 'Nhà hàng'}</small>
+                                </div>
+                            </div>
+                        </div>`;
+                        listEl.insertAdjacentHTML('beforeend', card);
+                    });
+
+                    const restaurantIds = [...new Set(items.map(item => item.restaurantId))];
+                    const filteredRestaurants = allRestaurants.filter(r => restaurantIds.includes(r.id));
+                    renderRestaurants(filteredRestaurants);
+                    
+                    document.getElementById('resultTitle').textContent = `🏪 Nhà hàng phục vụ món "${categoryName}"`;
+                } else {
+                    titleEl.innerHTML = `🍔 Không tìm thấy món ăn thuộc danh mục: <span class="text-danger">${categoryName}</span>`;
+                    listEl.innerHTML = `
+                        <div class="col-12 text-center py-4">
+                            <p class="text-muted mb-0">Hiện chưa có món ăn nào thuộc danh mục này.</p>
+                        </div>`;
+                    renderRestaurants([]);
+                }
+            }
+        } catch (e) {
+            console.error("Error loading category items:", e);
+            listEl.innerHTML = `<div class="col-12 text-center text-danger py-4">Đã xảy ra lỗi khi tải dữ liệu</div>`;
+        }
+    }
+
+    function clearCategoryFilter() {
+        activeCategoryId = null;
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        document.getElementById('menuItemsSection').classList.add('d-none');
+        document.getElementById('resultTitle').textContent = 'Nhà hàng tiêu biểu';
+        renderRestaurants(allRestaurants);
+    }
+
     function doSearch() {
         const q = document.getElementById('searchInput').value.trim();
         loadRestaurants(q);
-        // Reset category pills visually
+        loadMenuItems(q);
+        activeCategoryId = null;
         document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
     }
 
     function clearSearch() {
         document.getElementById('searchInput').value = '';
+        const sortSelect = document.querySelector('select[onchange="sortRestaurants(this.value)"]');
+        if (sortSelect) {
+            sortSelect.value = 'default';
+        }
         loadRestaurants();
+        loadMenuItems('');
+        activeCategoryId = null;
         document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-    }
-
-    function doCategorySearch(keyword, el) {
-        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        if (el) el.classList.add('active');
-        
-        document.getElementById('searchInput').value = keyword;
-        loadRestaurants(keyword);
-    }
-
-    function filterRestaurants(filter, el) {
-        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        if (el) el.classList.add('active');
-
-        let filtered = [...allRestaurants];
-        if (filter === 'open') filtered = filtered.filter(r => r.isOpen);
-        renderRestaurants(filtered);
+        document.getElementById('resultTitle').textContent = 'Nhà hàng tiêu biểu';
     }
 
     async function loadTopItems() {
@@ -465,22 +701,31 @@
     }
 
     // Init
+    loadCategories();
     loadRestaurants();
     loadTopItems();
 
     function sortRestaurants(sortBy) {
         let sorted = [...allRestaurants];
-        if (sortBy === 'rating') sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        else if (sortBy === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
-        else if (sortBy === 'open') sorted.sort((a, b) => (b.isOpen ? 1 : 0) - (a.isOpen ? 1 : 0));
+        if (sortBy === 'rating') {
+            sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        } else if (sortBy === 'name') {
+            sorted.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortBy === 'open') {
+            sorted.sort((a, b) => {
+                if (a.isOpen !== b.isOpen) {
+                    return (b.isOpen ? 1 : 0) - (a.isOpen ? 1 : 0);
+                }
+                // Sắp xếp phụ theo rating giảm dần
+                return (b.rating || 0) - (a.rating || 0);
+            });
+        }
         renderRestaurants(sorted);
     }
 
     document.getElementById('searchInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') doSearch();
     });
-
-    loadRestaurants();
 </script>
 
 <style>

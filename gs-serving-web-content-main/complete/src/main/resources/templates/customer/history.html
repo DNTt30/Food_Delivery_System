@@ -22,10 +22,13 @@
 
     <!-- Filter tabs -->
     <div class="d-flex gap-2 mb-4 overflow-auto">
-        <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-status="ALL" onclick="filterOrders('ALL', this)">Tất cả</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PROCESSING" onclick="filterOrders('PROCESSING', this)">Đang xử lý</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="filterOrders('COMPLETED', this)">Hoàn thành</button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="CANCELLED" onclick="filterOrders('CANCELLED', this)">Đã hủy</button>
+        <button class="btn btn-dark btn-sm rounded-pill px-3 tab-btn active" data-status="ALL" onclick="switchTab('orders','ALL', this)">Tất cả</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="PROCESSING" onclick="switchTab('orders','PROCESSING', this)">Đang xử lý</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="COMPLETED" onclick="switchTab('orders','COMPLETED', this)">Hoàn thành</button>
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="CANCELLED" onclick="switchTab('orders','CANCELLED', this)">Đã hủy</button>
+        <button class="btn btn-outline-warning btn-sm rounded-pill px-3 tab-btn flex-shrink-0" data-status="MY_REVIEWS" onclick="switchTab('myreviews','MY_REVIEWS', this)">
+            <i class="bi bi-star-fill me-1 text-warning"></i>Đánh giá của tôi
+        </button>
     </div>
 
     <!-- Loading -->
@@ -43,6 +46,20 @@
         <h5 class="fw-bold mt-2">Chưa có đơn hàng nào</h5>
         <p class="text-muted">Hãy đặt món ngay hôm nay!</p>
         <a href="/customer/home" class="btn btn-danger rounded-pill px-4 mt-2">Đặt món ngay</a>
+    </div>
+
+    <!-- ④ My Reviews Panel -->
+    <div id="myReviewsPanel" class="d-none">
+        <div id="myReviewsLoading" class="text-center py-5">
+            <div class="spinner-border text-warning"></div>
+            <p class="text-muted mt-2">Đang tải đánh giá...</p>
+        </div>
+        <div id="myReviewsList"></div>
+        <div id="myReviewsEmpty" class="text-center py-5 d-none">
+            <div style="font-size:3.5rem">⭐</div>
+            <h5 class="fw-bold mt-2">Bạn chưa có đánh giá nào</h5>
+            <p class="text-muted">Hãy đặt món và chia sẻ trải nghiệm của bạn!</p>
+        </div>
     </div>
 </div>
 
@@ -70,6 +87,13 @@
                 <div class="mb-3">
                     <label class="fw-semibold mb-2">Nhận xét của bạn</label>
                     <textarea id="reviewComment" class="form-control" rows="3" placeholder="Chia sẻ trải nghiệm của bạn..."></textarea>
+                </div>
+                <hr id="foodReviewsDivider">
+                <div class="mb-3" id="foodReviewsSection">
+                    <label class="fw-semibold mb-2 d-block">Đánh giá món ăn trong đơn</label>
+                    <div id="foodReviewsList" class="d-flex flex-column gap-3">
+                        <!-- Dynamic list of items -->
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="fw-semibold mb-2">Hình ảnh đính kèm (Tùy chọn)</label>
@@ -143,6 +167,31 @@
             applyFilters();
         } catch {
             document.getElementById('loading').innerHTML = '<div class="text-center text-danger"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+        }
+    }
+
+    // ── Tab routing (orders vs my-reviews) ──
+    let currentTab = 'orders';
+
+    function switchTab(tab, status, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        currentTab = tab;
+
+        const ordersLoading = document.getElementById('loading');
+        const ordersPanel = document.getElementById('orderList');
+        const emptyState = document.getElementById('emptyState');
+        const reviewsPanel = document.getElementById('myReviewsPanel');
+
+        if (tab === 'myreviews') {
+            ordersLoading.classList.add('d-none');
+            ordersPanel.classList.add('d-none');
+            emptyState.classList.add('d-none');
+            reviewsPanel.classList.remove('d-none');
+            loadMyReviews();
+        } else {
+            reviewsPanel.classList.add('d-none');
+            filterOrders(status, null);
         }
     }
 
@@ -283,6 +332,9 @@
     }
 
     function openReview(orderId, restaurantName) {
+        const order = allOrders.find(o => o.id === orderId);
+        if (!order) return;
+
         document.getElementById('reviewOrderId').value = orderId;
         document.getElementById('reviewRestaurantName').textContent = restaurantName;
         document.querySelector('#reviewModal .modal-title').innerHTML = '<i class="bi bi-star-fill text-warning me-2"></i>Đánh giá đơn hàng';
@@ -303,10 +355,40 @@
         // Kích hoạt lại sự kiện click cho sao
         document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'auto');
         
+        // Render food reviews section
+        const foodSection = document.getElementById('foodReviewsSection');
+        const foodList = document.getElementById('foodReviewsList');
+        foodSection.classList.remove('d-none');
+        foodList.innerHTML = '';
+
+        if (order.items && order.items.length > 0) {
+            order.items.forEach(item => {
+                if (!item.menuItemId) return; // Skip if no ID
+                const row = `
+                <div class="food-item-review-row border rounded-3 p-3 bg-light" data-item-id="${item.menuItemId}">
+                    <div class="fw-bold mb-1" style="font-size: 0.95rem;"><i class="bi bi-egg-fried me-1 text-danger"></i>${item.itemName}</div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="d-flex gap-2 item-star-rating" data-item-id="${item.menuItemId}" data-val="0">
+                            <i class="bi bi-star fs-3 text-warning item-star" data-val="1" onclick="selectItemStar(${item.menuItemId}, 1)" style="cursor:pointer;"></i>
+                            <i class="bi bi-star fs-3 text-warning item-star" data-val="2" onclick="selectItemStar(${item.menuItemId}, 2)" style="cursor:pointer;"></i>
+                            <i class="bi bi-star fs-3 text-warning item-star" data-val="3" onclick="selectItemStar(${item.menuItemId}, 3)" style="cursor:pointer;"></i>
+                            <i class="bi bi-star fs-3 text-warning item-star" data-val="4" onclick="selectItemStar(${item.menuItemId}, 4)" style="cursor:pointer;"></i>
+                            <i class="bi bi-star fs-3 text-warning item-star" data-val="5" onclick="selectItemStar(${item.menuItemId}, 5)" style="cursor:pointer;"></i>
+                        </div>
+                        <span class="badge bg-light text-dark border item-rating-level d-none" id="level-label-${item.menuItemId}" style="font-size: 0.75rem;"></span>
+                    </div>
+                    <input type="text" class="form-control form-control-sm item-comment" placeholder="Nhận xét món ăn này... (Tùy chọn)">
+                </div>`;
+                foodList.insertAdjacentHTML('beforeend', row);
+            });
+        } else {
+            foodSection.classList.add('d-none');
+        }
+
         reviewModalInstance.show();
     }
 
-    function viewReview(orderId) {
+    async function viewReview(orderId) {
         const order = allOrders.find(o => o.id === orderId);
         if (!order || !order.isReviewed) return;
 
@@ -322,7 +404,74 @@
         // Vô hiệu hóa sự kiện click cho sao khi ở chế độ xem
         document.querySelectorAll('.star').forEach(s => s.style.pointerEvents = 'none');
         
+        // Reset image preview in view mode
+        document.getElementById('reviewImageFile').value = '';
+        document.getElementById('imageUploadProgress').innerHTML = '';
+        document.getElementById('imagePreviewContainer').classList.add('d-none');
+        
+        // Render food reviews section in read-only mode
+        const foodSection = document.getElementById('foodReviewsSection');
+        const foodList = document.getElementById('foodReviewsList');
+        foodSection.classList.remove('d-none');
+        foodList.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-warning" role="status"></div> Đang tải đánh giá món ăn...</div>';
+
         reviewModalInstance.show();
+
+        if (order.items && order.items.length > 0) {
+            let html = '';
+            for (const item of order.items) {
+                if (!item.menuItemId) continue;
+                let rating = 0;
+                let comment = '';
+                try {
+                    const res = await fetch(`/api/customer/menu-items/${item.menuItemId}/reviews`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const reviews = await res.json();
+                        // Find the review by current user (username)
+                        const myUser = localStorage.getItem('username');
+                        const myReview = reviews.find(r => r.customerName === myUser);
+                        if (myReview) {
+                            rating = myReview.rating;
+                            comment = myReview.comment || '';
+                        }
+                    }
+                } catch (e) {
+                    console.error("Lỗi khi tải đánh giá món ăn:", e);
+                }
+
+                const starsHtml = Array(5).fill(0).map((_, i) => {
+                    const val = i + 1;
+                    return val <= rating
+                        ? `<i class="bi bi-star-fill fs-3 text-warning item-star" data-val="${val}"></i>`
+                        : `<i class="bi bi-star fs-3 text-warning item-star" data-val="${val}"></i>`;
+                }).join(' ');
+
+                // Ánh xạ số sao sang nhãn mức độ đánh giá tĩnh
+                let ratingLevelText = '';
+                if (rating === 5) ratingLevelText = 'Rất ngon';
+                else if (rating === 4) ratingLevelText = 'Ngon';
+                else if (rating === 3) ratingLevelText = 'Tạm được';
+                else if (rating === 2) ratingLevelText = 'Tệ';
+                else if (rating === 1) ratingLevelText = 'Rất tệ';
+
+                html += `
+                <div class="food-item-review-row border rounded-3 p-3 bg-light" data-item-id="${item.menuItemId}">
+                    <div class="fw-bold mb-1" style="font-size: 0.95rem;"><i class="bi bi-egg-fried me-1 text-danger"></i>${item.itemName}</div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="d-flex gap-2 item-star-rating" data-item-id="${item.menuItemId}" data-val="${rating}" style="pointer-events: none;">
+                            ${starsHtml}
+                        </div>
+                        ${ratingLevelText ? `<span class="badge bg-light text-dark border" style="font-size: 0.75rem;">${ratingLevelText}</span>` : ''}
+                    </div>
+                    <input type="text" class="form-control form-control-sm item-comment" value="${comment || 'Không có nhận xét'}" disabled readonly>
+                </div>`;
+            }
+            foodList.innerHTML = html;
+        } else {
+            foodSection.classList.add('d-none');
+        }
     }
 
     function selectStar(val) {
@@ -331,6 +480,34 @@
             const v = parseInt(s.dataset.val);
             s.className = v <= val ? 'bi bi-star-fill fs-2 text-warning star' : 'bi bi-star fs-2 text-warning star';
         });
+    }
+
+    function selectItemStar(itemId, val) {
+        const container = document.querySelector(`.item-star-rating[data-item-id="${itemId}"]`);
+        if (!container || container.style.pointerEvents === 'none') return;
+        container.dataset.val = val;
+        container.querySelectorAll('.item-star').forEach(s => {
+            const v = parseInt(s.dataset.val);
+            s.className = v <= val ? 'bi bi-star-fill fs-3 text-warning item-star' : 'bi bi-star fs-3 text-warning item-star';
+        });
+
+        // Cập nhật nhãn mức độ đánh giá động
+        const levels = {
+            1: 'Rất tệ',
+            2: 'Tệ',
+            3: 'Tạm được',
+            4: 'Ngon',
+            5: 'Rất ngon'
+        };
+        const labelEl = document.getElementById(`level-label-${itemId}`);
+        if (labelEl) {
+            if (val > 0) {
+                labelEl.textContent = levels[val];
+                labelEl.classList.remove('d-none');
+            } else {
+                labelEl.classList.add('d-none');
+            }
+        }
     }
 
     document.getElementById('reviewImageFile').addEventListener('change', async function() {
@@ -383,6 +560,30 @@
             const data = await res.json();
             const alertEl = document.getElementById('reviewAlert');
             if (res.ok) {
+                // Submit food reviews
+                const rows = document.querySelectorAll('.food-item-review-row');
+                const foodPromises = [];
+                rows.forEach(row => {
+                    const itemId = row.dataset.itemId;
+                    const ratingContainer = row.querySelector('.item-star-rating');
+                    const ratingVal = parseInt(ratingContainer.dataset.val || '0');
+                    const commentVal = row.querySelector('.item-comment').value.trim();
+                    
+                    if (ratingVal > 0) {
+                        foodPromises.push(
+                            fetch(`/api/customer/menu-items/${itemId}/reviews`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ rating: ratingVal, comment: commentVal })
+                            })
+                        );
+                    }
+                });
+
+                if (foodPromises.length > 0) {
+                    await Promise.all(foodPromises);
+                }
+
                 alertEl.className = 'alert alert-success';
                 alertEl.textContent = '✅ Cảm ơn bạn đã đánh giá!';
                 setTimeout(() => { reviewModalInstance.hide(); loadOrders(); }, 1500);
@@ -390,13 +591,95 @@
                 alertEl.className = 'alert alert-danger';
                 alertEl.textContent = data.error || 'Gửi đánh giá thất bại';
             }
-        } catch { alert('Lỗi kết nối!'); }
+        } catch (e) {
+            console.error("Lỗi khi gửi đánh giá:", e);
+            alert('Lỗi kết nối!');
+        }
         finally { btn.disabled = false; }
     }
 
     function reorder(orderId) {
         const order = allOrders.find(o => o.id === orderId);
         if (order) alert('Tính năng đặt lại sẽ sớm được ra mắt!');
+    }
+
+    // ④ Load My Reviews
+    async function loadMyReviews() {
+        const loading = document.getElementById('myReviewsLoading');
+        const list = document.getElementById('myReviewsList');
+        const empty = document.getElementById('myReviewsEmpty');
+        loading.classList.remove('d-none');
+        list.innerHTML = '';
+        empty.classList.add('d-none');
+        try {
+            const res = await fetch('/api/customer/my-reviews', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) throw new Error();
+            const reviews = await res.json();
+            loading.classList.add('d-none');
+            if (!reviews.length) {
+                empty.classList.remove('d-none');
+                return;
+            }
+            const stars = n => '⭐'.repeat(Math.max(0, Math.min(5, n)));
+            list.innerHTML = reviews.map(r => `
+            <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 align-items-start">
+                        <img src="${r.restaurantImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop'}"
+                             class="rounded-3 flex-shrink-0" style="width:60px;height:60px;object-fit:cover;"
+                             onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=80&h=80&fit=crop'">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0">${r.restaurantName}</h6>
+                                    <small class="text-muted">Đơn #${r.orderId} • ${r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : ''}</small>
+                                </div>
+                                <span class="text-warning fw-semibold">${stars(r.rating)} <span class="text-muted small">(${r.rating} sao)</span></span>
+                            </div>
+                            <p class="mt-2 mb-1 text-dark">${r.comment || '<em class="text-muted">Không có nhận xét</em>'}</p>
+                            ${r.restaurantReply ? `
+                            <div class="bg-light rounded-3 px-3 py-2 mt-2 border-start border-3 border-success">
+                                <small class="text-success fw-semibold">💬 Phản hồi từ nhà hàng:</small>
+                                <p class="mb-0 small mt-1">${r.restaurantReply}</p>
+                            </div>` : ''}
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnHelpful-${r.id}" onclick="voteHelpful(${r.id})">
+                                    <i class="bi bi-hand-thumbs-up me-1"></i>Hữu ích
+                                    <span class="badge bg-secondary ms-1" id="helpfulCount-${r.id}">${r.helpfulCount || 0}</span>
+                                </button>
+                                ${r.imageUrl ? `<img src="${r.imageUrl}" class="rounded-3" style="height:50px;width:70px;object-fit:cover;">` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`).join('');
+        } catch {
+            loading.innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi tải đánh giá</div>';
+        }
+    }
+
+    // ① Vote hữu ích
+    async function voteHelpful(reviewId) {
+        const btn = document.getElementById('btnHelpful-' + reviewId);
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch(`/api/customer/reviews/${reviewId}/helpful`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const countEl = document.getElementById('helpfulCount-' + reviewId);
+                if (countEl) countEl.textContent = data.helpfulCount;
+                if (btn) {
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-secondary');
+                    btn.innerHTML = '<i class="bi bi-hand-thumbs-up-fill me-1"></i>Đã đánh dấu <span class="badge bg-light text-dark ms-1">' + data.helpfulCount + '</span>';
+                }
+            }
+        } catch { if (btn) btn.disabled = false; }
     }
 
     // ── Chat: Polling Chat System ──────────────────────────────

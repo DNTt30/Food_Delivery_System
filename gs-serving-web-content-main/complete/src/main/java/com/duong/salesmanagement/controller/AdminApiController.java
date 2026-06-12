@@ -619,4 +619,64 @@ public class AdminApiController {
         public String message;
         public String targetAudience;
     }
+
+    // ② Admin quản lý đánh giá vi phạm
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews(Authentication authentication,
+            @RequestParam(defaultValue = "all") String filter) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        List<Review> reviews = reviewRepository.findAll(
+            org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+
+        if ("flagged".equalsIgnoreCase(filter)) {
+            reviews = reviews.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getHasInappropriateWords()))
+                .collect(Collectors.toList());
+        } else if ("clean".equalsIgnoreCase(filter)) {
+            reviews = reviews.stream()
+                .filter(r -> !Boolean.TRUE.equals(r.getHasInappropriateWords()))
+                .collect(Collectors.toList());
+        }
+
+        List<Map<String, Object>> result = reviews.stream().map(r -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", r.getId());
+            m.put("orderId", r.getOrder().getId());
+            m.put("customerName", r.getOrder().getCustomer().getUser().getFullName());
+            m.put("restaurantName", r.getOrder().getRestaurant().getRestaurantName());
+            m.put("rating", r.getRating());
+            m.put("comment", r.getComment());
+            m.put("originalComment", r.getOriginalComment());
+            m.put("hasInappropriateWords", Boolean.TRUE.equals(r.getHasInappropriateWords()));
+            m.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : "");
+            m.put("helpfulCount", r.getHelpfulCount() != null ? r.getHelpfulCount() : 0);
+            m.put("restaurantReply", r.getRestaurantReply());
+            return m;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteReview(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Review review = reviewRepository.findById(id).orElse(null);
+        if (review == null) return ResponseEntity.notFound().build();
+        reviewRepository.delete(review);
+        return ResponseEntity.ok(Map.of("message", "Đã xóa đánh giá"));
+    }
+
+    @PutMapping("/reviews/{id}/approve")
+    public ResponseEntity<?> approveReview(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Review review = reviewRepository.findById(id).orElse(null);
+        if (review == null) return ResponseEntity.notFound().build();
+        review.setHasInappropriateWords(false);
+        // Khôi phục nội dung gốc nếu muốn
+        reviewRepository.save(review);
+        return ResponseEntity.ok(Map.of("message", "Đã duyệt đánh giá"));
+    }
 }

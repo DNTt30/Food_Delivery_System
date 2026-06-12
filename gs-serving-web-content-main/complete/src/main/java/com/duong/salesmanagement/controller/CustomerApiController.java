@@ -23,6 +23,9 @@ import com.duong.salesmanagement.model.Review;
 import com.duong.salesmanagement.model.Role;
 import com.duong.salesmanagement.model.User;
 import com.duong.salesmanagement.model.Voucher;
+import com.duong.salesmanagement.model.FoodReview;
+import com.duong.salesmanagement.model.Category;
+import com.duong.salesmanagement.dto.FoodReviewDTO;
 import com.duong.salesmanagement.repository.CustomerProfileRepository;
 import com.duong.salesmanagement.repository.MenuItemRepository;
 import com.duong.salesmanagement.repository.PaymentRepository;
@@ -30,6 +33,8 @@ import com.duong.salesmanagement.repository.RestaurantProfileRepository;
 import com.duong.salesmanagement.repository.ReviewRepository;
 import com.duong.salesmanagement.repository.UserRepository;
 import com.duong.salesmanagement.repository.VoucherRepository;
+import com.duong.salesmanagement.repository.FoodReviewRepository;
+import com.duong.salesmanagement.repository.CategoryRepository;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -46,6 +51,9 @@ public class CustomerApiController {
     private final IShippingCalculationService shippingCalculationService;
     private final com.duong.salesmanagement.service.GeocodingService geocodingService;
     private final PaymentRepository paymentRepository;
+    private final FoodReviewRepository foodReviewRepository;
+    private final CategoryRepository categoryRepository;
+    private final com.duong.salesmanagement.service.NotificationService notificationService;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
@@ -56,7 +64,10 @@ public class CustomerApiController {
                                  ReviewRepository reviewRepository,
                                  IShippingCalculationService shippingCalculationService,
                                  com.duong.salesmanagement.service.GeocodingService geocodingService,
-                                 PaymentRepository paymentRepository) {
+                                 PaymentRepository paymentRepository,
+                                 FoodReviewRepository foodReviewRepository,
+                                 CategoryRepository categoryRepository,
+                                 com.duong.salesmanagement.service.NotificationService notificationService) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
@@ -67,6 +78,9 @@ public class CustomerApiController {
         this.shippingCalculationService = shippingCalculationService;
         this.geocodingService = geocodingService;
         this.paymentRepository = paymentRepository;
+        this.foodReviewRepository = foodReviewRepository;
+        this.categoryRepository = categoryRepository;
+        this.notificationService = notificationService;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -133,7 +147,9 @@ public class CustomerApiController {
 
         List<MenuItem> menuItems = menuItemRepository.findByRestaurant(restaurant);
         List<MenuItemDTO> menuItemDTOs = menuItems.stream().map(m -> new MenuItemDTO(
-                m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.getVideoUrl(), m.isAvailable()
+                m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.getVideoUrl(), m.isAvailable(),
+                m.getAverageRating(), m.getReviewCount(), m.getRestaurant() != null ? m.getRestaurant().getId() : null, m.getRestaurant() != null ? m.getRestaurant().getRestaurantName() : null,
+                m.getCategory() != null ? m.getCategory().getId() : null, m.getCategory() != null ? m.getCategory().getName() : null
         )).collect(Collectors.toList());
 
         RestaurantDetailDTO detailDTO = new RestaurantDetailDTO(
@@ -147,6 +163,113 @@ public class CustomerApiController {
                 menuItemDTOs
         );
         return ResponseEntity.ok(detailDTO);
+    }
+
+    // UC: Tìm kiếm món ăn và sắp xếp theo đánh giá
+    @GetMapping("/menu-items/search")
+    public ResponseEntity<?> searchMenuItems(@RequestParam String keyword) {
+        List<MenuItem> menuItems = menuItemRepository.findByNameContainingIgnoreCaseAndIsAvailableTrueOrderByAverageRatingDesc(keyword);
+        List<MenuItemDTO> menuItemDTOs = menuItems.stream().map(m -> new MenuItemDTO(
+                m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.getVideoUrl(), m.isAvailable(),
+                m.getAverageRating(), m.getReviewCount(), m.getRestaurant() != null ? m.getRestaurant().getId() : null, m.getRestaurant() != null ? m.getRestaurant().getRestaurantName() : null,
+                m.getCategory() != null ? m.getCategory().getId() : null, m.getCategory() != null ? m.getCategory().getName() : null
+        )).collect(Collectors.toList());
+        return ResponseEntity.ok(menuItemDTOs);
+    }
+
+    // UC: Lấy tất cả danh mục món ăn
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        return ResponseEntity.ok(categories);
+    }
+
+    // UC: Lấy món ăn theo danh mục
+    @GetMapping("/menu-items/category/{categoryId}")
+    public ResponseEntity<?> getMenuItemsByCategory(@PathVariable Long categoryId) {
+        List<MenuItem> menuItems = menuItemRepository.findByCategory_IdAndIsAvailableTrue(categoryId);
+        List<MenuItemDTO> menuItemDTOs = menuItems.stream()
+                .filter(m -> m.getRestaurant() != null && m.getRestaurant().getUser() != null && m.getRestaurant().getUser().isEnabled())
+                .map(m -> new MenuItemDTO(
+                    m.getId(), m.getName(), m.getDescription(), m.getPrice(), m.getImageUrl(), m.getVideoUrl(), m.isAvailable(),
+                    m.getAverageRating(), m.getReviewCount(), m.getRestaurant() != null ? m.getRestaurant().getId() : null, m.getRestaurant() != null ? m.getRestaurant().getRestaurantName() : null,
+                    m.getCategory() != null ? m.getCategory().getId() : null, m.getCategory() != null ? m.getCategory().getName() : null
+                )).collect(Collectors.toList());
+        return ResponseEntity.ok(menuItemDTOs);
+    }
+
+    // UC: Xem danh sách đánh giá của món ăn
+    @GetMapping("/menu-items/{id}/reviews")
+    public ResponseEntity<?> getMenuItemReviews(@PathVariable Long id) {
+        MenuItem menuItem = menuItemRepository.findById(id).orElse(null);
+        if (menuItem == null) return ResponseEntity.notFound().build();
+
+        List<FoodReview> reviews = foodReviewRepository.findByMenuItemOrderByCreatedAtDesc(menuItem);
+        List<FoodReviewDTO> reviewDTOs = reviews.stream().map(r -> new FoodReviewDTO(
+                r.getId(),
+                r.getMenuItem().getId(),
+                r.getCustomer().getFullName() != null ? r.getCustomer().getFullName() : r.getCustomer().getUsername(),
+                r.getRating(),
+                r.getComment(),
+                r.getCreatedAt().toString(),
+                r.getRatingLevel()
+        )).collect(Collectors.toList());
+
+        return ResponseEntity.ok(reviewDTOs);
+    }
+
+    public static class FoodReviewRequest {
+        public Integer rating;
+        public String comment;
+    }
+
+    // UC: Đánh giá món ăn
+    @PostMapping("/menu-items/{id}/reviews")
+    public ResponseEntity<?> reviewMenuItem(Authentication authentication, @PathVariable Long id, @RequestBody FoodReviewRequest request) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        MenuItem menuItem = menuItemRepository.findById(id).orElse(null);
+        if (menuItem == null) return ResponseEntity.notFound().build();
+
+        if (request.rating == null || request.rating < 1 || request.rating > 5) {
+            return ResponseEntity.badRequest().body("Rating must be between 1 and 5");
+        }
+
+        // Tạo review mới
+        FoodReview review = new FoodReview();
+        review.setMenuItem(menuItem);
+        review.setCustomer(customer.getUser());
+        review.setRating(request.rating);
+        review.setComment(request.comment);
+        review.setRatingLevel(FoodReview.getRatingLevelDescription(request.rating));
+        foodReviewRepository.save(review);
+
+        // Tính toán lại averageRating cho MenuItem từ dữ liệu thực tế trong DB
+        Double avgRating = foodReviewRepository.getAverageRatingForMenuItem(menuItem.getId());
+        Long count = foodReviewRepository.countByMenuItemId(menuItem.getId());
+        
+        menuItem.setReviewCount(count != null ? count.intValue() : 0);
+        menuItem.setAverageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+        menuItemRepository.save(menuItem);
+
+        // Đồng bộ lại averageRating cho RestaurantProfile từ toàn bộ FoodReview
+        if (menuItem.getRestaurant() != null) {
+            RestaurantProfile restaurant = menuItem.getRestaurant();
+            Double restAvgRating = foodReviewRepository.getAverageRatingByRestaurantId(restaurant.getId());
+            Long restCount = foodReviewRepository.countByRestaurantId(restaurant.getId());
+            restaurant.setAverageRating(restAvgRating != null ? Math.round(restAvgRating * 10.0) / 10.0 : 0.0);
+            restaurant.setReviewCount(restCount != null ? restCount.intValue() : 0);
+            restaurantProfileRepository.save(restaurant);
+            // ③ Gửi thông báo đến nhà hàng khi có đánh giá món ăn mới
+            try {
+                if (restaurant.getUser() != null) {
+                    notificationService.notifyNewReview(restaurant.getUser(), null, request.rating);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Đánh giá món ăn thành công!"));
     }
 
     // UC-06.1: Xem đánh giá của nhà hàng
@@ -326,7 +449,7 @@ public class CustomerApiController {
         List<OrderSummaryDTO> dtos = orders.stream().map(o -> {
             List<OrderItemDTO> items = o.getOrderItems() == null ? List.of() :
                     o.getOrderItems().stream().map(oi -> new OrderItemDTO(
-                            oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
+                            oi.getMenuItem().getId(), oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
                     )).collect(Collectors.toList());
             
             // Tìm đánh giá cho đơn hàng này từ Map (O(1))
@@ -366,7 +489,7 @@ public class CustomerApiController {
 
         List<OrderItemDTO> items = order.getOrderItems() == null ? List.of() :
                 order.getOrderItems().stream().map(oi -> new OrderItemDTO(
-                        oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
+                        oi.getMenuItem().getId(), oi.getMenuItem().getName(), oi.getQuantity(), oi.getPriceAtTimeOfOrder()
                 )).collect(Collectors.toList());
 
         String driverName = (order.getDriver() != null) ? order.getDriver().getUser().getFullName() : null;
@@ -422,10 +545,53 @@ public class CustomerApiController {
 
         try {
             orderService.reviewOrder(id, customer, request.rating, request.comment, request.imageUrl);
+            // ③ Gửi thông báo đến nhà hàng khi có review mới
+            try {
+                com.duong.salesmanagement.model.FoodOrder order = orderService.getOrderById(id).orElse(null);
+                if (order != null && order.getRestaurant() != null && order.getRestaurant().getUser() != null) {
+                    notificationService.notifyNewReview(order.getRestaurant().getUser(), id, request.rating);
+                }
+            } catch (Exception ignored) {}
             return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã đánh giá!"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // ① Vote "Hữu ích" cho review
+    @PostMapping("/reviews/{id}/helpful")
+    public ResponseEntity<?> voteHelpful(Authentication authentication, @PathVariable Long id) {
+        if (authentication == null || !authentication.isAuthenticated())
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        Review review = reviewRepository.findById(id).orElse(null);
+        if (review == null) return ResponseEntity.notFound().build();
+        review.setHelpfulCount((review.getHelpfulCount() == null ? 0 : review.getHelpfulCount()) + 1);
+        reviewRepository.save(review);
+        return ResponseEntity.ok(Map.of("helpfulCount", review.getHelpfulCount()));
+    }
+
+    // ④ Lịch sử đánh giá của khách
+    @GetMapping("/my-reviews")
+    public ResponseEntity<?> getMyReviews(Authentication authentication) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        List<Review> reviews = reviewRepository.findByOrder_CustomerOrderByCreatedAtDesc(customer);
+        List<Map<String, Object>> result = reviews.stream().map(r -> {
+            Map<String, Object> map = new java.util.LinkedHashMap<>();
+            map.put("id", r.getId());
+            map.put("orderId", r.getOrder().getId());
+            map.put("restaurantName", r.getOrder().getRestaurant().getRestaurantName());
+            map.put("restaurantImage", r.getOrder().getRestaurant().getBannerUrl());
+            map.put("rating", r.getRating());
+            map.put("comment", r.getComment());
+            map.put("createdAt", r.getCreatedAt() != null ? r.getCreatedAt().toString() : "");
+            map.put("restaurantReply", r.getRestaurantReply());
+            map.put("helpfulCount", r.getHelpfulCount() != null ? r.getHelpfulCount() : 0);
+            map.put("imageUrl", r.getImageUrl());
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 
     // Lịch sử giao dịch
@@ -475,10 +641,22 @@ public class CustomerApiController {
         public String imageUrl;
         public String videoUrl;
         public boolean isAvailable;
+        public Double averageRating;
+        public Integer reviewCount;
+        public Long restaurantId;
+        public String restaurantName;
+        public Long categoryId;
+        public String categoryName;
 
-        public MenuItemDTO(Long id, String name, String description, Double price, String imageUrl, String videoUrl, boolean isAvailable) {
+        public MenuItemDTO(Long id, String name, String description, Double price, String imageUrl, String videoUrl, boolean isAvailable, Double averageRating, Integer reviewCount, Long restaurantId, String restaurantName, Long categoryId, String categoryName) {
             this.id = id; this.name = name; this.description = description;
             this.price = price; this.imageUrl = imageUrl; this.videoUrl = videoUrl; this.isAvailable = isAvailable;
+            this.averageRating = averageRating != null ? averageRating : 0.0;
+            this.reviewCount = reviewCount != null ? reviewCount : 0;
+            this.restaurantId = restaurantId;
+            this.restaurantName = restaurantName;
+            this.categoryId = categoryId;
+            this.categoryName = categoryName;
         }
     }
 
@@ -500,12 +678,13 @@ public class CustomerApiController {
     }
 
     public static class OrderItemDTO {
+        public Long menuItemId;
         public String itemName;
         public int quantity;
         public Double price;
 
-        public OrderItemDTO(String itemName, int quantity, Double price) {
-            this.itemName = itemName; this.quantity = quantity; this.price = price;
+        public OrderItemDTO(Long menuItemId, String itemName, int quantity, Double price) {
+            this.menuItemId = menuItemId; this.itemName = itemName; this.quantity = quantity; this.price = price;
         }
     }
 

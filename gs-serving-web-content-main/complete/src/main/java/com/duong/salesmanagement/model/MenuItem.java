@@ -25,6 +25,12 @@ public class MenuItem {
     private String videoUrl;
     private boolean isAvailable;
     private Integer soldCount = 0;
+    
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
+    
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
 
     public MenuItem() {}
 
@@ -48,4 +54,8 @@ public class MenuItem {
     public void setCategory(Category category) { this.category = category; }
     public Integer getSoldCount() { return soldCount; }
     public void setSoldCount(Integer soldCount) { this.soldCount = soldCount; }
+    public Double getAverageRating() { return averageRating; }
+    public void setAverageRating(Double averageRating) { this.averageRating = averageRating; }
+    public Integer getReviewCount() { return reviewCount; }
+    public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
 }

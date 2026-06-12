@@ -17,7 +17,7 @@ public class Main {
 
     @EventListener(ApplicationReadyEvent.class)
     public void printAppUrl() {
-        String url = "http://localhost:8080";
+        String url = "http://localhost:8080";   
         System.out.println();
         System.out.println("=======================================");
         System.out.println(" RUN AT:");

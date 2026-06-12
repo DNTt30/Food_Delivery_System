@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html th:replace="~{layouts/dashboard_layout :: layout(~{::title}, 'admin', ~{::main})}">
+<head>
+    <title>Admin - Quản lý Đánh giá</title>
+</head>
+<body>
+<main>
+<div th:replace="~{fragments/header :: dashboard_header('admin')}"></div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <small class="text-muted">Kiểm duyệt và xử lý các đánh giá từ khách hàng</small>
+    </div>
+    <button class="btn btn-outline-secondary rounded-pill px-3" onclick="loadReviews()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+    </button>
+</div>
+
+<!-- Filter Tabs -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <button id="btnAll" class="btn btn-danger btn-sm rounded-pill px-4 active-filter" onclick="setFilter('all', this)">
+        <i class="bi bi-list-ul me-1"></i>Tất cả
+    </button>
+    <button id="btnFlagged" class="btn btn-outline-secondary btn-sm rounded-pill px-4" onclick="setFilter('flagged', this)">
+        <i class="bi bi-flag-fill me-1 text-danger"></i>Vi phạm
+        <span id="flaggedCount" class="badge bg-danger ms-1 d-none">0</span>
+    </button>
+    <button id="btnClean" class="btn btn-outline-secondary btn-sm rounded-pill px-4" onclick="setFilter('clean', this)">
+        <i class="bi bi-shield-check me-1 text-success"></i>Bình thường
+    </button>
+</div>
+
+<!-- Stats Bar -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-3">
+            <div class="fs-3 fw-bold text-primary" id="statTotal">—</div>
+            <div class="small text-muted">Tổng đánh giá</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-3">
+            <div class="fs-3 fw-bold text-danger" id="statFlagged">—</div>
+            <div class="small text-muted">Vi phạm</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-3">
+            <div class="fs-3 fw-bold text-warning" id="statAvgRating">—</div>
+            <div class="small text-muted">Điểm TB hệ thống</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center py-3">
+            <div class="fs-3 fw-bold text-success" id="statClean">—</div>
+            <div class="small text-muted">Sạch</div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="text-center py-5">
+    <div class="spinner-border text-danger"></div>
+    <p class="text-muted mt-2">Đang tải đánh giá...</p>
+</div>
+
+<!-- Empty State -->
+<div id="emptyState" class="text-center py-5 d-none">
+    <div style="font-size:3rem">⭐</div>
+    <h6 class="fw-bold mt-2">Không có đánh giá nào</h6>
+    <p class="text-muted small">Chưa có đánh giá trong mục này.</p>
+</div>
+
+<!-- Reviews Table -->
+<div id="reviewsPanel" class="d-none">
+    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+        <div class="input-group" style="max-width:320px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="reviewSearch" class="form-control border-start-0" placeholder="Tìm theo tên khách, nhà hàng..." oninput="filterReviews()">
+        </div>
+        <select class="form-select" style="max-width:160px;" id="ratingFilter" onchange="filterReviews()">
+            <option value="0">Tất cả sao</option>
+            <option value="5">⭐⭐⭐⭐⭐ 5 sao</option>
+            <option value="4">⭐⭐⭐⭐ 4 sao</option>
+            <option value="3">⭐⭐⭐ 3 sao</option>
+            <option value="2">⭐⭐ 2 sao</option>
+            <option value="1">⭐ 1 sao</option>
+        </select>
+        <span class="ms-auto text-muted small" id="reviewCount">0 đánh giá</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle rounded-4 overflow-hidden shadow-sm">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Khách hàng</th>
+                    <th>Nhà hàng</th>
+                    <th>Sao</th>
+                    <th>Nội dung</th>
+                    <th>Trạng thái</th>
+                    <th>Thời gian</th>
+                    <th class="text-end">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="reviewTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="reviewDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-chat-square-text me-2 text-warning"></i>Chi tiết đánh giá</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Khách hàng</label>
+                        <p class="fw-semibold mb-0" id="mdCustomer"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Nhà hàng</label>
+                        <p class="fw-semibold mb-0" id="mdRestaurant"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Đơn hàng #</label>
+                        <p class="mb-0" id="mdOrderId"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Đánh giá</label>
+                        <p class="mb-0" id="mdStars"></p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Nội dung hiển thị (đã lọc)</label>
+                    <div class="p-3 bg-light rounded-3" id="mdComment"></div>
+                </div>
+                <div class="mb-3" id="mdOriginalBlock">
+                    <label class="text-muted small">Nội dung gốc (chưa lọc)</label>
+                    <div class="p-3 bg-warning-subtle rounded-3 border border-warning" id="mdOriginal"></div>
+                </div>
+                <div class="mb-3" id="mdReplyBlock">
+                    <label class="text-muted small">Phản hồi nhà hàng</label>
+                    <div class="p-3 bg-success-subtle rounded-3" id="mdReply"></div>
+                </div>
+                <div class="d-flex gap-2 mt-1" id="mdActions"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0">
+                <h6 class="modal-title fw-bold" id="confirmTitle">Xác nhận</h6>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p class="text-muted small" id="confirmMsg"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light btn-sm rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                <button class="btn btn-danger btn-sm rounded-pill px-3" id="confirmBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.active-filter { background: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
+.star-fill { color: #f59e0b; }
+.review-row:hover { background: #fafafa; cursor: pointer; }
+</style>
+
+<script>
+const token = localStorage.getItem('jwt_token');
+let allReviews = [], currentFilter = 'all';
+let confirmModal, reviewDetailModal, confirmAction;
+
+document.addEventListener('DOMContentLoaded', () => {
+    confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    reviewDetailModal = new bootstrap.Modal(document.getElementById('reviewDetailModal'));
+    document.getElementById('confirmBtn').onclick = () => { confirmModal.hide(); confirmAction && confirmAction(); };
+    loadReviews();
+});
+
+async function loadReviews() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('reviewsPanel').classList.add('d-none');
+    document.getElementById('emptyState').classList.add('d-none');
+    try {
+        const res = await fetch('/api/admin/reviews?filter=all', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
+        allReviews = res.ok ? await res.json() : [];
+        updateStats();
+        applyFilter();
+    } catch (e) {
+        document.getElementById('loading').innerHTML = '<div class="text-center text-danger py-4"><i class="bi bi-wifi-off fs-1 d-block mb-2"></i>Lỗi kết nối</div>';
+    }
+}
+
+function updateStats() {
+    const flagged = allReviews.filter(r => r.hasInappropriateWords);
+    const clean = allReviews.filter(r => !r.hasInappropriateWords);
+    const avgRating = allReviews.length ? (allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length) : 0;
+
+    document.getElementById('statTotal').textContent = allReviews.length;
+    document.getElementById('statFlagged').textContent = flagged.length;
+    document.getElementById('statClean').textContent = clean.length;
+    document.getElementById('statAvgRating').textContent = avgRating ? avgRating.toFixed(1) + '⭐' : '—';
+
+    if (flagged.length > 0) {
+        const badge = document.getElementById('flaggedCount');
+        badge.textContent = flagged.length;
+        badge.classList.remove('d-none');
+    }
+}
+
+function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.active-filter').forEach(b => {
+        b.classList.remove('active-filter');
+        b.className = b.className.replace('btn-danger', 'btn-outline-secondary');
+    });
+    btn.classList.add('active-filter');
+    btn.className = btn.className.replace('btn-outline-secondary', 'btn-danger');
+    applyFilter();
+}
+
+function applyFilter() {
+    let items = allReviews;
+    if (currentFilter === 'flagged') items = items.filter(r => r.hasInappropriateWords);
+    else if (currentFilter === 'clean') items = items.filter(r => !r.hasInappropriateWords);
+    renderReviews(items);
+}
+
+function filterReviews() {
+    const q = document.getElementById('reviewSearch').value.toLowerCase();
+    const starFilter = parseInt(document.getElementById('ratingFilter').value);
+    let items = allReviews;
+    if (currentFilter === 'flagged') items = items.filter(r => r.hasInappropriateWords);
+    else if (currentFilter === 'clean') items = items.filter(r => !r.hasInappropriateWords);
+    if (q) items = items.filter(r => (r.customerName||'').toLowerCase().includes(q) || (r.restaurantName||'').toLowerCase().includes(q));
+    if (starFilter > 0) items = items.filter(r => r.rating === starFilter);
+    renderReviews(items);
+}
+
+function renderReviews(reviews) {
+    document.getElementById('loading').classList.add('d-none');
+    document.getElementById('reviewCount').textContent = reviews.length + ' đánh giá';
+    if (!reviews.length) {
+        document.getElementById('emptyState').classList.remove('d-none');
+        document.getElementById('reviewsPanel').classList.add('d-none');
+        return;
+    }
+    document.getElementById('emptyState').classList.add('d-none');
+    document.getElementById('reviewsPanel').classList.remove('d-none');
+
+    const stars = n => '⭐'.repeat(Math.max(0, Math.min(5, n)));
+    const tbody = document.getElementById('reviewTableBody');
+    tbody.innerHTML = reviews.map(r => {
+        const flagBadge = r.hasInappropriateWords
+            ? '<span class="badge bg-danger-subtle text-danger border border-danger"><i class="bi bi-flag-fill me-1"></i>Vi phạm</span>'
+            : '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-shield-check me-1"></i>Sạch</span>';
+        const comment = (r.comment || '').length > 60 ? r.comment.substring(0, 60) + '...' : (r.comment || '—');
+        const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('vi-VN') : '—';
+        return `<tr class="review-row" onclick="showDetail(${r.id})">
+            <td class="text-muted small">#${r.id}</td>
+            <td class="fw-semibold">${r.customerName || '—'}</td>
+            <td class="text-muted small">${r.restaurantName || '—'}</td>
+            <td><span class="text-warning">${stars(r.rating)}</span></td>
+            <td class="text-muted small">${comment}</td>
+            <td>${flagBadge}</td>
+            <td class="text-muted small">${dateStr}</td>
+            <td class="text-end" onclick="event.stopPropagation()">
+                ${r.hasInappropriateWords
+                    ? `<button class="btn btn-sm btn-outline-success rounded-pill px-2 me-1" onclick="approveReview(${r.id})" title="Duyệt">
+                        <i class="bi bi-shield-check"></i>
+                       </button>`
+                    : ''}
+                <button class="btn btn-sm btn-outline-danger rounded-pill px-2" onclick="confirmDelete(${r.id})" title="Xóa">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function showDetail(id) {
+    const r = allReviews.find(x => x.id === id);
+    if (!r) return;
+    const stars = '⭐'.repeat(Math.max(0, Math.min(5, r.rating)));
+
+    document.getElementById('mdCustomer').textContent = r.customerName || '—';
+    document.getElementById('mdRestaurant').textContent = r.restaurantName || '—';
+    document.getElementById('mdOrderId').textContent = '#' + r.orderId;
+    document.getElementById('mdStars').innerHTML = `${stars} <span class="text-muted small">(${r.rating} sao)</span>`;
+    document.getElementById('mdComment').textContent = r.comment || '(Không có nội dung)';
+
+    const origBlock = document.getElementById('mdOriginalBlock');
+    if (r.originalComment && r.originalComment !== r.comment) {
+        document.getElementById('mdOriginal').textContent = r.originalComment;
+        origBlock.classList.remove('d-none');
+    } else {
+        origBlock.classList.add('d-none');
+    }
+
+    const replyBlock = document.getElementById('mdReplyBlock');
+    if (r.restaurantReply) {
+        document.getElementById('mdReply').textContent = r.restaurantReply;
+        replyBlock.classList.remove('d-none');
+    } else {
+        replyBlock.classList.add('d-none');
+    }
+
+    const actionsEl = document.getElementById('mdActions');
+    actionsEl.innerHTML = `
+        ${r.hasInappropriateWords
+            ? `<button class="btn btn-success btn-sm rounded-pill px-3" onclick="approveReview(${r.id}); reviewDetailModal.hide()">
+                <i class="bi bi-shield-check me-1"></i>Duyệt đánh giá này
+               </button>`
+            : ''}
+        <button class="btn btn-danger btn-sm rounded-pill px-3" onclick="confirmDelete(${r.id}); reviewDetailModal.hide()">
+            <i class="bi bi-trash3 me-1"></i>Xóa đánh giá
+        </button>`;
+
+    reviewDetailModal.show();
+}
+
+async function approveReview(id) {
+    try {
+        const res = await fetch(`/api/admin/reviews/${id}/approve`, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+            showToast('Đã duyệt đánh giá!', 'success');
+            const r = allReviews.find(x => x.id === id);
+            if (r) r.hasInappropriateWords = false;
+            updateStats();
+            applyFilter();
+        } else showToast('Lỗi duyệt!', 'danger');
+    } catch { showToast('Lỗi kết nối!', 'danger'); }
+}
+
+function confirmDelete(id) {
+    const r = allReviews.find(x => x.id === id);
+    confirmAction = async () => {
+        try {
+            const res = await fetch(`/api/admin/reviews/${id}`, {
+                method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (res.ok) {
+                showToast('Đã xóa đánh giá!', 'success');
+                allReviews = allReviews.filter(x => x.id !== id);
+                updateStats();
+                applyFilter();
+            } else showToast('Lỗi xóa!', 'danger');
+        } catch { showToast('Lỗi kết nối!', 'danger'); }
+    };
+    document.getElementById('confirmTitle').textContent = 'Xóa đánh giá';
+    document.getElementById('confirmMsg').textContent = `Xóa vĩnh viễn đánh giá từ "${r?.customerName || 'khách hàng'}"? Hành động này không thể hoàn tác!`;
+    document.getElementById('confirmBtn').textContent = 'Xóa ngay';
+    confirmModal.show();
+}
+
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = `position-fixed top-0 end-0 m-3 toast align-items-center text-bg-${type} border-0 show`;
+    t.style.zIndex = 9999;
+    t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div></div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+</script>
+</main>
+</body>
+</html>
