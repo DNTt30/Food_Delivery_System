@@ -21,7 +21,11 @@ public class DataInitializer {
                                       OrderItemRepository orderItemRepository,
                                       ReviewRepository reviewRepository,
                                       FoodReviewRepository foodReviewRepository,
-                                      CategoryRepository categoryRepository) {
+                                      CategoryRepository categoryRepository,
+                                      PaymentRepository paymentRepository,
+                                      ChatMessageRepository chatMessageRepository,
+                                      OrderTrackingLocationRepository orderTrackingLocationRepository,
+                                      NotificationRepository notificationRepository) {
         return args -> {
             try {
                 // Seed Categories
@@ -345,6 +349,9 @@ public class DataInitializer {
                                 if (orderItems != null && !orderItems.isEmpty()) {
                                     orderItemRepository.deleteAll(orderItems);
                                 }
+                                paymentRepository.findByOrder(o).ifPresent(paymentRepository::delete);
+                                chatMessageRepository.deleteAll(chatMessageRepository.findByOrderIdOrderByCreatedAtAsc(o.getId()));
+                                orderTrackingLocationRepository.deleteAll(orderTrackingLocationRepository.findByOrderIdOrderByTimestampAsc(o.getId()));
                                 foodOrderRepository.delete(o);
                             }
 
@@ -358,6 +365,7 @@ public class DataInitializer {
 
                             restaurantProfileRepository.delete(rp);
                         });
+                        notificationRepository.deleteByUser(u);
                         userRepository.delete(u);
                     });
                 }

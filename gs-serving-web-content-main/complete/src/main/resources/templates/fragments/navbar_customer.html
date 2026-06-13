@@ -267,7 +267,16 @@
             applyUserInfo(username);
         } else if (token) {
             fetch('/api/profile/me', { headers: { 'Authorization': 'Bearer ' + token } })
-                .then(r => r.ok ? r.json() : null)
+                .then(r => {
+                    if (r.status === 401 || r.status === 403) {
+                        localStorage.removeItem('jwt_token');
+                        localStorage.removeItem('username');
+                        localStorage.removeItem('role');
+                        window.location.href = '/common/auth';
+                        return null;
+                    }
+                    return r.ok ? r.json() : null;
+                })
                 .then(d => {
                     if (d) {
                         const name = d.fullName || d.username;

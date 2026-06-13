@@ -22,6 +22,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /** Tìm chưa đọc của user, sắp xếp mới nhất */
     List<Notification> findByUserAndReadFalseOrderByCreatedAtDesc(User user);
 
+    /** Xóa tất cả thông báo của user */
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.user = :user")
+    void deleteByUser(@Param("user") User user);
+
     /** Đánh dấu tất cả là đã đọc */
     @Modifying
     @Query("UPDATE Notification n SET n.read = true WHERE n.user = :user AND n.read = false")

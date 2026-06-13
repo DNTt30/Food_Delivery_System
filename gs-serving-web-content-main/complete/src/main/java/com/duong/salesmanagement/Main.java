@@ -25,6 +25,7 @@ public class Main {
         System.out.println("=======================================");
         System.out.println();
 
+
         // Tự động mở browser tại trang chủ
         try {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {

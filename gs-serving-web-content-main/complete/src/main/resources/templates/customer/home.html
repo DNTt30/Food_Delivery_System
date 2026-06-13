@@ -342,7 +342,12 @@
 
 <script>
     const token = localStorage.getItem('jwt_token');
-    if (!token) window.location.href = '/common/auth';
+    if (!token || token === 'null' || token === 'undefined') {
+        localStorage.removeItem('jwt_token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('role');
+        window.location.href = '/common/auth';
+    }
 
     let allRestaurants = [];
     let currentFilter = 'all';
@@ -362,7 +367,13 @@
                 : '/api/customer/restaurants';
 
             const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
-            if (res.status === 401) { window.location.href = '/common/auth'; return; }
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '/common/auth';
+                return;
+            }
 
             allRestaurants = await res.json();
             loading.classList.add('d-none');
@@ -411,6 +422,13 @@
 
         try {
             const res = await fetch(`/api/customer/menu-items/search?keyword=${encodeURIComponent(searchQuery)}`, { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '/common/auth';
+                return;
+            }
             if (res.ok) {
                 const items = await res.json();
                 if (items.length > 0) {
@@ -519,6 +537,13 @@
             const res = await fetch('/api/customer/categories', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '/common/auth';
+                return;
+            }
             if (res.ok) {
                 const categories = await res.json();
                 catContainer.innerHTML = '';
@@ -589,6 +614,13 @@
             const res = await fetch(`/api/customer/menu-items/category/${categoryId}`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '/common/auth';
+                return;
+            }
             
             if (res.ok) {
                 const data = await res.json();
@@ -659,6 +691,7 @@
             console.error("Error loading category items:", e);
             listEl.innerHTML = `<div class="col-12 text-center text-danger py-4">Đã xảy ra lỗi khi tải dữ liệu</div>`;
         }
+    }
 
     function clearCategoryFilter() {
         activeCategoryId = null;
@@ -694,6 +727,13 @@
         if(!topItemsContainer) return;
         try {
             const res = await fetch('/api/customer/top-items', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '/common/auth';
+                return;
+            }
             if (res.ok) {
                 const items = await res.json();
                 topItemsContainer.innerHTML = '';
