@@ -425,15 +425,28 @@ public class AdminApiController {
     public ResponseEntity<?> createVoucher(Authentication authentication, @RequestBody VoucherRequest req) {
         if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
-        if (voucherRepository.findByCode(req.code).isPresent())
-            return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher đã tồn tại"));
+        if (req.code == null || req.code.isBlank())
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher không được để trống"));
+
+        String code = req.code.trim().toUpperCase();
+        java.util.List<Voucher> existing = voucherRepository.findByCodeAndRestaurantIsNull(code);
+        boolean hasActive = existing.stream().anyMatch(v -> 
+            v.isActive() && (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(LocalDate.now()))
+        );
+        if (hasActive)
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher hệ thống đang tồn tại và hoạt động"));
 
         Voucher v = new Voucher();
-        v.setCode(req.code.toUpperCase());
+        v.setCode(code);
         v.setDiscountValue(req.discountValue);
         v.setDiscountType(req.discountType != null ? DiscountType.valueOf(req.discountType) : DiscountType.PERCENTAGE);
+        if (req.startDate != null && !req.startDate.isBlank())
+            v.setStartDate(LocalDate.parse(req.startDate));
         if (req.expiryDate != null && !req.expiryDate.isBlank())
             v.setExpirationDate(LocalDate.parse(req.expiryDate));
+        v.setMinOrderAmount(req.minOrderAmount);
+        v.setMaxDiscount(req.maxDiscount);
+        v.setDescription(req.description);
         v.setActive(req.active);
         voucherRepository.save(v);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo voucher thành công"));
@@ -446,15 +459,52 @@ public class AdminApiController {
 
         Voucher v = voucherRepository.findById(id).orElse(null);
         if (v == null) return ResponseEntity.notFound().build();
+        if (v.getRestaurant() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Admin chỉ được chỉnh sửa nội dung voucher toàn hệ thống. Voucher nhà hàng chỉ được bật/tắt hoặc xóa."));
+        }
 
-        if (req.code != null && !req.code.isBlank()) v.setCode(req.code.toUpperCase());
+        if (req.code != null && !req.code.isBlank()) {
+            String newCode = req.code.trim().toUpperCase();
+            if (!newCode.equals(v.getCode())) {
+                java.util.List<Voucher> existing = voucherRepository.findByCodeAndRestaurantIsNull(newCode);
+                boolean hasActive = existing.stream().anyMatch(ev -> 
+                    ev.isActive() && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(LocalDate.now()))
+                );
+                if (hasActive) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher hệ thống đang tồn tại và hoạt động"));
+                }
+                v.setCode(newCode);
+            }
+        }
         v.setDiscountValue(req.discountValue);
         if (req.discountType != null) v.setDiscountType(DiscountType.valueOf(req.discountType));
+        if (req.startDate != null && !req.startDate.isBlank())
+            v.setStartDate(LocalDate.parse(req.startDate));
+        else v.setStartDate(null);
         if (req.expiryDate != null && !req.expiryDate.isBlank())
             v.setExpirationDate(LocalDate.parse(req.expiryDate));
+        else v.setExpirationDate(null);
+        v.setMinOrderAmount(req.minOrderAmount);
+        v.setMaxDiscount(req.maxDiscount);
+        v.setDescription(req.description);
         v.setActive(req.active);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Cập nhật voucher thành công"));
+    }
+
+    @PatchMapping("/vouchers/{id}/toggle")
+    public ResponseEntity<?> toggleVoucher(Authentication authentication, @PathVariable Long id) {
+        if (!isAdmin(authentication)) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+
+        Voucher v = voucherRepository.findById(id).orElse(null);
+        if (v == null) return ResponseEntity.notFound().build();
+        v.setActive(!v.isActive());
+        voucherRepository.save(v);
+        return ResponseEntity.ok(Map.of(
+                "active", v.isActive(),
+                "message", v.isActive() ? "Đã bật voucher" : "Đã tắt voucher"
+        ));
     }
 
     @DeleteMapping("/vouchers/{id}")
@@ -471,8 +521,12 @@ public class AdminApiController {
         m.put("id", v.getId());
         m.put("code", v.getCode());
         m.put("discountValue", v.getDiscountValue());
-        m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENT");
+        m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENTAGE");
+        m.put("startDate", v.getStartDate() != null ? v.getStartDate().toString() : null);
         m.put("expiryDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : null);
+        m.put("minOrderAmount", v.getMinOrderAmount());
+        m.put("maxDiscount", v.getMaxDiscount());
+        m.put("description", v.getDescription());
         m.put("active", v.isActive());
         m.put("restaurantName", v.getRestaurant() != null ? v.getRestaurant().getRestaurantName() : null);
         m.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);

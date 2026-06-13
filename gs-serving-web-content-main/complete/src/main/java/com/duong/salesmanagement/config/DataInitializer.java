@@ -5,11 +5,16 @@ import com.duong.salesmanagement.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 import java.util.ArrayList;
 
 @Configuration
 public class DataInitializer {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Bean
     public CommandLineRunner initData(UserRepository userRepository, 
@@ -28,46 +33,81 @@ public class DataInitializer {
                                       NotificationRepository notificationRepository) {
         return args -> {
             try {
+                // Drop unique index on vouchers if exists
+                try {
+                    jdbcTemplate.execute("ALTER TABLE vouchers DROP INDEX UK30ftp2biebbvpik8e49wlmady");
+                    System.out.println("✅ Dropped UK30ftp2biebbvpik8e49wlmady from vouchers.");
+                } catch (Exception e) {
+                    // Index might not exist or already dropped, ignore
+                }
+
                 // Seed Categories
-                Category catTraChanh = categoryRepository.findAll().stream().filter(c -> c.getName().equalsIgnoreCase("Trà chanh")).findFirst().orElse(null);
-                if (catTraChanh == null) {
+                Category catCom, catTraSua, catDoUong, catAnVat, catTraChanh, catPhoBun, catDoAnNhanh;
+
+                if (categoryRepository.count() == 0) {
+                    System.out.println("🌱 Seeding Categories...");
                     catTraChanh = new Category();
                     catTraChanh.setName("Trà chanh");
                     catTraChanh.setDescription("Trà chanh tươi mát giải nhiệt");
                     catTraChanh = categoryRepository.save(catTraChanh);
-                }
 
-                Category catCom = categoryRepository.findAll().stream().filter(c -> c.getName().equalsIgnoreCase("Cơm")).findFirst().orElse(null);
-                if (catCom == null) {
                     catCom = new Category();
                     catCom.setName("Cơm");
                     catCom.setDescription("Các món cơm bình dân & gia đình");
                     catCom = categoryRepository.save(catCom);
-                }
 
-                Category catTraSua = categoryRepository.findAll().stream().filter(c -> c.getName().equalsIgnoreCase("Trà sữa")).findFirst().orElse(null);
-                if (catTraSua == null) {
                     catTraSua = new Category();
                     catTraSua.setName("Trà sữa");
                     catTraSua.setDescription("Trà sữa trân châu, thạch các loại");
                     catTraSua = categoryRepository.save(catTraSua);
-                }
 
-                Category catDoUong = categoryRepository.findAll().stream().filter(c -> c.getName().equalsIgnoreCase("Đồ uống")).findFirst().orElse(null);
-                if (catDoUong == null) {
                     catDoUong = new Category();
                     catDoUong.setName("Đồ uống");
                     catDoUong.setDescription("Cà phê, trà trái cây giải nhiệt");
                     catDoUong = categoryRepository.save(catDoUong);
-                }
 
-                Category catAnVat = categoryRepository.findAll().stream().filter(c -> c.getName().equalsIgnoreCase("Ăn vặt")).findFirst().orElse(null);
-                if (catAnVat == null) {
                     catAnVat = new Category();
                     catAnVat.setName("Ăn vặt");
                     catAnVat.setDescription("Bánh ngọt, bánh mì, đồ ăn nhẹ");
                     catAnVat = categoryRepository.save(catAnVat);
+
+                    catPhoBun = new Category();
+                    catPhoBun.setName("Phở & Bún");
+                    catPhoBun.setDescription("Các món bún phở truyền thống");
+                    catPhoBun = categoryRepository.save(catPhoBun);
+
+                    catDoAnNhanh = new Category();
+                    catDoAnNhanh.setName("Đồ ăn nhanh");
+                    catDoAnNhanh.setDescription("Burger, gà rán, pizza");
+                    catDoAnNhanh = categoryRepository.save(catDoAnNhanh);
+
+                    System.out.println("✅ Categories seeded successfully!");
+                } else {
+                    List<Category> cats = categoryRepository.findAll();
+                    catTraChanh = cats.stream().filter(c -> c.getName().equals("Trà chanh")).findFirst().orElse(cats.get(0));
+                    catCom = cats.stream().filter(c -> c.getName().equals("Cơm")).findFirst().orElse(cats.get(0));
+                    catTraSua = cats.stream().filter(c -> c.getName().equals("Trà sữa")).findFirst().orElse(cats.get(0));
+                    catDoUong = cats.stream().filter(c -> c.getName().equals("Đồ uống")).findFirst().orElse(cats.get(0));
+                    catAnVat = cats.stream().filter(c -> c.getName().equals("Ăn vặt")).findFirst().orElse(cats.get(0));
+                    
+                    // Thêm Phở & Bún và Đồ ăn nhanh nếu chưa có
+                    catPhoBun = cats.stream().filter(c -> c.getName().equals("Phở & Bún")).findFirst().orElse(null);
+                    if (catPhoBun == null) {
+                        catPhoBun = new Category();
+                        catPhoBun.setName("Phở & Bún");
+                        catPhoBun.setDescription("Các món bún phở truyền thống");
+                        catPhoBun = categoryRepository.save(catPhoBun);
+                    }
+                    
+                    catDoAnNhanh = cats.stream().filter(c -> c.getName().equals("Đồ ăn nhanh")).findFirst().orElse(null);
+                    if (catDoAnNhanh == null) {
+                        catDoAnNhanh = new Category();
+                        catDoAnNhanh.setName("Đồ ăn nhanh");
+                        catDoAnNhanh.setDescription("Burger, gà rán, pizza");
+                        catDoAnNhanh = categoryRepository.save(catDoAnNhanh);
+                    }
                 }
+
                 // 1. Seed Admin
                 if (!userRepository.existsByUsername("admin")) {
                     User admin = new User("admin", "admin123", "System Admin", "admin@foodonl.com", Role.ADMIN);

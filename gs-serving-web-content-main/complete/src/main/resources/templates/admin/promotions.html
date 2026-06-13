@@ -216,13 +216,23 @@
             const discountStr = v.discountType === 'PERCENTAGE'
                 ? `${v.discountValue}%`
                 : formatVND(v.discountValue);
-            const statusBadge = v.active
-                ? '<span class="badge bg-success-subtle text-success border border-success">Hoạt động</span>'
-                : '<span class="badge bg-secondary-subtle text-secondary border border-secondary">Đã tắt</span>';
-            const isExpired = v.expiryDate && new Date(v.expiryDate) < new Date();
-            const expiryStr = isExpired
-                ? `<span class="text-danger small">${formatDate(v.expiryDate)} ⚠️</span>`
-                : `<span class="small">${formatDate(v.expiryDate)}</span>`;
+            
+            const isExpired = v.expiryDate && new Date(v.expiryDate + 'T23:59:59') < new Date();
+            const isUpcoming = v.startDate && new Date(v.startDate + 'T00:00:00') > new Date();
+            let statusBadge = '';
+            if (isExpired) {
+                statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning">Hết hạn</span>';
+            } else if (isUpcoming) {
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info">Sắp diễn ra</span>';
+            } else if (v.active) {
+                statusBadge = '<span class="badge bg-success-subtle text-success border border-success">Hoạt động</span>';
+            } else {
+                statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary">Đã tắt</span>';
+            }
+            
+            const expiryStr = `<span class="small">${formatDate(v.startDate)} ➔ ${formatDate(v.expiryDate)}</span>`;
+
+            const canEdit = !v.restaurantId;
 
             return `<tr>
                 <td>
@@ -241,9 +251,9 @@
                 <td>${expiryStr}</td>
                 <td>${statusBadge}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-warning rounded-pill px-2 me-1" onclick='openEditModal(${JSON.stringify(v).replace(/'/g,"&#39;")})'>
+                    ${canEdit ? `<button class="btn btn-sm btn-outline-warning rounded-pill px-2 me-1" onclick='openEditModal(${JSON.stringify(v).replace(/'/g,"&#39;")})'>
                         <i class="bi bi-pencil"></i>
-                    </button>
+                    </button>` : ''}
                     <button class="btn btn-sm ${v.active ? 'btn-outline-secondary' : 'btn-outline-success'} rounded-pill px-2 me-1"
                             onclick="toggleVoucher(${v.id}, ${v.active})" title="${v.active ? 'Tắt' : 'Bật'}">
                         <i class="bi ${v.active ? 'bi-pause-fill' : 'bi-play-fill'}"></i>
@@ -347,10 +357,9 @@
         const voucher = allVouchers.find(v => v.id === id);
         if (!voucher) return;
         try {
-            const res = await fetch(`/api/admin/vouchers/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ ...voucher, active: !currentActive })
+            const res = await fetch(`/api/admin/vouchers/${id}/toggle`, {
+                method: 'PATCH',
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             if (res.ok) { showToast(`Đã ${currentActive ? 'tắt' : 'bật'} mã ${voucher.code}`, 'success'); loadVouchers(); }
             else showToast('Lỗi cập nhật!', 'danger');

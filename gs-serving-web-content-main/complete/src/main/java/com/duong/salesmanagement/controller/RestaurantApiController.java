@@ -422,7 +422,9 @@ public class RestaurantApiController {
         List<VoucherDTO> dtos = vouchers.stream().map(v -> new VoucherDTO(
                 v.getId(), v.getCode(), v.getDiscountValue(),
                 v.getDiscountType() != null ? v.getDiscountType().name() : null,
+                v.getStartDate() != null ? v.getStartDate().toString() : null,
                 v.getExpirationDate() != null ? v.getExpirationDate().toString() : null,
+                v.getMinOrderAmount(), v.getMaxDiscount(), v.getDescription(),
                 v.isActive()
         )).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
@@ -437,17 +439,32 @@ public class RestaurantApiController {
         if (dto.code == null || dto.code.isBlank())
             return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher không được để trống"));
 
+        String code = dto.code.trim().toUpperCase();
+        java.util.List<Voucher> existing = voucherRepository.findByCodeAndRestaurantId(code, restaurant.getId());
+        boolean hasActive = existing.stream().anyMatch(v -> 
+            v.isActive() && (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(LocalDate.now()))
+        );
+        if (hasActive) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher này đang tồn tại và hoạt động"));
+        }
+
         Voucher v = new Voucher();
-        v.setCode(dto.code.trim().toUpperCase());
+        v.setCode(code);
         v.setDiscountValue(dto.discountValue);
         v.setRestaurant(restaurant); // Assign to current restaurant
         if (dto.discountType != null) {
             try { v.setDiscountType(DiscountType.valueOf(dto.discountType)); }
             catch (IllegalArgumentException ignored) {}
         }
+        if (dto.startDate != null && !dto.startDate.isBlank()) {
+            v.setStartDate(LocalDate.parse(dto.startDate));
+        }
         if (dto.expirationDate != null && !dto.expirationDate.isBlank()) {
             v.setExpirationDate(LocalDate.parse(dto.expirationDate));
         }
+        v.setMinOrderAmount(dto.minOrderAmount);
+        v.setMaxDiscount(dto.maxDiscount);
+        v.setDescription(dto.description);
         v.setActive(dto.isActive);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Đã tạo voucher " + v.getCode()));
@@ -464,15 +481,33 @@ public class RestaurantApiController {
         if (v == null || v.getRestaurant() == null || !v.getRestaurant().getId().equals(restaurant.getId())) 
             return ResponseEntity.notFound().build();
 
-        if (dto.code != null)          v.setCode(dto.code.trim().toUpperCase());
+        if (dto.code != null) {
+            String newCode = dto.code.trim().toUpperCase();
+            if (!newCode.equals(v.getCode())) {
+                java.util.List<Voucher> existing = voucherRepository.findByCodeAndRestaurantId(newCode, restaurant.getId());
+                boolean hasActive = existing.stream().anyMatch(ev -> 
+                    ev.isActive() && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(LocalDate.now()))
+                );
+                if (hasActive) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Mã voucher này đang tồn tại và hoạt động"));
+                }
+                v.setCode(newCode);
+            }
+        }
         if (dto.discountValue != null)  v.setDiscountValue(dto.discountValue);
         if (dto.discountType != null) {
             try { v.setDiscountType(DiscountType.valueOf(dto.discountType)); }
             catch (IllegalArgumentException ignored) {}
         }
+        if (dto.startDate != null && !dto.startDate.isBlank()) {
+            v.setStartDate(LocalDate.parse(dto.startDate));
+        } else v.setStartDate(null);
         if (dto.expirationDate != null && !dto.expirationDate.isBlank()) {
             v.setExpirationDate(LocalDate.parse(dto.expirationDate));
-        }
+        } else v.setExpirationDate(null);
+        v.setMinOrderAmount(dto.minOrderAmount);
+        v.setMaxDiscount(dto.maxDiscount);
+        v.setDescription(dto.description);
         v.setActive(dto.isActive);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Đã cập nhật voucher"));
@@ -678,16 +713,22 @@ public class RestaurantApiController {
         public String code;
         public Double discountValue;
         public String discountType;
+        public String startDate;
         public String expirationDate;
+        public Double minOrderAmount;
+        public Double maxDiscount;
+        public String description;
         public boolean isActive;
 
         public VoucherDTO() {}
 
         public VoucherDTO(Long id, String code, Double discountValue, String discountType,
-                          String expirationDate, boolean isActive) {
+                          String startDate, String expirationDate, Double minOrderAmount,
+                          Double maxDiscount, String description, boolean isActive) {
             this.id = id; this.code = code; this.discountValue = discountValue;
-            this.discountType = discountType; this.expirationDate = expirationDate;
-            this.isActive = isActive;
+            this.discountType = discountType; this.startDate = startDate;
+            this.expirationDate = expirationDate; this.minOrderAmount = minOrderAmount;
+            this.maxDiscount = maxDiscount; this.description = description; this.isActive = isActive;
         }
     }
 

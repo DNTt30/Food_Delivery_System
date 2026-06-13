@@ -88,16 +88,22 @@
                 <input type="hidden" id="editVoucherId">
                 <div class="mb-3">
                     <label class="form-label">Mã voucher <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control text-uppercase fw-bold" id="vCode"
-                           placeholder="VD: GIAM20, FREESHIP..." maxlength="30"
-                           style="letter-spacing:.05em;font-family:'Courier New',monospace;">
+                    <div class="input-group">
+                        <input type="text" class="form-control text-uppercase fw-bold" id="vCode"
+                               placeholder="VD: GIAM20, FREESHIP..." maxlength="30"
+                               oninput="this.value=this.value.toUpperCase()"
+                               style="letter-spacing:.05em;font-family:'Courier New',monospace;">
+                        <button class="btn btn-outline-secondary" type="button" onclick="generateCode()">
+                            <i class="bi bi-shuffle"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="row g-3 mb-3">
                     <div class="col-6">
                         <label class="form-label">Loại giảm giá</label>
                         <select class="form-select" id="vType" onchange="updateValueLabel()">
                             <option value="PERCENTAGE">Giảm phần trăm (%)</option>
-                            <option value="FIXED">Giảm số tiền (đ)</option>
+                            <option value="FIXED_AMOUNT">Giảm số tiền (đ)</option>
                         </select>
                     </div>
                     <div class="col-6">
@@ -106,9 +112,32 @@
                                placeholder="VD: 20" min="0" step="0.01">
                     </div>
                 </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Đơn tối thiểu (đ)</label>
+                        <input type="number" class="form-control" id="vMinOrder"
+                               placeholder="VD: 50000" min="0" step="1000">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Giảm tối đa (đ)</label>
+                        <input type="number" class="form-control" id="vMaxDiscount"
+                               placeholder="VD: 100000" min="0" step="1000">
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Ngày bắt đầu</label>
+                        <input type="date" class="form-control" id="vStart">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Ngày hết hạn</label>
+                        <input type="date" class="form-control" id="vExpiry">
+                    </div>
+                </div>
                 <div class="mb-3">
-                    <label class="form-label">Ngày hết hạn</label>
-                    <input type="date" class="form-control" id="vExpiry">
+                    <label class="form-label">Mô tả</label>
+                    <input type="text" class="form-control" id="vDescription"
+                           placeholder="VD: Giảm 20% cho đơn hàng đầu tiên">
                 </div>
                 <div class="form-check form-switch mb-1">
                     <input class="form-check-input" type="checkbox" id="vActive" checked>
@@ -131,6 +160,13 @@
 const token = localStorage.getItem('jwt_token');
 let vouchers = [];
 
+function generateCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    document.getElementById('vCode').value = Array.from({ length: 8 }, () =>
+        chars[Math.floor(Math.random() * chars.length)]
+    ).join('');
+}
+
 function updateValueLabel() {
     const t = document.getElementById('vType').value;
     document.getElementById('vValueLabel').textContent = t === 'PERCENTAGE' ? 'Giá trị giảm (%)' : 'Số tiền giảm (₫)';
@@ -138,7 +174,14 @@ function updateValueLabel() {
 
 function isExpired(dateStr) {
     if (!dateStr) return false;
-    return new Date(dateStr) < new Date();
+    const end = new Date(dateStr + 'T23:59:59');
+    return end < new Date();
+}
+
+function isUpcoming(dateStr) {
+    if (!dateStr) return false;
+    const start = new Date(dateStr + 'T00:00:00');
+    return start > new Date();
 }
 
 function fmtDate(d) {
@@ -148,6 +191,7 @@ function fmtDate(d) {
 }
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function fmtVND(n) { return new Intl.NumberFormat('vi-VN', { style:'currency', currency:'VND' }).format(n || 0); }
 
 async function loadVouchers() {
     document.getElementById('loading').classList.remove('d-none');
@@ -170,9 +214,9 @@ function renderVouchers() {
     document.getElementById('loading').classList.add('d-none');
 
     const total    = vouchers.length;
-    const active   = vouchers.filter(v => v.isActive && !isExpired(v.expirationDate)).length;
+    const active   = vouchers.filter(v => v.isActive && !isExpired(v.expirationDate) && !isUpcoming(v.startDate)).length;
     const inactive = vouchers.filter(v => !v.isActive).length;
-    const expired  = vouchers.filter(v => v.isActive && isExpired(v.expirationDate)).length;
+    const expired  = vouchers.filter(v => v.isActive && (isExpired(v.expirationDate) || isUpcoming(v.startDate))).length;
 
     document.getElementById('totalVouchers').textContent    = total;
     document.getElementById('activeVouchers').textContent   = active;
@@ -187,11 +231,17 @@ function renderVouchers() {
 
     vouchers.forEach(v => {
         const expired    = isExpired(v.expirationDate);
-        const statusText = expired ? 'Hết hạn' : (v.isActive ? 'Hoạt động' : 'Đã tắt');
+        const upcoming   = isUpcoming(v.startDate);
+        const statusText = expired ? 'Hết hạn' : (upcoming ? 'Sắp diễn ra' : (v.isActive ? 'Hoạt động' : 'Đã tắt'));
         const statusCls  = expired ? 'bg-warning-subtle text-warning' :
-                           (v.isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger');
+                           (upcoming ? 'bg-info-subtle text-info' : 
+                           (v.isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'));
         const discountText = v.discountType === 'PERCENTAGE'
                 ? `${v.discountValue}%` : new Intl.NumberFormat('vi-VN').format(v.discountValue || 0) + '₫';
+        const conditionText = [
+            v.minOrderAmount ? `Đơn tối thiểu ${fmtVND(v.minOrderAmount)}` : null,
+            v.maxDiscount ? `Giảm tối đa ${fmtVND(v.maxDiscount)}` : null
+        ].filter(Boolean).join(' · ');
 
         grid.insertAdjacentHTML('beforeend', `
         <div class="col-md-6 col-xl-4">
@@ -204,8 +254,10 @@ function renderVouchers() {
                 <div class="discount-badge text-warning mb-1">−${esc(discountText)}</div>
                 <div class="small text-muted mb-3">
                     <i class="bi bi-calendar3 me-1"></i>
-                    Hết hạn: ${fmtDate(v.expirationDate)}
+                    ${fmtDate(v.startDate)} ➔ ${fmtDate(v.expirationDate)}
                 </div>
+                ${v.description ? `<div class="small text-muted mb-2">${esc(v.description)}</div>` : ''}
+                ${conditionText ? `<div class="small text-muted mb-3"><i class="bi bi-receipt me-1"></i>${esc(conditionText)}</div>` : ''}
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 flex-fill"
                             onclick="openEditModal(${v.id})">
@@ -235,7 +287,11 @@ function openCreateModal() {
     document.getElementById('vCode').value = '';
     document.getElementById('vType').value = 'PERCENTAGE';
     document.getElementById('vValue').value = '';
+    document.getElementById('vMinOrder').value = '';
+    document.getElementById('vMaxDiscount').value = '';
+    document.getElementById('vStart').value = '';
     document.getElementById('vExpiry').value = '';
+    document.getElementById('vDescription').value = '';
     document.getElementById('vActive').checked = true;
     updateValueLabel();
     new bootstrap.Modal(document.getElementById('voucherModal')).show();
@@ -249,7 +305,11 @@ function openEditModal(id) {
     document.getElementById('vCode').value   = v.code || '';
     document.getElementById('vType').value   = v.discountType || 'PERCENTAGE';
     document.getElementById('vValue').value  = v.discountValue || '';
+    document.getElementById('vMinOrder').value = v.minOrderAmount || '';
+    document.getElementById('vMaxDiscount').value = v.maxDiscount || '';
+    document.getElementById('vStart').value = v.startDate || '';
     document.getElementById('vExpiry').value = v.expirationDate || '';
+    document.getElementById('vDescription').value = v.description || '';
     document.getElementById('vActive').checked = v.isActive;
     updateValueLabel();
     new bootstrap.Modal(document.getElementById('voucherModal')).show();
@@ -260,14 +320,27 @@ async function saveVoucher() {
     const code  = document.getElementById('vCode').value.trim();
     const type  = document.getElementById('vType').value;
     const value = parseFloat(document.getElementById('vValue').value);
+    const minOrder = parseFloat(document.getElementById('vMinOrder').value);
+    const maxDiscount = parseFloat(document.getElementById('vMaxDiscount').value);
+    const start = document.getElementById('vStart').value;
     const exp   = document.getElementById('vExpiry').value;
+    const description = document.getElementById('vDescription').value.trim();
     const active = document.getElementById('vActive').checked;
 
     if (!code) { alert('Vui lòng nhập mã voucher'); return; }
     if (isNaN(value) || value <= 0) { alert('Vui lòng nhập giá trị giảm hợp lệ'); return; }
 
-    const payload = { code, discountType: type, discountValue: value,
-                      expirationDate: exp || null, isActive: active };
+    const payload = {
+        code,
+        discountType: type,
+        discountValue: value,
+        minOrderAmount: isNaN(minOrder) ? null : minOrder,
+        maxDiscount: isNaN(maxDiscount) ? null : maxDiscount,
+        startDate: start || null,
+        expirationDate: exp || null,
+        description: description || null,
+        isActive: active
+    };
     const url    = id ? `/api/restaurant/vouchers/${id}` : '/api/restaurant/vouchers';
     const method = id ? 'PUT' : 'POST';
 

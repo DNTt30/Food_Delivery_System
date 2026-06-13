@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
+<!DOCTYPE html>
+<html th:replace="~{layouts/customer_layout :: layout(~{::title}, ~{::main})}">
 <head>
     <title>Khám phá Ẩm thực - FoodDelivery</title>
 </head>
@@ -12,6 +14,45 @@
         --glass-bg: rgba(255, 255, 255, 0.9);
         --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         --hover-shadow: 0 20px 40px rgba(255, 75, 43, 0.15);
+    }
+
+    /* Voucher Ticket Styling */
+    .voucher-ticket {
+        min-width: 250px;
+        max-width: 250px;
+        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+        border-radius: 16px;
+        flex-shrink: 0;
+        position: relative;
+        color: white;
+        padding: 16px;
+        box-shadow: 0 8px 20px rgba(255, 75, 43, 0.12);
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .voucher-ticket:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(255, 75, 43, 0.22);
+    }
+    .voucher-ticket::before,
+    .voucher-ticket::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        background-color: #fcfcfd;
+        border-radius: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+    }
+    .voucher-ticket::before { left: -7px; }
+    .voucher-ticket::after { right: -7px; }
+
+    .voucher-separator {
+        border-top: 1px dashed rgba(255, 255, 255, 0.4);
+        margin: 12px 0;
+        position: relative;
     }
 
     body {
@@ -290,9 +331,18 @@
         <hr class="mt-5 text-muted">
     </div>
 
+    <!-- Promotions / Vouchers -->
+    <div class="mb-5 d-none" id="promotionsSection">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <h4 class="fw-bold mb-0">🎟️ Mã giảm giá toàn sàn</h4>
+        </div>
+        <div class="d-flex gap-3 overflow-auto pb-3 no-scrollbar" id="promotionsList">
+        </div>
+    </div>
+
     <!-- Section Header & Filters -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" id="resultTitle">Nhà hàng tiêu biểu</h4>
+        <h4 class="fw-bold mb-0" id="resultTitle">⭐ Quán nổi bật</h4>
         <div class="d-flex gap-3 align-items-center">
             <small class="text-muted fw-semibold" id="resultCount"></small>
             <select class="form-select border-0 bg-white shadow-sm rounded-pill px-4" 
@@ -759,10 +809,96 @@
         }
     }
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        try {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+        } catch(e) {}
+        return dateStr;
+    }
+
+    function copyVoucherCode(code, btnElement) {
+        navigator.clipboard.writeText(code).then(() => {
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = '<i class="bi bi-check-lg"></i> Đã chép';
+            btnElement.classList.remove('btn-light');
+            btnElement.classList.add('btn-success', 'text-white');
+            
+            setTimeout(() => {
+                btnElement.innerHTML = originalHtml;
+                btnElement.classList.remove('btn-success', 'text-white');
+                btnElement.classList.add('btn-light');
+            }, 1500);
+        }).catch(err => {
+            console.error('Không thể sao chép: ', err);
+        });
+    }
+
+    async function loadPromotions() {
+        const promotionsSection = document.getElementById('promotionsSection');
+        const promotionsList = document.getElementById('promotionsList');
+        if(!promotionsSection || !promotionsList) return;
+        try {
+            const res = await fetch('/api/customer/vouchers/available', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+                const vouchers = await res.json();
+                if (vouchers && vouchers.length > 0) {
+                    promotionsSection.classList.remove('d-none');
+                    promotionsList.innerHTML = '';
+                    vouchers.forEach(v => {
+                        const discount = v.discountType === 'PERCENTAGE'
+                            ? v.discountValue + '%'
+                            : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0);
+                        
+                        const minOrder = v.minOrderAmount && v.minOrderAmount > 0
+                            ? 'Đơn tối thiểu ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.minOrderAmount)
+                            : 'Mọi đơn hàng';
+                        
+                        const expDate = v.expirationDate 
+                            ? `HSD: ${formatDate(v.expirationDate)}`
+                            : 'Không giới hạn HSD';
+
+                        const card = `
+                            <div class="voucher-ticket">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="fw-bold mb-1" style="font-size: 1.2rem; letter-spacing: -0.5px;">Giảm ${discount}</h5>
+                                        <span class="badge bg-white text-danger fw-bold px-2 py-0.5" style="font-size: 0.65rem; border-radius: 4px;">MÃ TOÀN SÀN</span>
+                                    </div>
+                                    <div class="fs-4">🎟️</div>
+                                </div>
+                                <p class="mb-0 mt-2 opacity-90" style="font-size: 0.75rem;"><i class="bi bi-cart me-1"></i>${minOrder}</p>
+                                <small class="d-block opacity-75 mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${expDate}</small>
+                                
+                                <div class="voucher-separator"></div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <code class="text-white fw-bold fs-6 bg-black bg-opacity-25 px-2 py-1 rounded" style="font-family: monospace; letter-spacing: 0.5px;">${v.code}</code>
+                                    <button class="btn btn-sm btn-light fw-bold rounded-pill px-3" style="font-size: 0.7rem; color: #FF4B2B; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="copyVoucherCode('${v.code}', this)">
+                                        <i class="bi bi-clipboard me-1"></i> Sao chép
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        promotionsList.insertAdjacentHTML('beforeend', card);
+                    });
+                } else {
+                    promotionsSection.classList.add('d-none');
+                }
+            }
+        } catch(e) {
+            console.log("Error loading promotions:", e);
+        }
+    }
+
     // Init
     loadCategories();
     loadRestaurants();
     loadTopItems();
+    loadPromotions();
 
     function sortRestaurants(sortBy) {
         let sorted = [...allRestaurants];

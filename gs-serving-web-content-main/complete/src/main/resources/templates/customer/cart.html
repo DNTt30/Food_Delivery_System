@@ -559,14 +559,22 @@
             if (res.ok) {
                 currentVoucherCode = data.code;
                 const sub = getCart().reduce((s, i) => s + i.price * i.qty, 0);
+                if (data.minOrderAmount && sub < data.minOrderAmount) {
+                    discountAmount = 0;
+                    currentVoucherCode = null;
+                    msgEl.innerHTML = `<span class="text-danger">❌ Đơn hàng cần tối thiểu ${formatVND(data.minOrderAmount)} để dùng mã này</span>`;
+                    renderCart();
+                    return;
+                }
                 
                 if (data.discountType === 'PERCENTAGE') {
                     discountAmount = sub * (data.discountValue / 100.0);
-                    msgEl.innerHTML = `<span class="text-success">✅ Giảm ${data.discountValue}%: -${formatVND(discountAmount)}</span>`;
                 } else {
                     discountAmount = data.discountValue;
-                    msgEl.innerHTML = `<span class="text-success">✅ Giảm ${formatVND(data.discountValue)}</span>`;
                 }
+                if (data.maxDiscount) discountAmount = Math.min(discountAmount, data.maxDiscount);
+                discountAmount = Math.min(discountAmount, sub);
+                msgEl.innerHTML = `<span class="text-success">✅ Áp dụng ${data.code}: -${formatVND(discountAmount)}</span>`;
             } else {
                 discountAmount = 0;
                 currentVoucherCode = null;

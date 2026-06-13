@@ -368,8 +368,11 @@ public class CustomerApiController {
         List<Map<String, Object>> result = vouchers.stream().map(v -> {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("code", v.getCode());
-            map.put("discountType", v.getDiscountType().name());
+            map.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENTAGE");
             map.put("discountValue", v.getDiscountValue());
+            map.put("minOrderAmount", v.getMinOrderAmount());
+            map.put("maxDiscount", v.getMaxDiscount());
+            map.put("description", v.getDescription());
             map.put("expirationDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : "");
             map.put("isGlobal", v.getRestaurant() == null);
             map.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);
@@ -384,10 +387,28 @@ public class CustomerApiController {
     @GetMapping("/vouchers/check")
     public ResponseEntity<?> checkVoucher(@RequestParam String code, 
                                           @RequestParam(required = false) Long restaurantId) {
-        Voucher voucher = voucherRepository.findByCode(code).orElse(null);
-        if (voucher == null || !voucher.isActive() || 
-           (voucher.getExpirationDate() != null && voucher.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá không hợp lệ hoặc đã hết hạn"));
+        Voucher voucher = null;
+        java.time.LocalDate today = java.time.LocalDate.now();
+        
+        if (restaurantId != null) {
+            java.util.List<Voucher> restVouchers = voucherRepository.findByCodeAndRestaurantId(code, restaurantId);
+            voucher = restVouchers.stream()
+                .filter(v -> v.isActive() && 
+                             (v.getStartDate() == null || !v.getStartDate().isAfter(today)) &&
+                             (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(today)))
+                .findFirst().orElse(null);
+        }
+        if (voucher == null) {
+            java.util.List<Voucher> globalVouchers = voucherRepository.findByCodeAndRestaurantIsNull(code);
+            voucher = globalVouchers.stream()
+                .filter(v -> v.isActive() && 
+                             (v.getStartDate() == null || !v.getStartDate().isAfter(today)) &&
+                             (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(today)))
+                .findFirst().orElse(null);
+        }
+        
+        if (voucher == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá không hợp lệ, chưa đến ngày hoặc đã hết hạn"));
         }
         
         // Validate ownership: must be global or belong to the restaurant
@@ -397,11 +418,14 @@ public class CustomerApiController {
             }
         }
 
-        return ResponseEntity.ok(Map.of(
-            "code", voucher.getCode(),
-            "discountType", voucher.getDiscountType().name(),
-            "discountValue", voucher.getDiscountValue()
-        ));
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("code", voucher.getCode());
+        response.put("discountType", voucher.getDiscountType() != null ? voucher.getDiscountType().name() : "PERCENTAGE");
+        response.put("discountValue", voucher.getDiscountValue());
+        response.put("minOrderAmount", voucher.getMinOrderAmount());
+        response.put("maxDiscount", voucher.getMaxDiscount());
+        response.put("description", voucher.getDescription());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/orders/estimate-shipping")

@@ -191,19 +191,39 @@ public class OrderService implements IOrderService {
         }
 
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            Optional<Voucher> vOpt = voucherRepository.findByCode(voucherCode.trim());
-            if (vOpt.isPresent()) {
-                Voucher v = vOpt.get();
-                boolean isGlobalOrBelongsToRestaurant = (v.getRestaurant() == null) || 
-                                                        (v.getRestaurant().getId().equals(restaurant.getId()));
+            Voucher v = null;
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.util.List<Voucher> restVouchers = voucherRepository.findByCodeAndRestaurantId(voucherCode.trim(), restaurant.getId());
+            v = restVouchers.stream()
+                .filter(ev -> ev.isActive() && 
+                             (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) &&
+                             (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                .findFirst().orElse(null);
+
+            if (v == null) {
+                java.util.List<Voucher> globalVouchers = voucherRepository.findByCodeAndRestaurantIsNull(voucherCode.trim());
+                v = globalVouchers.stream()
+                    .filter(ev -> ev.isActive() && 
+                                 (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) &&
+                                 (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                    .findFirst().orElse(null);
+            }
+            if (v != null) {
+                boolean isGlobalOrBelongsToRestaurant = true; // Condition already satisfied by the queries
                 
                 if (v.isActive() && isGlobalOrBelongsToRestaurant && 
                    (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
+                    if (v.getMinOrderAmount() != null && productTotal < v.getMinOrderAmount()) {
+                        throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá");
+                    }
                     double discount = 0;
                     if (v.getDiscountType() == DiscountType.PERCENTAGE) {
                         discount = productTotal * (v.getDiscountValue() / 100.0);
                     } else if (v.getDiscountType() == DiscountType.FIXED_AMOUNT) {
                         discount = v.getDiscountValue();
+                    }
+                    if (v.getMaxDiscount() != null) {
+                        discount = Math.min(discount, v.getMaxDiscount());
                     }
                     productTotal -= discount;
                     if (productTotal < 0) productTotal = 0;

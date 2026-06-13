@@ -10,7 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     /** 50 thông báo mới nhất của user, sắp xếp DESC */

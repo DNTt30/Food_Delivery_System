@@ -11,7 +11,7 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String code;
 
     private Double discountValue;
@@ -19,7 +19,11 @@ public class Voucher {
     @Enumerated(EnumType.STRING)
     private DiscountType discountType;
 
+    private LocalDate startDate;
     private LocalDate expirationDate;
+    private Double minOrderAmount;
+    private Double maxDiscount;
+    private String description;
     private boolean isActive;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -36,8 +40,16 @@ public class Voucher {
     public void setDiscountValue(Double discountValue) { this.discountValue = discountValue; }
     public DiscountType getDiscountType() { return discountType; }
     public void setDiscountType(DiscountType discountType) { this.discountType = discountType; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getExpirationDate() { return expirationDate; }
     public void setExpirationDate(LocalDate expirationDate) { this.expirationDate = expirationDate; }
+    public Double getMinOrderAmount() { return minOrderAmount; }
+    public void setMinOrderAmount(Double minOrderAmount) { this.minOrderAmount = minOrderAmount; }
+    public Double getMaxDiscount() { return maxDiscount; }
+    public void setMaxDiscount(Double maxDiscount) { this.maxDiscount = maxDiscount; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
     public RestaurantProfile getRestaurant() { return restaurant; }
