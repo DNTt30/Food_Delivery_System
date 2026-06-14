@@ -56,6 +56,7 @@
                     <th>Giá trị</th>
                     <th>Đơn tối thiểu</th>
                     <th>Phạm vi</th>
+                    <th>Đã dùng / Tổng</th>
                     <th>Hạn dùng</th>
                     <th>Trạng thái</th>
                     <th class="text-end">Hành động</th>
@@ -96,6 +97,13 @@
                             </button>
                         </div>
                     </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Phạm vi khuyến mãi *</label>
+                        <select id="discountScope" class="form-select">
+                            <option value="ORDER_TOTAL">Giảm tiền món ăn</option>
+                            <option value="SHIPPING_FEE">Giảm phí vận chuyển (Freeship)</option>
+                        </select>
+                    </div>
                     <div class="col-6">
                         <label class="form-label fw-semibold small">Loại giảm giá *</label>
                         <select id="discountType" class="form-select" onchange="updateDiscountPlaceholder()">
@@ -122,6 +130,14 @@
                     <div class="col-6">
                         <label class="form-label fw-semibold small">Ngày hết hạn</label>
                         <input type="date" id="expiryDate" class="form-control">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Tổng lượt dùng</label>
+                        <input type="number" id="maxGlobalUsage" class="form-control" placeholder="Không giới hạn" min="1">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold small">Mỗi khách dùng</label>
+                        <input type="number" id="maxUsagePerUser" class="form-control" placeholder="Không giới hạn" min="1">
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold small">Mô tả</label>
@@ -152,6 +168,8 @@
 
 <script>
     const token = localStorage.getItem('jwt_token');
+    const isAdminMode = window.location.pathname.startsWith('/admin');
+    const apiBase = isAdminMode ? '/api/admin' : '/api/restaurant';
     let allVouchers = [], modalInstance = null, statusFilter = 'all';
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -172,7 +190,7 @@
         document.getElementById('voucherTable').classList.add('d-none');
         document.getElementById('emptyState').classList.add('d-none');
         try {
-            const res = await fetch('/api/admin/vouchers', {
+            const res = await fetch(`${apiBase}/vouchers`, {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
             if (res.status === 401 || res.status === 403) { window.location.href = '/common/auth'; return; }
@@ -234,9 +252,13 @@
 
             const canEdit = !v.restaurantId;
 
+            const scopeBadge = v.discountScope === 'SHIPPING_FEE' 
+                ? '<span class="badge bg-info-subtle text-info border border-info rounded-pill ms-2"><i class="bi bi-truck"></i> Freeship</span>'
+                : '<span class="badge bg-danger-subtle text-danger border border-danger rounded-pill ms-2"><i class="bi bi-basket"></i> Món ăn</span>';
+            
             return `<tr>
                 <td>
-                    <span class="fw-bold text-danger font-monospace">${v.code}</span>
+                    <span class="fw-bold text-danger font-monospace">${v.code}</span>${scopeBadge}
                     ${v.description ? `<br><small class="text-muted">${v.description}</small>` : ''}
                 </td>
                 <td><small>${v.discountType === 'PERCENTAGE' ? 'Phần trăm' : 'Cố định'}</small></td>
@@ -248,6 +270,7 @@
                         : `<span class="badge bg-info-subtle text-info border border-info rounded-pill"><i class="bi bi-globe me-1"></i>Toàn hệ thống</span>`
                     }
                 </td>
+                <td><small>${v.currentGlobalUsage || 0} / <span class="fw-bold">${v.maxGlobalUsage || '∞'}</span></small></td>
                 <td>${expiryStr}</td>
                 <td>${statusBadge}</td>
                 <td class="text-end">
@@ -282,12 +305,15 @@
         document.getElementById('modalTitle').textContent = 'Tạo mã khuyến mãi';
         document.getElementById('editId').value = '';
         document.getElementById('voucherCode').value = '';
+        document.getElementById('discountScope').value = 'ORDER_TOTAL';
         document.getElementById('discountType').value = 'PERCENTAGE';
         document.getElementById('discountValue').value = '';
         document.getElementById('minOrderAmount').value = '';
         document.getElementById('maxDiscount').value = '';
         document.getElementById('startDate').value = '';
         document.getElementById('expiryDate').value = '';
+        document.getElementById('maxGlobalUsage').value = '';
+        document.getElementById('maxUsagePerUser').value = '';
         document.getElementById('description').value = '';
         document.getElementById('isActive').checked = true;
         document.getElementById('modalAlert').className = 'alert mt-3 d-none';
@@ -299,12 +325,15 @@
         document.getElementById('modalTitle').textContent = 'Chỉnh sửa: ' + v.code;
         document.getElementById('editId').value = v.id;
         document.getElementById('voucherCode').value = v.code;
+        document.getElementById('discountScope').value = v.discountScope || 'ORDER_TOTAL';
         document.getElementById('discountType').value = v.discountType || 'PERCENTAGE';
         document.getElementById('discountValue').value = v.discountValue || '';
         document.getElementById('minOrderAmount').value = v.minOrderAmount || '';
         document.getElementById('maxDiscount').value = v.maxDiscount || '';
         document.getElementById('startDate').value = v.startDate ? v.startDate.substring(0, 10) : '';
         document.getElementById('expiryDate').value = v.expiryDate ? v.expiryDate.substring(0, 10) : '';
+        document.getElementById('maxGlobalUsage').value = v.maxGlobalUsage || '';
+        document.getElementById('maxUsagePerUser').value = v.maxUsagePerUser || '';
         document.getElementById('description').value = v.description || '';
         document.getElementById('isActive').checked = !!v.active;
         document.getElementById('modalAlert').className = 'alert mt-3 d-none';
@@ -323,12 +352,15 @@
         const id = document.getElementById('editId').value;
         const payload = {
             code,
+            discountScope: document.getElementById('discountScope').value,
             discountType: document.getElementById('discountType').value,
             discountValue,
             minOrderAmount: parseFloat(document.getElementById('minOrderAmount').value) || null,
             maxDiscount: parseFloat(document.getElementById('maxDiscount').value) || null,
             startDate: document.getElementById('startDate').value || null,
             expiryDate: document.getElementById('expiryDate').value || null,
+            maxGlobalUsage: parseInt(document.getElementById('maxGlobalUsage').value) || null,
+            maxUsagePerUser: parseInt(document.getElementById('maxUsagePerUser').value) || null,
             description: document.getElementById('description').value.trim() || null,
             active: document.getElementById('isActive').checked
         };
@@ -336,7 +368,7 @@
         const btn = document.getElementById('btnSave');
         btn.disabled = true;
         try {
-            const res = await fetch(id ? `/api/admin/vouchers/${id}` : '/api/admin/vouchers', {
+            const res = await fetch(id ? `${apiBase}/vouchers/${id}` : `${apiBase}/vouchers`, {
                 method: id ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify(payload)
@@ -357,7 +389,7 @@
         const voucher = allVouchers.find(v => v.id === id);
         if (!voucher) return;
         try {
-            const res = await fetch(`/api/admin/vouchers/${id}/toggle`, {
+            const res = await fetch(`${apiBase}/vouchers/${id}/toggle`, {
                 method: 'PATCH',
                 headers: { 'Authorization': 'Bearer ' + token }
             });
@@ -369,7 +401,7 @@
     async function deleteVoucher(id, code) {
         if (!confirm(`Xóa mã voucher "${code}"?`)) return;
         try {
-            const res = await fetch(`/api/admin/vouchers/${id}`, {
+            const res = await fetch(`${apiBase}/vouchers/${id}`, {
                 method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token }
             });
             if (res.ok) { showToast(`Đã xóa mã ${code}`, 'success'); loadVouchers(); }

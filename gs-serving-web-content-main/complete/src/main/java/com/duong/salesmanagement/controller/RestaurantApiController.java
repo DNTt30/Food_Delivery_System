@@ -422,10 +422,14 @@ public class RestaurantApiController {
         List<VoucherDTO> dtos = vouchers.stream().map(v -> new VoucherDTO(
                 v.getId(), v.getCode(), v.getDiscountValue(),
                 v.getDiscountType() != null ? v.getDiscountType().name() : null,
+                v.getDiscountScope() != null ? v.getDiscountScope().name() : "ORDER_TOTAL",
                 v.getStartDate() != null ? v.getStartDate().toString() : null,
                 v.getExpirationDate() != null ? v.getExpirationDate().toString() : null,
                 v.getMinOrderAmount(), v.getMaxDiscount(), v.getDescription(),
-                v.isActive()
+                v.isActive(),
+                v.getMaxGlobalUsage(),
+                v.getCurrentGlobalUsage() != null ? v.getCurrentGlobalUsage() : 0,
+                v.getMaxUsagePerUser()
         )).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
@@ -456,6 +460,10 @@ public class RestaurantApiController {
             try { v.setDiscountType(DiscountType.valueOf(dto.discountType)); }
             catch (IllegalArgumentException ignored) {}
         }
+        if (dto.discountScope != null) {
+            try { v.setDiscountScope(Voucher.DiscountScope.valueOf(dto.discountScope)); }
+            catch (IllegalArgumentException ignored) {}
+        }
         if (dto.startDate != null && !dto.startDate.isBlank()) {
             v.setStartDate(LocalDate.parse(dto.startDate));
         }
@@ -466,6 +474,8 @@ public class RestaurantApiController {
         v.setMaxDiscount(dto.maxDiscount);
         v.setDescription(dto.description);
         v.setActive(dto.isActive);
+        v.setMaxGlobalUsage(dto.maxGlobalUsage);
+        v.setMaxUsagePerUser(dto.maxUsagePerUser);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Đã tạo voucher " + v.getCode()));
     }
@@ -499,6 +509,10 @@ public class RestaurantApiController {
             try { v.setDiscountType(DiscountType.valueOf(dto.discountType)); }
             catch (IllegalArgumentException ignored) {}
         }
+        if (dto.discountScope != null) {
+            try { v.setDiscountScope(Voucher.DiscountScope.valueOf(dto.discountScope)); }
+            catch (IllegalArgumentException ignored) {}
+        }
         if (dto.startDate != null && !dto.startDate.isBlank()) {
             v.setStartDate(LocalDate.parse(dto.startDate));
         } else v.setStartDate(null);
@@ -509,6 +523,8 @@ public class RestaurantApiController {
         v.setMaxDiscount(dto.maxDiscount);
         v.setDescription(dto.description);
         v.setActive(dto.isActive);
+        v.setMaxGlobalUsage(dto.maxGlobalUsage);
+        v.setMaxUsagePerUser(dto.maxUsagePerUser);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Đã cập nhật voucher"));
     }
@@ -713,22 +729,28 @@ public class RestaurantApiController {
         public String code;
         public Double discountValue;
         public String discountType;
+        public String discountScope;
         public String startDate;
         public String expirationDate;
         public Double minOrderAmount;
         public Double maxDiscount;
         public String description;
         public boolean isActive;
+        public Integer maxGlobalUsage;
+        public Integer currentGlobalUsage;
+        public Integer maxUsagePerUser;
 
         public VoucherDTO() {}
 
-        public VoucherDTO(Long id, String code, Double discountValue, String discountType,
+        public VoucherDTO(Long id, String code, Double discountValue, String discountType, String discountScope,
                           String startDate, String expirationDate, Double minOrderAmount,
-                          Double maxDiscount, String description, boolean isActive) {
+                          Double maxDiscount, String description, boolean isActive,
+                          Integer maxGlobalUsage, Integer currentGlobalUsage, Integer maxUsagePerUser) {
             this.id = id; this.code = code; this.discountValue = discountValue;
-            this.discountType = discountType; this.startDate = startDate;
+            this.discountType = discountType; this.discountScope = discountScope; this.startDate = startDate;
             this.expirationDate = expirationDate; this.minOrderAmount = minOrderAmount;
             this.maxDiscount = maxDiscount; this.description = description; this.isActive = isActive;
+            this.maxGlobalUsage = maxGlobalUsage; this.currentGlobalUsage = currentGlobalUsage; this.maxUsagePerUser = maxUsagePerUser;
         }
     }
 

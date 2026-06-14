@@ -9,53 +9,49 @@
 *Mô tả: Thể hiện tương tác giữa 4 Actor (Khách hàng, Nhà hàng, Tài xế, Quản trị viên) với các tính năng chính của hệ thống.*
 
 ```mermaid
-usecaseDiagram
-    actor "Khách hàng (Customer)" as C
-    actor "Nhà hàng (Restaurant)" as R
-    actor "Tài xế (Driver)" as D
-    actor "Quản trị (Admin)" as A
+flowchart LR
+    C(("Khách hàng\n(Customer)"))
+    R(("Nhà hàng\n(Restaurant)"))
+    D(("Tài xế\n(Driver)"))
+    A(("Quản trị\n(Admin)"))
 
-    package "Food Delivery System" {
-        usecase "Đăng ký / Đăng nhập (OTP)" as UC1
-        usecase "Quản lý Profile" as UC2
-        
-        usecase "Tìm kiếm & Đặt món" as UC3
-        usecase "Thanh toán Online / Hoàn tiền" as UC4
-        
-        usecase "Quản lý Thực đơn" as UC5
-        usecase "Xác nhận & Chuẩn bị đơn" as UC6
-        
-        usecase "Nhận đơn giao hàng" as UC7
-        usecase "Cập nhật vị trí (GPS)" as UC8
-        
-        usecase "Chat Trực tiếp (Real-time)" as UC9
-        
-        usecase "Quản lý Người dùng" as UC10
-        usecase "Quản lý Mã giảm giá" as UC11
-    }
+    subgraph System ["Food Delivery System"]
+        direction TB
+        UC1(["Đăng ký / Đăng nhập (OTP)"])
+        UC2(["Quản lý Profile"])
+        UC3(["Tìm kiếm & Đặt món"])
+        UC4(["Thanh toán Online / Hoàn tiền"])
+        UC5(["Quản lý Thực đơn"])
+        UC6(["Xác nhận & Chuẩn bị đơn"])
+        UC7(["Nhận đơn giao hàng"])
+        UC8(["Cập nhật vị trí (GPS)"])
+        UC9(["Chat Trực tiếp (Real-time)"])
+        UC10(["Quản lý Người dùng"])
+        UC11(["Quản lý Mã giảm giá"])
+    end
 
-    C --> UC1
-    R --> UC1
-    D --> UC1
+    C --- UC1
+    R --- UC1
+    D --- UC1
     
-    C --> UC2
-    R --> UC2
-    D --> UC2
+    C --- UC2
+    R --- UC2
+    D --- UC2
     
-    C --> UC3
-    C --> UC4
-    C --> UC9
+    C --- UC3
+    C --- UC4
+    C --- UC9
     
-    R --> UC5
-    R --> UC6
-    R --> UC9
+    R --- UC5
+    R --- UC6
+    R --- UC9
     
-    D --> UC7
-    D --> UC8
-    D --> UC9
+    D --- UC7
+    D --- UC8
+    D --- UC9
     
-    A --> UC10
-    A --> UC11
+    A --- UC10
+    A --- UC11
 ```
 
 ---
@@ -130,22 +126,23 @@ sequenceDiagram
 ```mermaid
 graph TD
     subgraph Client Tier
-        Web[Trình duyệt Web (Khách, Quán, Tài xế)]
+        Web[Trình duyệt Web Khách, Quán, Tài xế]
     end
 
-    subgraph Server Tier (Spring Boot 3)
+    subgraph Server Tier Spring Boot 3
         WS[WebSocket STOMP]
         REST[RESTful API Controllers]
         SEC[Spring Security & JWT]
-        SER[Service Layer (Business Logic)]
+        SER[Service Layer Business Logic]
         REP[Spring Data JPA Repositories]
         
-        Web <-->|HTTP/REST| REST
-        Web <-->|ws://| WS
-        REST --> SEC
-        WS --> SEC
-        SEC --> SER
-        SER --> REP
+        Web <-->|HTTP/REST| SEC
+        Web <-->|ws://| SEC
+        SEC <--> REST
+        SEC <--> WS
+        REST <--> SER
+        WS <--> SER
+        SER <--> REP
     end
 
     subgraph Data Tier

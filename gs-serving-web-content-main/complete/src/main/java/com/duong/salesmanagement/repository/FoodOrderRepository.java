@@ -65,4 +65,7 @@ public interface FoodOrderRepository extends JpaRepository<FoodOrder, Long> {
 
     @Query("SELECT COALESCE(SUM(COALESCE(o.totalAmount, 0) - COALESCE(o.shippingFee, 0)), 0) FROM FoodOrder o WHERE o.restaurant = :r AND o.status = :status AND o.orderTime >= :start AND o.orderTime <= :end")
     Double sumNetRevenueByRestaurantAndStatusAndDateRange(@Param("r") RestaurantProfile restaurant, @Param("status") OrderStatus status, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT COUNT(o) FROM FoodOrder o WHERE o.customer.id = :customerId AND o.status <> com.duong.salesmanagement.model.OrderStatus.CANCELLED AND (o.foodVoucherCode = :code OR o.shippingVoucherCode = :code)")
+    long countVoucherUsageByCustomer(@Param("customerId") Long customerId, @Param("code") String code);
 }

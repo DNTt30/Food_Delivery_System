@@ -25,10 +25,10 @@ The application follows a standard **three-tier architecture** (Controller, Serv
 
 ```mermaid
 graph TD
-    UI[Thymeleaf Views & JS Clients] <-->|HTTP REST / WebSocket STOMP| Cont[Controller Tier]
-    Cont -->|Service Calls| Sec[Security & JWT Guards]
-    Cont -->|Business Logic Invocation| Serv[Service Tier]
-    Serv -->|JPA Transactions| Rep[Repository Tier]
+    UI[Thymeleaf Views & JS Clients] <-->|HTTP REST / WebSocket STOMP| Sec[Security & JWT Guards]
+    Sec <-->|Authenticated Requests| Cont[Controller Tier]
+    Cont <-->|Business Logic Invocation| Serv[Service Tier]
+    Serv <-->|JPA Transactions| Rep[Repository Tier]
     Rep <-->|SQL Queries| DB[(MySQL Database)]
 ```
 

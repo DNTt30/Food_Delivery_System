@@ -106,7 +106,7 @@ public class OrderService implements IOrderService {
     public FoodOrder createOrder(CustomerProfile customer, RestaurantProfile restaurant,
                                  List<OrderItemRequest> itemRequests, String deliveryAddress,
                                  Double providedLat, Double providedLng,
-                                 String voucherCode, String paymentMethodStr) {
+                                 String foodVoucherCode, String shippingVoucherCode, String paymentMethodStr) {
         FoodOrder order = new FoodOrder();
         order.setCustomer(customer);
         order.setRestaurant(restaurant);
@@ -190,50 +190,105 @@ public class OrderService implements IOrderService {
             productTotal += menuItem.getPrice() * req.getQuantity();
         }
 
-        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            Voucher v = null;
-            java.time.LocalDate today = java.time.LocalDate.now();
-            java.util.List<Voucher> restVouchers = voucherRepository.findByCodeAndRestaurantId(voucherCode.trim(), restaurant.getId());
-            v = restVouchers.stream()
-                .filter(ev -> ev.isActive() && 
-                             (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) &&
-                             (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
-                .findFirst().orElse(null);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        double finalShippingFee = savedOrder.getShippingFee() != null ? savedOrder.getShippingFee() : 0;
 
+        // Process Food Voucher
+        if (foodVoucherCode != null && !foodVoucherCode.trim().isEmpty()) {
+            Voucher v = null;
+            java.util.List<Voucher> restVouchers = voucherRepository.findByCodeAndRestaurantId(foodVoucherCode.trim(), restaurant.getId());
+            v = restVouchers.stream()
+                .filter(ev -> ev.isActive() && (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                .findFirst().orElse(null);
             if (v == null) {
-                java.util.List<Voucher> globalVouchers = voucherRepository.findByCodeAndRestaurantIsNull(voucherCode.trim());
+                java.util.List<Voucher> globalVouchers = voucherRepository.findByCodeAndRestaurantIsNull(foodVoucherCode.trim());
                 v = globalVouchers.stream()
-                    .filter(ev -> ev.isActive() && 
-                                 (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) &&
-                                 (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                    .filter(ev -> ev.isActive() && (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
                     .findFirst().orElse(null);
             }
-            if (v != null) {
-                boolean isGlobalOrBelongsToRestaurant = true; // Condition already satisfied by the queries
-                
-                if (v.isActive() && isGlobalOrBelongsToRestaurant && 
-                   (v.getExpirationDate() == null || !v.getExpirationDate().isBefore(java.time.LocalDate.now()))) {
-                    if (v.getMinOrderAmount() != null && productTotal < v.getMinOrderAmount()) {
-                        throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá");
+            if (v != null && v.getDiscountScope() == Voucher.DiscountScope.ORDER_TOTAL) {
+                if (v.getMaxGlobalUsage() != null && v.getCurrentGlobalUsage() != null && v.getCurrentGlobalUsage() >= v.getMaxGlobalUsage()) {
+                    throw new RuntimeException("Mã giảm giá món ăn đã hết lượt sử dụng");
+                }
+                if (v.getMaxUsagePerUser() != null) {
+                    long used = foodOrderRepository.countVoucherUsageByCustomer(customer.getId(), v.getCode());
+                    if (used >= v.getMaxUsagePerUser()) {
+                        throw new RuntimeException("Bạn đã hết lượt sử dụng mã giảm giá món ăn này");
                     }
+                }
+
+                if (v.getMinOrderAmount() == null || productTotal >= v.getMinOrderAmount()) {
                     double discount = 0;
                     if (v.getDiscountType() == DiscountType.PERCENTAGE) {
                         discount = productTotal * (v.getDiscountValue() / 100.0);
                     } else if (v.getDiscountType() == DiscountType.FIXED_AMOUNT) {
                         discount = v.getDiscountValue();
                     }
-                    if (v.getMaxDiscount() != null) {
-                        discount = Math.min(discount, v.getMaxDiscount());
-                    }
+                    if (v.getMaxDiscount() != null) discount = Math.min(discount, v.getMaxDiscount());
+                    savedOrder.setFoodVoucherCode(v.getCode());
+                    savedOrder.setFoodDiscountAmount(discount);
+                    
+                    v.setCurrentGlobalUsage((v.getCurrentGlobalUsage() == null ? 0 : v.getCurrentGlobalUsage()) + 1);
+                    voucherRepository.save(v);
+
                     productTotal -= discount;
                     if (productTotal < 0) productTotal = 0;
+                } else {
+                    throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã giảm giá món");
                 }
             }
         }
 
-        double finalShippingFee = savedOrder.getShippingFee() != null ? savedOrder.getShippingFee() : 0;
-        double finalTotalAmount = productTotal + finalShippingFee;
+        // Process Shipping Voucher
+        if (shippingVoucherCode != null && !shippingVoucherCode.trim().isEmpty()) {
+            Voucher v = null;
+            java.util.List<Voucher> restVouchers = voucherRepository.findByCodeAndRestaurantId(shippingVoucherCode.trim(), restaurant.getId());
+            v = restVouchers.stream()
+                .filter(ev -> ev.isActive() && (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                .findFirst().orElse(null);
+            if (v == null) {
+                java.util.List<Voucher> globalVouchers = voucherRepository.findByCodeAndRestaurantIsNull(shippingVoucherCode.trim());
+                v = globalVouchers.stream()
+                    .filter(ev -> ev.isActive() && (ev.getStartDate() == null || !ev.getStartDate().isAfter(today)) && (ev.getExpirationDate() == null || !ev.getExpirationDate().isBefore(today)))
+                    .findFirst().orElse(null);
+            }
+            if (v != null && v.getDiscountScope() == Voucher.DiscountScope.SHIPPING_FEE) {
+                if (v.getMaxGlobalUsage() != null && v.getCurrentGlobalUsage() != null && v.getCurrentGlobalUsage() >= v.getMaxGlobalUsage()) {
+                    throw new RuntimeException("Mã miễn phí vận chuyển đã hết lượt sử dụng");
+                }
+                if (v.getMaxUsagePerUser() != null) {
+                    long used = foodOrderRepository.countVoucherUsageByCustomer(customer.getId(), v.getCode());
+                    if (used >= v.getMaxUsagePerUser()) {
+                        throw new RuntimeException("Bạn đã hết lượt sử dụng mã miễn phí vận chuyển này");
+                    }
+                }
 
+                if (v.getMinOrderAmount() == null || (productTotal + (savedOrder.getFoodDiscountAmount() != null ? savedOrder.getFoodDiscountAmount() : 0)) >= v.getMinOrderAmount()) {
+                    double discount = 0;
+                    if (v.getDiscountType() == DiscountType.PERCENTAGE) {
+                        discount = finalShippingFee * (v.getDiscountValue() / 100.0);
+                    } else if (v.getDiscountType() == DiscountType.FIXED_AMOUNT) {
+                        discount = v.getDiscountValue();
+                    }
+                    if (v.getMaxDiscount() != null) discount = Math.min(discount, v.getMaxDiscount());
+                    
+                    if (discount > finalShippingFee) discount = finalShippingFee; // Cap at shipping fee
+                    
+                    savedOrder.setShippingVoucherCode(v.getCode());
+                    savedOrder.setShippingDiscountAmount(discount);
+
+                    v.setCurrentGlobalUsage((v.getCurrentGlobalUsage() == null ? 0 : v.getCurrentGlobalUsage()) + 1);
+                    voucherRepository.save(v);
+
+                    finalShippingFee -= discount;
+                    if (finalShippingFee < 0) finalShippingFee = 0;
+                } else {
+                    throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu để áp dụng mã Freeship");
+                }
+            }
+        }
+
+        double finalTotalAmount = productTotal + finalShippingFee;
         savedOrder.setTotalAmount(finalTotalAmount);
         FoodOrder finalOrder = foodOrderRepository.save(savedOrder);
 

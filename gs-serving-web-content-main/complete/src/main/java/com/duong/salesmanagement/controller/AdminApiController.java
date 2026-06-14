@@ -440,6 +440,9 @@ public class AdminApiController {
         v.setCode(code);
         v.setDiscountValue(req.discountValue);
         v.setDiscountType(req.discountType != null ? DiscountType.valueOf(req.discountType) : DiscountType.PERCENTAGE);
+        if (req.discountScope != null) {
+            try { v.setDiscountScope(Voucher.DiscountScope.valueOf(req.discountScope)); } catch (Exception ignored) {}
+        }
         if (req.startDate != null && !req.startDate.isBlank())
             v.setStartDate(LocalDate.parse(req.startDate));
         if (req.expiryDate != null && !req.expiryDate.isBlank())
@@ -448,6 +451,8 @@ public class AdminApiController {
         v.setMaxDiscount(req.maxDiscount);
         v.setDescription(req.description);
         v.setActive(req.active);
+        v.setMaxGlobalUsage(req.maxGlobalUsage);
+        v.setMaxUsagePerUser(req.maxUsagePerUser);
         voucherRepository.save(v);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("message", "Tạo voucher thành công"));
     }
@@ -479,6 +484,9 @@ public class AdminApiController {
         }
         v.setDiscountValue(req.discountValue);
         if (req.discountType != null) v.setDiscountType(DiscountType.valueOf(req.discountType));
+        if (req.discountScope != null) {
+            try { v.setDiscountScope(Voucher.DiscountScope.valueOf(req.discountScope)); } catch (Exception ignored) {}
+        }
         if (req.startDate != null && !req.startDate.isBlank())
             v.setStartDate(LocalDate.parse(req.startDate));
         else v.setStartDate(null);
@@ -489,6 +497,8 @@ public class AdminApiController {
         v.setMaxDiscount(req.maxDiscount);
         v.setDescription(req.description);
         v.setActive(req.active);
+        v.setMaxGlobalUsage(req.maxGlobalUsage);
+        v.setMaxUsagePerUser(req.maxUsagePerUser);
         voucherRepository.save(v);
         return ResponseEntity.ok(Map.of("message", "Cập nhật voucher thành công"));
     }
@@ -522,12 +532,16 @@ public class AdminApiController {
         m.put("code", v.getCode());
         m.put("discountValue", v.getDiscountValue());
         m.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENTAGE");
+        m.put("discountScope", v.getDiscountScope() != null ? v.getDiscountScope().name() : "ORDER_TOTAL");
         m.put("startDate", v.getStartDate() != null ? v.getStartDate().toString() : null);
         m.put("expiryDate", v.getExpirationDate() != null ? v.getExpirationDate().toString() : null);
         m.put("minOrderAmount", v.getMinOrderAmount());
         m.put("maxDiscount", v.getMaxDiscount());
         m.put("description", v.getDescription());
         m.put("active", v.isActive());
+        m.put("maxGlobalUsage", v.getMaxGlobalUsage());
+        m.put("currentGlobalUsage", v.getCurrentGlobalUsage() != null ? v.getCurrentGlobalUsage() : 0);
+        m.put("maxUsagePerUser", v.getMaxUsagePerUser());
         m.put("restaurantName", v.getRestaurant() != null ? v.getRestaurant().getRestaurantName() : null);
         m.put("restaurantId", v.getRestaurant() != null ? v.getRestaurant().getId() : null);
         return m;
@@ -660,12 +674,15 @@ public class AdminApiController {
         public String code;
         public Double discountValue;
         public String discountType;
+        public String discountScope;
         public String expiryDate;
         public String startDate;
         public Double minOrderAmount;
         public Double maxDiscount;
         public String description;
         public boolean active;
+        public Integer maxGlobalUsage;
+        public Integer maxUsagePerUser;
     }
 
     public static class BroadcastRequest {

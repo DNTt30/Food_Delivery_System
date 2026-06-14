@@ -54,6 +54,7 @@ public class CustomerApiController {
     private final FoodReviewRepository foodReviewRepository;
     private final CategoryRepository categoryRepository;
     private final com.duong.salesmanagement.service.NotificationService notificationService;
+    private final com.duong.salesmanagement.repository.FoodOrderRepository foodOrderRepository;
 
     public CustomerApiController(RestaurantProfileRepository restaurantProfileRepository,
                                  MenuItemRepository menuItemRepository,
@@ -67,7 +68,8 @@ public class CustomerApiController {
                                  PaymentRepository paymentRepository,
                                  FoodReviewRepository foodReviewRepository,
                                  CategoryRepository categoryRepository,
-                                 com.duong.salesmanagement.service.NotificationService notificationService) {
+                                 com.duong.salesmanagement.service.NotificationService notificationService,
+                                 com.duong.salesmanagement.repository.FoodOrderRepository foodOrderRepository) {
         this.restaurantProfileRepository = restaurantProfileRepository;
         this.menuItemRepository = menuItemRepository;
         this.orderService = orderService;
@@ -81,6 +83,7 @@ public class CustomerApiController {
         this.foodReviewRepository = foodReviewRepository;
         this.categoryRepository = categoryRepository;
         this.notificationService = notificationService;
+        this.foodOrderRepository = foodOrderRepository;
     }
 
     private CustomerProfile getAuthenticatedCustomer(Authentication authentication) {
@@ -339,7 +342,7 @@ public class CustomerApiController {
             return ResponseEntity.badRequest().body(Map.of("error", "Nhà hàng hiện đang đóng cửa"));
 
         try {
-            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.deliveryLat, request.deliveryLng, request.voucherCode, request.paymentMethod);
+            FoodOrder order = orderService.createOrder(customer, restaurant, request.items, request.deliveryAddress, request.deliveryLat, request.deliveryLng, request.foodVoucherCode, request.shippingVoucherCode, request.paymentMethod);
             boolean requiresPayment = order.getStatus() == com.duong.salesmanagement.model.OrderStatus.AWAITING_PAYMENT;
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "message", requiresPayment
@@ -369,6 +372,7 @@ public class CustomerApiController {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("code", v.getCode());
             map.put("discountType", v.getDiscountType() != null ? v.getDiscountType().name() : "PERCENTAGE");
+            map.put("discountScope", v.getDiscountScope() != null ? v.getDiscountScope().name() : "ORDER_TOTAL");
             map.put("discountValue", v.getDiscountValue());
             map.put("minOrderAmount", v.getMinOrderAmount());
             map.put("maxDiscount", v.getMaxDiscount());
@@ -385,8 +389,11 @@ public class CustomerApiController {
 
     // Kiểm tra Voucher
     @GetMapping("/vouchers/check")
-    public ResponseEntity<?> checkVoucher(@RequestParam String code, 
+    public ResponseEntity<?> checkVoucher(Authentication authentication, @RequestParam String code, 
                                           @RequestParam(required = false) Long restaurantId) {
+        CustomerProfile customer = getAuthenticatedCustomer(authentication);
+        if (customer == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         Voucher voucher = null;
         java.time.LocalDate today = java.time.LocalDate.now();
         
@@ -418,9 +425,25 @@ public class CustomerApiController {
             }
         }
 
+        // Check global usage limit
+        if (voucher.getMaxGlobalUsage() != null && voucher.getCurrentGlobalUsage() != null) {
+            if (voucher.getCurrentGlobalUsage() >= voucher.getMaxGlobalUsage()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mã giảm giá này đã hết lượt sử dụng trên hệ thống"));
+            }
+        }
+
+        // Check per user usage limit
+        if (voucher.getMaxUsagePerUser() != null) {
+            long used = foodOrderRepository.countVoucherUsageByCustomer(customer.getId(), voucher.getCode());
+            if (used >= voucher.getMaxUsagePerUser()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Bạn đã hết lượt sử dụng mã giảm giá này"));
+            }
+        }
+
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("code", voucher.getCode());
         response.put("discountType", voucher.getDiscountType() != null ? voucher.getDiscountType().name() : "PERCENTAGE");
+        response.put("discountScope", voucher.getDiscountScope() != null ? voucher.getDiscountScope().name() : "ORDER_TOTAL");
         response.put("discountValue", voucher.getDiscountValue());
         response.put("minOrderAmount", voucher.getMinOrderAmount());
         response.put("maxDiscount", voucher.getMaxDiscount());
@@ -787,7 +810,8 @@ public class CustomerApiController {
         public List<OrderService.OrderItemRequest> items;
         public String deliveryAddress;
         public String paymentMethod;
-        public String voucherCode;
+        public String foodVoucherCode;
+        public String shippingVoucherCode;
         public Double deliveryLat;
         public Double deliveryLng;
     }

@@ -34,6 +34,13 @@
         transform: translateY(-4px);
         box-shadow: 0 12px 24px rgba(255, 75, 43, 0.22);
     }
+    .voucher-ticket.shipping {
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.12);
+    }
+    .voucher-ticket.shipping:hover {
+        box-shadow: 0 12px 24px rgba(14, 165, 233, 0.22);
+    }
     .voucher-ticket::before,
     .voucher-ticket::after {
         content: '';
@@ -849,6 +856,8 @@
                     promotionsSection.classList.remove('d-none');
                     promotionsList.innerHTML = '';
                     vouchers.forEach(v => {
+                        const isShipping = v.discountScope === 'SHIPPING_FEE';
+                        
                         const discount = v.discountType === 'PERCENTAGE'
                             ? v.discountValue + '%'
                             : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v.discountValue || 0);
@@ -861,14 +870,20 @@
                             ? `HSD: ${formatDate(v.expirationDate)}`
                             : 'Không giới hạn HSD';
 
+                        const ticketClass = isShipping ? 'voucher-ticket shipping' : 'voucher-ticket';
+                        const badgeText = isShipping ? 'FREESHIP' : 'MÃ TOÀN SÀN';
+                        const badgeColor = isShipping ? 'text-info' : 'text-danger';
+                        const btnColor = isShipping ? '#0ea5e9' : '#FF4B2B';
+                        const iconEmoji = isShipping ? '🚚' : '🎟️';
+
                         const card = `
-                            <div class="voucher-ticket">
+                            <div class="${ticketClass}">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h5 class="fw-bold mb-1" style="font-size: 1.2rem; letter-spacing: -0.5px;">Giảm ${discount}</h5>
-                                        <span class="badge bg-white text-danger fw-bold px-2 py-0.5" style="font-size: 0.65rem; border-radius: 4px;">MÃ TOÀN SÀN</span>
+                                        <span class="badge bg-white ${badgeColor} fw-bold px-2 py-0.5" style="font-size: 0.65rem; border-radius: 4px;">${badgeText}</span>
                                     </div>
-                                    <div class="fs-4">🎟️</div>
+                                    <div class="fs-4">${iconEmoji}</div>
                                 </div>
                                 <p class="mb-0 mt-2 opacity-90" style="font-size: 0.75rem;"><i class="bi bi-cart me-1"></i>${minOrder}</p>
                                 <small class="d-block opacity-75 mt-1" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>${expDate}</small>
@@ -877,7 +892,7 @@
                                 
                                 <div class="d-flex justify-content-between align-items-center">
                                     <code class="text-white fw-bold fs-6 bg-black bg-opacity-25 px-2 py-1 rounded" style="font-family: monospace; letter-spacing: 0.5px;">${v.code}</code>
-                                    <button class="btn btn-sm btn-light fw-bold rounded-pill px-3" style="font-size: 0.7rem; color: #FF4B2B; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="copyVoucherCode('${v.code}', this)">
+                                    <button class="btn btn-sm btn-light fw-bold rounded-pill px-3" style="font-size: 0.7rem; color: ${btnColor}; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onclick="copyVoucherCode('${v.code}', this)">
                                         <i class="bi bi-clipboard me-1"></i> Sao chép
                                     </button>
                                 </div>

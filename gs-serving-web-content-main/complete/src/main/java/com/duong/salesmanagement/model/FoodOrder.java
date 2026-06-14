@@ -56,6 +56,18 @@ public class FoodOrder {
     private Double distance; // in KM
     private Double shippingFee;
 
+    @Column(name = "food_voucher_code")
+    private String foodVoucherCode;
+    
+    @Column(name = "food_discount_amount")
+    private Double foodDiscountAmount;
+    
+    @Column(name = "shipping_voucher_code")
+    private String shippingVoucherCode;
+    
+    @Column(name = "shipping_discount_amount")
+    private Double shippingDiscountAmount;
+
     @Column(name = "payment_method")
     private String paymentMethod;
 
@@ -122,6 +134,15 @@ public String getPaymentStatus() {
 public void setPaymentStatus(String paymentStatus) {
     this.paymentStatus = paymentStatus;
 }
+
+    public String getFoodVoucherCode() { return foodVoucherCode; }
+    public void setFoodVoucherCode(String foodVoucherCode) { this.foodVoucherCode = foodVoucherCode; }
+    public Double getFoodDiscountAmount() { return foodDiscountAmount; }
+    public void setFoodDiscountAmount(Double foodDiscountAmount) { this.foodDiscountAmount = foodDiscountAmount; }
+    public String getShippingVoucherCode() { return shippingVoucherCode; }
+    public void setShippingVoucherCode(String shippingVoucherCode) { this.shippingVoucherCode = shippingVoucherCode; }
+    public Double getShippingDiscountAmount() { return shippingDiscountAmount; }
+    public void setShippingDiscountAmount(Double shippingDiscountAmount) { this.shippingDiscountAmount = shippingDiscountAmount; }
 
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
