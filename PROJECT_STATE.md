@@ -115,7 +115,7 @@ The application is composed of **6 structural modules**:
  ├── 2. Capture snapshots of restaurant & customer locations on the FoodOrder
  ├── 3. Calculate distance (Haversine Formula) via ShippingCalculationService
  ├── 4. Estimate Delivery Fee (15k base + 5k/extra km) & ETA (15m + 2m/km + 5m)
- ├── 5. Apply Voucher discount logic (Percentage or Fixed amount)
+ ├── 5. Apply Split Voucher discount logic (Food Voucher & Shipping Voucher) and enforce usage limits
  ├── 6. Persist order & items inside a unified SQL Transaction
  └── 7. Trigger Notification Service (creates notifications for Customer & Restaurant)
 ```

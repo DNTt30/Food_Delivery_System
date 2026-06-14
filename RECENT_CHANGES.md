@@ -25,6 +25,13 @@ Use this format when logging new changes:
 
 ## Historic Code Changes Log
 
+### 2026-06-14: Voucher Usage Limits & Split Scope (Food/Shipping)
+*   **Description**: Implemented voucher usage limits (Global Usage Limit & Per-User Limit) to prevent abuse. Split the voucher scope so that customers can apply a Food Voucher and a Shipping Voucher simultaneously on the same order. Fixed related UI bugs causing `shippingDiscountAmount` display errors.
+*   **Changed Files**: `Voucher.java`, `FoodOrder.java`, `FoodOrderRepository.java`, `CustomerApiController.java`, `OrderService.java`, `cart.html`, `promotions.html`.
+*   **Affected Modules**: `order`, `admin`
+*   **API Impact**: `PlaceOrderRequest` now accepts `foodVoucherCode` and `shippingVoucherCode`. `VoucherDTO` includes limit parameters.
+*   **Database Schema Updates**: Yes. Added `max_global_usage`, `current_global_usage`, `max_usage_per_user` to `vouchers`. Added `food_voucher_code`, `food_discount_amount`, `shipping_voucher_code`, `shipping_discount_amount` to `food_orders`.
+
 ### 2026-06-02: Driver Multiple Orders Fix & UI Polish
 *   **Description**: Implemented a constraint to prevent drivers from accepting multiple orders simultaneously. Polished the Driver UI by introducing a history accordion view and removing native browser confirmation alerts for a smoother experience.
 *   **Changed Files**: Driver controllers and templates.

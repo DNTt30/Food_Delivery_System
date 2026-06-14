@@ -68,7 +68,7 @@ Food_Delivery_System/
 - ✅ **Trải nghiệm Premium UI/UX:** Giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
 - ✅ **Thanh toán Trực tuyến (VNPAY/MoMo):** Tích hợp cổng thanh toán trực tuyến và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
 - **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
-- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh, lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine.
+- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh, lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine. Cho phép áp dụng song song **Mã Freeship** và **Mã giảm giá món ăn**.
 - ✅ **Lịch sử Giao dịch (E-Wallet):** Xem lại toàn bộ lịch sử nạp/rút/thanh toán với giao diện Ví điện tử chuyên nghiệp, tách biệt khỏi Lịch sử đơn hàng.
 - ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
 - ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
@@ -90,7 +90,7 @@ Food_Delivery_System/
 
 ### 🛡️ Quản trị viên (Admin)
 - ✅ **Quản lý Người dùng:** Khóa/mở tài khoản, duyệt đối tác nhà hàng mới
-- ✅ **Hệ thống Khuyến mãi:** Tạo/sửa/xóa Voucher (% hoặc số tiền cố định)
+- ✅ **Hệ thống Khuyến mãi:** Tạo/sửa/xóa Voucher (% hoặc số tiền cố định). Quản lý **Giới hạn số lượt sử dụng** (Toàn hệ thống và Cá nhân) để ngăn chặn trục lợi.
 - ✅ **Thống kê Hệ thống:** Xem tổng quan doanh thu với **Line Chart**, danh sách đơn hàng gần đây với **Server-Side Pagination**.
 - ✅ **Broadcast Notifications:** Gửi thông báo hệ thống đồng loạt đến toàn bộ người dùng hoặc theo vai trò cụ thể.
 
