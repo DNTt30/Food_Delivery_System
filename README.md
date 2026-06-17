@@ -257,6 +257,7 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 │  └─ Native SQL queries                                 │
 └────────────────┬─────────────
 
+```
 ## 👨‍💻 Đội ngũ Phát triển
 
 | Thành viên | MSSV | Vai trò |
