@@ -68,33 +68,34 @@ Food_Delivery_System/
 - ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin cá nhân, định vị vị trí. Trải nghiệm Premium UI/UX với giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
 - ✅ **Tìm kiếm, Xem Thực đơn & Giỏ hàng (UC-05, UC-06, UC-07):** Tìm kiếm nhà hàng thông minh (UC-05), xem chi tiết thực đơn món ăn (UC-06), quản lý giỏ hàng Global Real-time (UC-07). Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine. Cho phép áp dụng song song **Mã Freeship** và **Mã giảm giá món ăn**.
 - ✅ **Đặt đơn hàng (UC-08):** Đặt món và khởi tạo chu trình xử lý đơn hàng.
-- ✅ **Thanh toán Trực tuyến & Ví điện tử (UC-09):** Tích hợp cổng thanh toán trực tuyến (VNPAY/MoMo), xem lại toàn bộ lịch sử nạp/rút/thanh toán với giao diện Ví điện tử chuyên nghiệp, và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
+- ✅ **Thanh toán Trực tuyến (UC-09):** Tích hợp cổng thanh toán trực tuyến (VNPAY/MoMo) và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
 - ✅ **Theo dõi đơn (UC-10):** Theo dõi tiến trình đơn hàng động (Tracking Progress UI Bar) và vị trí tài xế thời gian thực.
 - ✅ **Hủy đơn hàng (UC-11):** Khách hàng tự hủy đơn hàng khi còn trong trạng thái chờ nhà hàng xác nhận.
 - ✅ **Đánh giá đơn (UC-12):** Gửi feedback sao và bình luận sau khi nhận hàng thành công.
-- ✅ **Chat Trực tiếp (UC-08, UC-10):** Nhắn tin trao đổi real-time với Nhà hàng trong lúc đơn chờ/chuẩn bị (UC-08) và Tài xế trong lúc giao hàng (UC-10) qua WebSocket.
-- ✅ **Món Ăn Yêu Thích (UC-05, UC-06):** Thả tim video món ăn để lưu vào danh sách Yêu thích khi đang tìm kiếm nhà hàng & xem thực đơn. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
+- ✅ **Lịch sử Giao dịch (E-Wallet) [Bổ trợ UC-03, UC-09]:** Xem lại toàn bộ lịch sử nạp/rút/thanh toán với giao diện Ví điện tử chuyên nghiệp, tách biệt khỏi Lịch sử đơn hàng.
+- ✅ **Chat Trực tiếp [Bổ trợ UC-08, UC-10]:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING) qua WebSocket.
+- **Món Ăn Yêu Thích [Mở rộng UC-05, UC-06]:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
 
 ### 🏪 Nhà hàng (Restaurant)
 - ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin, bản đồ chọn vị trí (Leaflet Map Picker) tự động đồng bộ tọa độ, upload banner.
 - ✅ **Quản lý Thực đơn & Danh mục (UC-13, UC-14):** CRUD danh mục món ăn (UC-13) và món ăn chi tiết (UC-14), upload hình ảnh chi tiết, cấu hình giá.
 - ✅ **Xử lý Đơn hàng (UC-15):** Tiếp nhận, chuẩn bị chế biến, bàn giao cho Tài xế qua bảng Kanban (Mới/Đang chuẩn bị/Xong).
 - ✅ **Báo cáo Doanh thu (UC-19):** Thống kê doanh thu trực quan dưới dạng biểu đồ (Chart.js), xem chi tiết đơn theo ngày/tháng trên Dashboard.
-- ✅ **Chat Trực tiếp (UC-15):** Nhắn tin trao đổi real-time với Khách hàng và Tài xế theo từng giai đoạn xử lý đơn hàng.
+- ✅ **Chat Trực tiếp [Bổ trợ UC-15]:** Nhắn tin với Khách hàng và Tài xế theo từng giai đoạn đơn hàng.
 
 ### 🛵 Tài xế (Driver)
 - ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin cá nhân, chọn vị trí làm việc.
 - ✅ **Nhận & Giao hàng (UC-16):** Xem danh sách đơn đang chờ, nhận đơn (giới hạn **1 đơn hàng cùng lúc**), cập nhật trạng thái (PREPARING → DELIVERING → COMPLETED).
-- ✅ **Lịch sử Giao hàng (UC-16):** Xem lại toàn bộ lịch sử các đơn hàng đã giao với giao diện **Accordion** thông minh.
-- ✅ **Tracking (UC-10):** Gửi vị trí tọa độ GPS Real-time cho Khách hàng theo dõi đơn.
-- ✅ **Chat Trực tiếp (UC-16):** Nhắn tin trao đổi real-time với Khách hàng và Nhà hàng khi đang thực hiện nhận/giao đơn.
+- ✅ **Lịch sử Giao hàng [Bổ trợ UC-16]:** Xem lại lịch sử với giao diện **Accordion** thông minh.
+- ✅ **Tracking [Bổ trợ UC-16]:** Gửi vị trí GPS Real-time cho Khách hàng.
+- ✅ **Chat Trực tiếp [Bổ trợ UC-16]:** Nhắn tin với Khách hàng và Nhà hàng khi đang xử lý đơn.
 
 ### 🛡️ Quản trị viên (Admin)
 - ✅ **Quản lý Người dùng (UC-17):** Khóa/mở khóa tài khoản người dùng, quản trị vai trò.
 - ✅ **Duyệt Nhà hàng (UC-18):** Xét duyệt đối tác nhà hàng mới đăng ký tham gia hệ thống.
 - ✅ **Báo cáo Doanh thu Hệ thống (UC-19):** Xem tổng quan doanh thu toàn hệ thống với **Line Chart** trực quan, danh sách đơn hàng gần đây hỗ trợ **Server-Side Pagination**.
 - ✅ **Quản lý Voucher (UC-20):** Tạo/sửa/xóa Voucher khuyến mãi (% hoặc số tiền cố định), thiết lập **Giới hạn số lượt sử dụng** (Toàn hệ thống và Cá nhân) để ngăn chặn trục lợi.
-- ✅ **Broadcast Notifications (UC-17):** Gửi thông báo hệ thống đồng loạt đến toàn bộ người dùng hoặc theo vai trò cụ thể để hỗ trợ quản lý người dùng.
+- ✅ **Broadcast Notifications [Mở rộng UC-17]:** Gửi thông báo hệ thống đồng loạt đến toàn bộ người dùng hoặc theo vai trò cụ thể.
 
 ---
 
