@@ -11,37 +11,37 @@
     <mxCell id="SEC0" parent="SYS" style="swimlane;startSize=25;fillColor=#EFF2FF;strokeColor=#7B68EE;strokeWidth=2;fontSize=11;fontStyle=1;dashed=1;rounded=1;" value="Chức năng Chung" vertex="1">
       <mxGeometry height="100" width="700" x="280" y="40" as="geometry" />
     </mxCell>
-    <mxCell id="UC01" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-01&#10;Đăng ký tài khoản" vertex="1">
+    <mxCell id="UC01" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-01&#10;Đăng ký &amp; OTP" vertex="1">
       <mxGeometry height="55" width="145" x="15" y="25" as="geometry" />
     </mxCell>
-    <mxCell id="UC02" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-02&#10;Đăng nhập hệ thống" vertex="1">
+    <mxCell id="UC02" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-02&#10;Đăng nhập" vertex="1">
       <mxGeometry height="55" width="145" x="180" y="25" as="geometry" />
     </mxCell>
-    <mxCell id="UC03" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-03&#10;Quản lý hồ sơ cá nhân" vertex="1">
+    <mxCell id="UC03" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-03&#10;Quản lý hồ sơ" vertex="1">
       <mxGeometry height="55" width="155" x="345" y="25" as="geometry" />
     </mxCell>
-    <mxCell id="UC04" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-04&#10;Đổi mật khẩu" vertex="1">
+    <mxCell id="UC04" parent="SEC0" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=center;" value="UC-04&#10;Quên mật khẩu" vertex="1">
       <mxGeometry height="55" width="145" x="520" y="25" as="geometry" />
     </mxCell>
     <mxCell id="SEC1" parent="SYS" style="swimlane;startSize=25;fillColor=#F0FFF0;strokeColor=#82b366;strokeWidth=2;fontSize=11;fontStyle=1;dashed=1;rounded=1;" value="Khách hàng (Customer)" vertex="1">
       <mxGeometry height="850" width="480" x="20" y="195" as="geometry" />
     </mxCell>
-    <mxCell id="UC05" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-05&#10;Tìm kiếm nhà hàng / món ăn" vertex="1">
+    <mxCell id="UC05" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-05&#10;Tìm nhà hàng" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="35" as="geometry" />
     </mxCell>
-    <mxCell id="UC06" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-06&#10;Xem thực đơn nhà hàng" vertex="1">
+    <mxCell id="UC06" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-06&#10;Xem thực đơn" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="120" as="geometry" />
     </mxCell>
-    <mxCell id="UC07" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-07&#10;Thêm vào giỏ hàng" vertex="1">
+    <mxCell id="UC07" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-07&#10;Quản lý giỏ hàng" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="205" as="geometry" />
     </mxCell>
     <mxCell id="UC08" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-08&#10;Đặt đơn hàng" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="295" as="geometry" />
     </mxCell>
-    <mxCell id="UC09" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-09&#10;Thanh toán (COD)" vertex="1">
+    <mxCell id="UC09" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-09&#10;Thanh toán" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="385" as="geometry" />
     </mxCell>
-    <mxCell id="UC10" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-10&#10;Theo dõi trạng thái đơn" vertex="1">
+    <mxCell id="UC10" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-10&#10;Theo dõi đơn" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="555" as="geometry" />
     </mxCell>
     <mxCell id="UC11" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-11&#10;Hủy đơn hàng" vertex="1">
@@ -69,7 +69,7 @@
     <mxCell id="R06" edge="1" parent="SEC1" source="UC11" style="endArrow=open;endFill=0;dashed=1;fontSize=9;edgeStyle=orthogonalEdgeStyle;" target="UC10" value="«include»">
       <mxGeometry relative="1" as="geometry" />
     </mxCell>
-    <mxCell id="UC12" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-12&#10;Đánh giá đơn hàng" vertex="1">
+    <mxCell id="UC12" parent="SEC1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" value="UC-12&#10;Đánh giá đơn" vertex="1">
       <mxGeometry height="55" width="165" x="155" y="465" as="geometry" />
     </mxCell>
     <mxCell id="R05" edge="1" parent="SEC1" source="UC12" style="endArrow=open;endFill=0;dashed=1;strokeDasharray=8 4;fontSize=9;edgeStyle=orthogonalEdgeStyle;" target="UC10" value="«extend»">
