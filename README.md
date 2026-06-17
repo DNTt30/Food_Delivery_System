@@ -64,34 +64,37 @@ Food_Delivery_System/
 ## ⚙️ Chức năng Chính (20/20 Use Case)
 
 ### 👤 Khách hàng (Customer)
-- ✅ **Xác thực & Đăng ký:** OTP qua Email, Reset mật khẩu
-- ✅ **Trải nghiệm Premium UI/UX:** Giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
-- ✅ **Thanh toán Trực tuyến (VNPAY/MoMo):** Tích hợp cổng thanh toán trực tuyến và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
-- **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
-- ✅ **Tìm kiếm Đa năng & Đặt hàng:** Search thông minh, lọc nhà hàng, Giỏ hàng Global Real-time. Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine. Cho phép áp dụng song song **Mã Freeship** và **Mã giảm giá món ăn**.
+- ✅ **Xác thực & Đăng ký (UC-01, UC-02, UC-04):** Đăng ký tài khoản mới & xác thực OTP qua Email (UC-01), Đăng nhập hệ thống (UC-02), Quên mật khẩu & cấp lại (UC-04).
+- ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin cá nhân, định vị vị trí. Trải nghiệm Premium UI/UX với giao diện Glassmorphism, Dark Mode hiện đại, Micro-animations cực mượt.
+- ✅ **Tìm kiếm, Xem Thực đơn & Giỏ hàng (UC-05, UC-06, UC-07):** Tìm kiếm nhà hàng thông minh (UC-05), xem chi tiết thực đơn món ăn (UC-06), quản lý giỏ hàng Global Real-time (UC-07). Hỗ trợ **Geocoding Search** tính phí ship tự động qua Haversine. Cho phép áp dụng song song **Mã Freeship** và **Mã giảm giá món ăn**.
+- ✅ **Đặt đơn hàng (UC-08):** Đặt món và khởi tạo chu trình xử lý đơn hàng.
+- ✅ **Thanh toán Trực tuyến (UC-09):** Tích hợp cổng thanh toán trực tuyến (VNPAY/MoMo) và cơ chế tự động hoàn tiền (Refund) khi bị hủy đơn.
+- ✅ **Theo dõi đơn (UC-10):** Theo dõi tiến trình đơn hàng động (Tracking Progress UI Bar) và vị trí tài xế thời gian thực.
+- ✅ **Hủy đơn hàng (UC-11):** Khách hàng tự hủy đơn hàng khi còn trong trạng thái chờ nhà hàng xác nhận.
+- ✅ **Đánh giá đơn (UC-12):** Gửi feedback sao và bình luận sau khi nhận hàng thành công.
 - ✅ **Lịch sử Giao dịch (E-Wallet):** Xem lại toàn bộ lịch sử nạp/rút/thanh toán với giao diện Ví điện tử chuyên nghiệp, tách biệt khỏi Lịch sử đơn hàng.
-- ✅ **Đánh giá & Feedback:** Gửi feedback sao sau khi nhận hàng
-- ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING)
+- ✅ **Chat Trực tiếp:** Nhắn tin với Nhà hàng (PENDING/PREPARING/DELIVERING) và Tài xế (PREPARING/DELIVERING) qua WebSocket.
+- **Món Ăn Yêu Thích:** Thả tim video món ăn để lưu vào danh sách Yêu thích. Dữ liệu được bảo toàn tuyệt đối kể cả khi đăng xuất.
 
 ### 🏪 Nhà hàng (Restaurant)
-- ✅ **Quản lý Hồ sơ:** Cập nhật thông tin, bản đồ chọn vị trí (Leaflet Map Picker) tự động đồng bộ tọa độ, upload banner
-- ✅ **Quản lý Thực đơn:** CRUD món ăn, upload hình ảnh chi tiết, set giá
-- ✅ **Quản lý Đơn hàng:** Tiếp nhận, chế biến, bàn giao cho Tài xế
-- ✅ **Dashboard:** Thống kê doanh thu trực quan (Chart.js), xem đơn theo ngày/tháng
-- ✅ **Chat Trực tiếp:** Nhắn tin với Khách hàng và Tài xế theo từng giai đoạn đơn hàng
+- ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin, bản đồ chọn vị trí (Leaflet Map Picker) tự động đồng bộ tọa độ, upload banner.
+- ✅ **Quản lý Thực đơn & Danh mục (UC-13, UC-14):** CRUD danh mục món ăn (UC-13) và món ăn chi tiết (UC-14), upload hình ảnh chi tiết, cấu hình giá.
+- ✅ **Xử lý Đơn hàng (UC-15):** Tiếp nhận, chuẩn bị chế biến, bàn giao cho Tài xế qua bảng Kanban (Mới/Đang chuẩn bị/Xong).
+- ✅ **Báo cáo Doanh thu (UC-19):** Thống kê doanh thu trực quan dưới dạng biểu đồ (Chart.js), xem chi tiết đơn theo ngày/tháng trên Dashboard.
+- ✅ **Chat Trực tiếp:** Nhắn tin với Khách hàng và Tài xế theo từng giai đoạn đơn hàng.
 
 ### 🛵 Tài xế (Driver)
-- ✅ **Quản lý Hồ sơ:** Cập nhật thông tin cá nhân, chọn vị trí làm việc
-- ✅ **Nhận Đơn hàng:** Xem danh sách đơn đang chờ, nhận đơn (giới hạn **1 đơn hàng cùng lúc**).
+- ✅ **Quản lý Hồ sơ (UC-03):** Cập nhật thông tin cá nhân, chọn vị trí làm việc.
+- ✅ **Nhận & Giao hàng (UC-16):** Xem danh sách đơn đang chờ, nhận đơn (giới hạn **1 đơn hàng cùng lúc**), cập nhật trạng thái (PREPARING → DELIVERING → COMPLETED).
 - ✅ **Lịch sử Giao hàng:** Xem lại lịch sử với giao diện **Accordion** thông minh.
-- ✅ **Giao hàng:** Cập nhật trạng thái (PREPARING → DELIVERING → COMPLETED)
-- ✅ **Tracking:** Gửi vị trí GPS Real-time cho Khách hàng
-- ✅ **Chat Trực tiếp:** Nhắn tin với Khách hàng và Nhà hàng khi đang xử lý đơn
+- ✅ **Tracking:** Gửi vị trí GPS Real-time cho Khách hàng.
+- ✅ **Chat Trực tiếp:** Nhắn tin với Khách hàng và Nhà hàng khi đang xử lý đơn.
 
 ### 🛡️ Quản trị viên (Admin)
-- ✅ **Quản lý Người dùng:** Khóa/mở tài khoản, duyệt đối tác nhà hàng mới
-- ✅ **Hệ thống Khuyến mãi:** Tạo/sửa/xóa Voucher (% hoặc số tiền cố định). Quản lý **Giới hạn số lượt sử dụng** (Toàn hệ thống và Cá nhân) để ngăn chặn trục lợi.
-- ✅ **Thống kê Hệ thống:** Xem tổng quan doanh thu với **Line Chart**, danh sách đơn hàng gần đây với **Server-Side Pagination**.
+- ✅ **Quản lý Người dùng (UC-17):** Khóa/mở khóa tài khoản người dùng, quản trị vai trò.
+- ✅ **Duyệt Nhà hàng (UC-18):** Xét duyệt đối tác nhà hàng mới đăng ký tham gia hệ thống.
+- ✅ **Báo cáo Doanh thu Hệ thống (UC-19):** Xem tổng quan doanh thu toàn hệ thống với **Line Chart** trực quan, danh sách đơn hàng gần đây hỗ trợ **Server-Side Pagination**.
+- ✅ **Quản lý Voucher (UC-20):** Tạo/sửa/xóa Voucher khuyến mãi (% hoặc số tiền cố định), thiết lập **Giới hạn số lượt sử dụng** (Toàn hệ thống và Cá nhân) để ngăn chặn trục lợi.
 - ✅ **Broadcast Notifications:** Gửi thông báo hệ thống đồng loạt đến toàn bộ người dùng hoặc theo vai trò cụ thể.
 
 ---
@@ -272,6 +275,8 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 | [RECENT_CHANGES.md](RECENT_CHANGES.md) | Nhật ký thay đổi code |
 | [modules/](modules/) | Tài liệu 6 module chuyên sâu |
 | [CHANGELOG.md](CHANGELOG.md) | Lịch sử phiên bản |
+| [Báo cáo tuần (Google Drive)](https://drive.google.com/drive/folders/19BwHr-GmpaY6r-E1r86X4kxD8mDm7mMH?usp=drive_link) | Thư mục Drive chứa báo cáo tiến độ tuần |
+| [Báo cáo bài tập lớn (Google Drive)](https://drive.google.com/drive/folders/149eQSMiAWrHXUksXz_WqrA_sWgfAjusm?usp=drive_link) | Thư mục Drive chứa báo cáo bài tập lớn (Đồ án) |
 
 ---
 

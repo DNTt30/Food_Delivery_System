@@ -90,6 +90,8 @@
 | **Module: Tracking** | [modules/tracking.md](../modules/tracking.md) | GPS Real-time |
 | **Module: Chat** | [modules/chat.md](../modules/chat.md) | WebSocket STOMP |
 | **Module: Notification** | [modules/notification.md](../modules/notification.md) | Thông báo hệ thống |
+| **Weekly Reports** | [Báo cáo tuần (Drive)](https://drive.google.com/drive/folders/19BwHr-GmpaY6r-E1r86X4kxD8mDm7mMH?usp=drive_link) | Thư mục Drive chứa báo cáo tiến độ hàng tuần |
+| **Project Report** | [Báo cáo bài tập lớn (Drive)](https://drive.google.com/drive/folders/149eQSMiAWrHXUksXz_WqrA_sWgfAjusm?usp=drive_link) | Thư mục Drive chứa báo cáo tổng kết môn học (Đồ án) |
 
 ---
 
