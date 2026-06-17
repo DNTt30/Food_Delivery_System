@@ -6,52 +6,90 @@
 ---
 
 ### 1. Sơ đồ Use Case Tổng quát (General Use Case Diagram)
-*Mô tả: Thể hiện tương tác giữa 4 Actor (Khách hàng, Nhà hàng, Tài xế, Quản trị viên) với các tính năng chính của hệ thống.*
+*Mô tả: Thể hiện tương tác giữa 4 Actor (Khách hàng, Nhà hàng, Tài xế, Quản trị viên) với 20 Use Cases chính của hệ thống.*
 
 ```mermaid
 flowchart LR
+    %% Actors
     C(("Khách hàng\n(Customer)"))
     R(("Nhà hàng\n(Restaurant)"))
     D(("Tài xế\n(Driver)"))
-    A(("Quản trị\n(Admin)"))
+    A(("Quản trị viên\n(Admin)"))
 
-    subgraph System ["Food Delivery System"]
+    %% System Boundary
+    subgraph System ["Hệ thống Giao đồ ăn (Food Delivery System)"]
         direction TB
-        UC1(["Đăng ký / Đăng nhập (OTP)"])
-        UC2(["Quản lý Profile"])
-        UC3(["Tìm kiếm & Đặt món"])
-        UC4(["Thanh toán Online / Hoàn tiền"])
-        UC5(["Quản lý Thực đơn"])
-        UC6(["Xác nhận & Chuẩn bị đơn"])
-        UC7(["Nhận đơn giao hàng"])
-        UC8(["Cập nhật vị trí (GPS)"])
-        UC9(["Chat Trực tiếp (Real-time)"])
-        UC10(["Quản lý Người dùng"])
-        UC11(["Quản lý Mã giảm giá"])
+        
+        %% Authentication & Profiles
+        UC1(["UC-01: Đăng ký & OTP"])
+        UC2(["UC-02: Đăng nhập"])
+        UC3(["UC-03: Quản lý hồ sơ"])
+        UC4(["UC-04: Quên mật khẩu"])
+
+        %% Customer Use Cases
+        UC5(["UC-05: Tìm nhà hàng"])
+        UC6(["UC-06: Xem thực đơn"])
+        UC7(["UC-07: Quản lý giỏ hàng"])
+        UC8(["UC-08: Đặt đơn hàng"])
+        UC9(["UC-09: Thanh toán"])
+        UC10(["UC-10: Theo dõi đơn"])
+        UC11(["UC-11: Hủy đơn hàng"])
+        UC12(["UC-12: Đánh giá đơn"])
+
+        %% Restaurant Use Cases
+        UC13(["UC-13: Quản lý danh mục"])
+        UC14(["UC-14: Quản lý thực đơn"])
+        UC15(["UC-15: Xử lý đơn hàng"])
+
+        %% Driver Use Cases
+        UC16(["UC-16: Nhận giao hàng"])
+
+        %% Admin Use Cases
+        UC17(["UC-17: Quản lý người dùng"])
+        UC18(["UC-18: Duyệt nhà hàng"])
+        UC19(["UC-19: Báo cáo doanh thu"])
+        UC20(["UC-20: Quản lý voucher"])
     end
 
+    %% Customer Associations
     C --- UC1
-    R --- UC1
-    D --- UC1
-    
     C --- UC2
-    R --- UC2
-    D --- UC2
-    
     C --- UC3
     C --- UC4
+    C --- UC5
+    C --- UC6
+    C --- UC7
+    C --- UC8
     C --- UC9
-    
-    R --- UC5
-    R --- UC6
-    R --- UC9
-    
-    D --- UC7
-    D --- UC8
-    D --- UC9
-    
-    A --- UC10
-    A --- UC11
+    C --- UC10
+    C --- UC11
+    C --- UC12
+
+    %% Restaurant Associations
+    R --- UC1
+    R --- UC2
+    R --- UC3
+    R --- UC4
+    R --- UC13
+    R --- UC14
+    R --- UC15
+    R --- UC19
+
+    %% Driver Associations
+    D --- UC1
+    D --- UC2
+    D --- UC3
+    D --- UC4
+    D --- UC16
+    D --- UC19
+
+    %% Admin Associations
+    A --- UC2
+    A --- UC3
+    A --- UC17
+    A --- UC18
+    A --- UC19
+    A --- UC20
 ```
 
 ---
