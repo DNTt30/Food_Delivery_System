@@ -255,7 +255,9 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 │  ├─ Spring Data JPA Repositories                       │
 │  ├─ Custom @Query methods                              │
 │  └─ Native SQL queries                                 │
-└────────────────┬─────────────## 👨‍💻 Đội ngũ Phát triển
+└────────────────┬─────────────
+
+## 👨‍💻 Đội ngũ Phát triển
 
 | Thành viên | MSSV | Vai trò |
 | :--- | :--- | :--- |
@@ -279,28 +281,4 @@ DELETE /api/admin/vouchers/:id           # Xóa voucher
 | [Báo cáo bài tập lớn (Google Drive)](https://drive.google.com/drive/folders/149eQSMiAWrHXUksXz_WqrA_sWgfAjusm?usp=drive_link) | Thư mục Drive chứa báo cáo bài tập lớn (Đồ án) |
 
 ---
-
-## 📞 Liên hệ & Support
-
-- **GitHub Issues:** [Báo cáo bug](https://github.com/DNTt30/Food_Delivery_System/issues)
-- **Giấy phép:** [MIT License](LICENSE)
-
----
-
-*Cập nhật: 02/06/2026 | Dự án phát triển ứng dụng Web - Phân tích & Thiết kế Phần mềm*
-- **Email:** [contact@example.com]
-- **Issues:** GitHub Issues
-- **Documentation:** [Project Wiki]
-
----
-
-## 📄 Giấy phép
-
-Dự án này được cấp phép theo [MIT License](LICENSE)
-
----
-
-## ✨ Cảm ơn
-
-Cảm ơn tất cả những người đã góp phần vào dự án này!
 
